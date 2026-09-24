@@ -2,6 +2,7 @@ import { AppError, asyncHandler } from '../lib/errors';
 import { Router, Response } from 'express';
 import { authenticate, AuthRequest, locationFilter, requireFeaturePermission } from '../middleware/auth.middleware';
 import { enforceEffectiveRole } from '../middleware/effective-role';
+import { geminiSuggestLimiter } from '../middleware/rate-limit';
 import { qbService } from '../services/qb.service';
 import { suggestMappings, suggestValueMappings, ValueMappingFieldTypeString } from '../lib/gemini';
 import { prisma } from '../lib/prisma';
@@ -241,7 +242,7 @@ router.post('/suggest', requireFeaturePermission('map', 'read'), asyncHandler(as
   }
 }));
 
-router.post('/suggest-values', requireFeaturePermission('map', 'read'), asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+router.post('/suggest-values', geminiSuggestLimiter, requireFeaturePermission('map', 'read'), asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { templateId, valueCategories } = req.body as {
       templateId?: string;

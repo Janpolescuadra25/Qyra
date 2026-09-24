@@ -26,9 +26,14 @@ Last Updated: 2026-09-25
   - Preserved scan session across tab switches and popup reopen/close cycles
   - Cleared persisted session on deliberate new-scan and successful sync completion
 
+- [x] **F-11: AI-Powered Value Mapping Suggestions** (Completed: 2026-09-25)
+  - Added `geminiSuggestLimiter` with 10 req/min IP enforcement on `POST /api/mappings/suggest-values`
+  - Added 5-minute in-memory TTL cache for QuickBooks accounts, vendors, customers, and tax codes
+  - Verified API, backend build, and test suite for the completed F-11 implementation
+
 ## Current Active Focus
 
-- **F-11: AI-Powered Value Mapping Suggestions (Rate Limiting & QB Caching)**
+- **F-5A: User QA & Verification**
 
 ## Active Phases
 
@@ -144,5 +149,5 @@ Last Updated: 2026-09-25
 
 ## Next Priority
 1. **Immediate (F-5A)**: Complete the user QA checklist. This is a prerequisite for store submission.
-2. **Short-term (F-11)**: Complete rate limiting and QB caching for AI value suggestions. This unblocks full F-11 delivery.
-3. **Medium-term (F-7 → F-8 → F-9 → F-10)**: Batch scanning, custom presets, sync analytics, and Chrome Web Store launch — in that order. Each phase builds on the previous.
+2. **Short-term (F-7)**: Multi-Document Batch Scanning.
+3. **Medium-term (F-8 → F-9 → F-10)**: Custom presets, sync analytics, and Chrome Web Store launch — in that order.

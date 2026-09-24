@@ -7,6 +7,34 @@ import { logger } from '../lib/logger';
 const log = logger.child({ module: 'QBService' });
 const pendingRefreshes = new Map<string, Promise<{ accessToken: string; realmId: string }>>();
 
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+const qbEntityCache = new Map<string, CacheEntry<unknown>>();
+const CACHE_TTL = 5 * 60 * 1000;
+
+function getCacheKey(realmId: string, entityType: string): string {
+  return `${realmId}:${entityType}`;
+}
+
+function getCachedEntity<T>(realmId: string, entityType: string): T | null {
+  const key = getCacheKey(realmId, entityType);
+  const entry = qbEntityCache.get(key) as CacheEntry<T> | undefined;
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL) {
+    qbEntityCache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCachedEntity<T>(realmId: string, entityType: string, data: T): void {
+  const key = getCacheKey(realmId, entityType);
+  qbEntityCache.set(key, { data, timestamp: Date.now() });
+}
+
 async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs: number = 30_000): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -96,11 +124,16 @@ async function qbQuery<T>(realmId: string, accessToken: string, query: string): 
 
 // ── Entity query functions ────────────────────────────────────────────────────
 async function getAccounts(realmId: string, accessToken: string): Promise<QBAccount[]> {
+  const cached = getCachedEntity<QBAccount[]>(realmId, 'accounts');
+  if (cached) return cached;
+
   const data = await qbQuery<{ QueryResponse: { Account?: QBAccount[] } }>(
     realmId, accessToken,
     'SELECT * FROM Account WHERE Active = true MAXRESULTS 1000',
   );
-  return data.QueryResponse.Account ?? [];
+  const accounts = data.QueryResponse.Account ?? [];
+  setCachedEntity(realmId, 'accounts', accounts);
+  return accounts;
 }
 
 async function getClasses(realmId: string, accessToken: string): Promise<QBClass[]> {
@@ -120,19 +153,29 @@ async function getEmployees(realmId: string, accessToken: string): Promise<QBEmp
 }
 
 async function getVendors(realmId: string, accessToken: string): Promise<QBVendor[]> {
+  const cached = getCachedEntity<QBVendor[]>(realmId, 'vendors');
+  if (cached) return cached;
+
   const data = await qbQuery<{ QueryResponse: { Vendor?: QBVendor[] } }>(
     realmId, accessToken,
     'SELECT * FROM Vendor WHERE Active = true MAXRESULTS 1000',
   );
-  return data.QueryResponse.Vendor ?? [];
+  const vendors = data.QueryResponse.Vendor ?? [];
+  setCachedEntity(realmId, 'vendors', vendors);
+  return vendors;
 }
 
 async function getCustomers(realmId: string, accessToken: string): Promise<QBCustomer[]> {
+  const cached = getCachedEntity<QBCustomer[]>(realmId, 'customers');
+  if (cached) return cached;
+
   const data = await qbQuery<{ QueryResponse: { Customer?: QBCustomer[] } }>(
     realmId, accessToken,
     'SELECT * FROM Customer WHERE Active = true MAXRESULTS 1000',
   );
-  return data.QueryResponse.Customer ?? [];
+  const customers = data.QueryResponse.Customer ?? [];
+  setCachedEntity(realmId, 'customers', customers);
+  return customers;
 }
 
 interface QBTerm {
@@ -147,11 +190,16 @@ interface QBTerm {
 }
 
 async function getTaxCodes(realmId: string, accessToken: string): Promise<QBTaxCode[]> {
+  const cached = getCachedEntity<QBTaxCode[]>(realmId, 'taxCodes');
+  if (cached) return cached;
+
   const data = await qbQuery<{ QueryResponse: { TaxCode?: QBTaxCode[] } }>(
     realmId, accessToken,
     'SELECT * FROM TaxCode MAXRESULTS 1000',
   );
-  return data.QueryResponse.TaxCode ?? [];
+  const taxCodes = data.QueryResponse.TaxCode ?? [];
+  setCachedEntity(realmId, 'taxCodes', taxCodes);
+  return taxCodes;
 }
 
 async function getTerms(realmId: string, accessToken: string): Promise<QBTerm[]> {

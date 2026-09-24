@@ -52,3 +52,16 @@ export const apiLimiter = rateLimit({
     next(new AppError('Too many requests. Please try again later.', 429));
   },
 });
+
+export const geminiSuggestLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res, next) => {
+    const resetTime = (req as any).rateLimit?.resetTime;
+    const retryAfter = Math.ceil(resetTime ? (resetTime.getTime() - Date.now()) / 1000 : 60);
+    res.setHeader('Retry-After', String(retryAfter));
+    next(new AppError('Too many AI suggestion requests. Please try again later.', 429));
+  },
+});

@@ -1,6 +1,6 @@
 # Feature F-11: AI-Powered Value Mapping Suggestions
 
-**Status**: PARTIALLY COMPLETED (Core Logic & Endpoint Implemented)
+**Status**: DONE (100% Implemented & Verified)
 **Last Updated**: 2026-09-25
 **Related Modules**:
 - `Backend/src/routes/mappings.ts`
@@ -40,6 +40,7 @@ Feature F-11 provides intelligent, automated value mapping suggestions for trans
 
 ---
 
-## 3. Current In-Progress Items & Limitations
-1. **Rate Limiting**: Route currently relies on upstream 429 error handling; in-process route rate limiting is pending.
-2. **Reference Data Caching**: QuickBooks reference entities are retrieved per request; Redis or in-memory TTL caching will be added to minimize API calls to Intuit.
+## 3. Implemented Controls & Limitations
+1. **Rate Limiting**: `POST /api/mappings/suggest-values` now uses `geminiSuggestLimiter` with a 60-second window and a max of 10 requests per IP. Requests beyond the quota return HTTP 429 with a `Retry-After` header and an AppError message.
+2. **Reference Data Caching**: `Backend/src/services/qb.service.ts` now caches `accounts`, `vendors`, `customers`, and `taxCodes` in an in-memory TTL cache for 5 minutes before re-fetching from QuickBooks. This reduces repeated Intuit API calls during value mapping suggestions while preserving the latest data on expiry.
+3. **Verified Behavior**: Exact matches, fuzzy matches, confidence scoring, and response validation are in place and verified as part of the F-11 implementation.
