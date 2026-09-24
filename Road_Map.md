@@ -1,5 +1,5 @@
 # Qyra — Product Roadmap
-Last Updated: 2026-08-21
+Last Updated: 2026-09-25
 
 ## Current Verified State
 - **Backend Test Suite**: 117/117 passing, 20/20 suites
@@ -12,12 +12,14 @@ Last Updated: 2026-08-21
 - **Extension Welcome Overlay**: Logo + tagline fade-in-up animation. First-install logo splash screen (one-time, fullscreen, chrome.storage.local tracked). All original functionality preserved.
 - **Frontend Type Check**: Clean (`tsc --noEmit` exits with 0, zero errors). All 6 type errors across 5 files resolved.
 - **Extension Store Prep**: STORE_LISTING.md created, manifest description aligned, version 1.0.1, `<all_urls>` fully removed from host_permissions, content_scripts, and web_accessible_resources.
-- **Deployment Infrastructure**: Backend on Render.com, PostgreSQL on Neon.
-- **Scan Section — Cheque Auto-Mapping**: Fixed 11-column default mappings applied automatically for CHEQUE Excel; no manual column mapping required.
-- **Scan Section — JE Preview**: Column visibility toggles (`colVis` state persisted to localStorage via `qyra_je_col_vis`) allow users to show/hide JE columns in the preview table.
-- **Scan Section — AI Suggest for Excel**: `disableAutoDetect` prop is never passed from MappingView call site, so AI Suggest and Auto-Detect buttons are always enabled in Excel mode. The prop remains as dead code in MappingFilters.tsx.
-- CHEQUE preview: each Excel row produces a separate cheque form in the Preview tab (individual sync + Sync All button). Backend CHEQUE parser creates one transaction per row. CheckPreviewForm auto-populates date, check number, bank account, and payee from Excel data via existing header auto-resolution.
-- **Known Issue — Cheque Line Item Count**: RESOLVED. Fixed at commit `5e2b5be` (CHEQUE parser creates one transaction per row) and `110a33e` (CHEQUE preview UX redesign + debug log cleanup). Debug logs removed. Cheque preview redesigned as individual cards per row.
+- **Deployment Infrastructure**: Qyra backend provisioned on Hetzner VPS Slot 3 under PM2 with Nginx + Let's Encrypt; other repo infrastructure remains separate.
+
+## Completed Phases
+
+- [x] **VPS-QYRA-01**: Hetzner VPS Slot 3 Provisioning & Multi-Repo Deployment (Completed: 2026-09-25)
+  - Deployed NestJS backend under PM2 (`qyra-backend`) on internal port 10000
+  - Configured Nginx virtual host for `qyra.space` and `www.qyra.space` with 50MB body size limit
+  - Issued Let's Encrypt SSL certificate; verified zero-touch isolation across all 3 hosted domains
 
 ## Active Phases
 
@@ -29,8 +31,9 @@ Last Updated: 2026-08-21
   3. Verify AI Suggest for Excel templates is available and functional
   4. Verify landing page animations and extension intro interact correctly
   5. Verify all health endpoints and browser compatibility
+  6. Verify Vendor Credit Excel flow end-to-end (parse → mapping → review → sync navigation)
 - **Acceptance Criteria**:
-  - All 5 verification items pass in Chrome (latest), Firefox (latest), and Edge (latest)
+  - All 6 verification items pass in Chrome (latest), Firefox (latest), and Edge (latest)
 
 ## Upcoming Phases
 
@@ -74,14 +77,14 @@ Last Updated: 2026-08-21
 **Context:** Current AI Suggest (`Backend/src/lib/gemini.ts` L576-670, endpoint at `Backend/src/routes/mappings.ts` L120-180) only suggests column-to-account field mappings for Journal Entry POS scans. Value mapping UI exists for Cheque/Bill/JE in EXCEL mode (`Frontend/src/popup/components/MappingView/ValueMappingSection.tsx`) but has zero AI assistance — all value mappings are manual dropdown selection. The `disableAutoDetect` prop in `MappingFilters.tsx` is dead code (defined but never passed from MappingView, defaults to undefined/falsy) — the AI Suggest button is already technically enabled for all templates but the backend only supports account mapping suggestions.
 
 **Deliverables:**
-- ✅ **Clean up `disableAutoDetect` dead code**: Remove the prop and all its references from `MappingFilters.tsx` only. This is pure cleanup — removing it changes no behavior since it was never passed.
-- ✅ **Backend value suggestion endpoint**: New `POST /api/mappings/suggest-values` endpoint that accepts scan data (extracted row values) + template type + mapping field type (payee/bank/category/tax), queries QB reference data via existing `qb.service.ts` methods (vendors, accounts, tax codes), and returns ranked suggestions with match type (exact/fuzzy/none) and confidence score.
-- **AI-powered fuzzy matching**: Use Gemini to compare scanned values against QB reference data. Exact string match = auto-apply. Substring/abbreviation match (e.g., "Jp" → "Jeypee Enterprises") = suggest with note explaining the match. No match = suggest creating a new QB entity or leaving unmapped. **Fuzzy matches must NEVER be auto-applied** — user must explicitly accept to prevent data integrity issues.
-- ✅ **Frontend value suggestion UI**: Add an "AI Suggest Values" button to each `ValueMappingSection` (or a single button above all value mapping accordions). Display suggestions as inline recommendation chips/badges with accept/reject actions. Show confidence level and match reasoning (e.g., "Jeypee Enterprises in QuickBooks may match Jp in your spreadsheet").
-- ✅ **Support all EXCEL-mode templates**: Cheque (payee, bank account, category, tax type), Bill (vendor, account, tax type), Journal Entry (payee, account, category). Each template type has different value mapping fields — the endpoint and UI must handle all permutations.
-- ✅ **Batch apply**: Allow user to "Accept All" suggestions for a single mapping category (e.g., accept all payee suggestions at once) or individually accept/reject.
-- **Rate limiting and caching**: Add rate limiting to the new endpoint to prevent Gemini API cost abuse. Cache QB reference data (vendors, accounts, tax codes) to reduce QuickBooks API calls — invalidate cache on sync events or after a configurable TTL.
-- ✅ **Maintain test suite**: All new code passes existing tests (114 frontend + 6 backend) plus new tests for column builders and suggest-values route validation.
+- [x] **Clean up `disableAutoDetect` dead code**: Remove the prop and all its references from `MappingFilters.tsx` only. This is pure cleanup — removing it changes no behavior since it was never passed.
+- [x] **Backend value suggestion endpoint**: New `POST /api/mappings/suggest-values` endpoint that accepts scan data (extracted row values) + template type + mapping field type (payee/bank/category/tax), queries QB reference data via existing `qb.service.ts` methods (vendors, accounts, tax codes), and returns ranked suggestions with match type (exact/fuzzy/none) and confidence score.
+- [x] **AI-powered fuzzy matching**: Use Gemini to compare scanned values against QB reference data. Exact string match = auto-apply. Substring/abbreviation match (e.g., "Jp" → "Jeypee Enterprises") = suggest with note explaining the match. No match = suggest creating a new QB entity or leaving unmapped. **Fuzzy matches must NEVER be auto-applied** — user must explicitly accept to prevent data integrity issues.
+- [x] **Frontend value suggestion UI**: Add an "AI Suggest Values" button to each `ValueMappingSection` (or a single button above all value mapping accordions). Display suggestions as inline recommendation chips/badges with accept/reject actions. Show confidence level and match reasoning (e.g., "Jeypee Enterprises in QuickBooks may match Jp in your spreadsheet").
+- [x] **Support all EXCEL-mode templates**: Cheque (payee, bank account, category, tax type), Bill (vendor, account, tax type), Journal Entry (payee, account, category). Each template type has different value mapping fields — the endpoint and UI must handle all permutations.
+- [x] **Batch apply**: Allow user to "Accept All" suggestions for a single mapping category (e.g., accept all payee suggestions at once) or individually accept/reject.
+- [-] **Rate limiting and caching**: Add rate limiting to `/api/mappings/suggest-values` to prevent Gemini API cost abuse. Cache QuickBooks reference data (vendors, accounts, tax codes) to reduce API calls — invalidate cache on sync events or after a configurable TTL.
+- [x] **Maintain test suite**: All new code passes existing tests (114 frontend + 6 backend) plus new tests for column builders and suggest-values route validation.
 
 **Acceptance Criteria:**
 - `disableAutoDetect` prop and all references removed from `MappingFilters.tsx`
