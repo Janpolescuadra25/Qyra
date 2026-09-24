@@ -143,6 +143,6 @@ Last Updated: 2026-09-25
   - Zero critical errors in the first 48 hours post-launch
 
 ## Next Priority
-1. **Immediate (F-5A)**: Complete the user QA checklist. This is a prerequisite for both F-6 and store submission.
-2. **Short-term (F-6)**: Harden scan data flow. This unblocks reliable cheque workflows.
-3. **Medium-term (F-7 → F-8 → F-11 → F-9 → F-10)**: Batch scanning, custom presets, AI-powered value mapping suggestions, sync analytics, and Chrome Web Store launch — in that order. Each phase builds on the previous.
+1. **Immediate (F-5A)**: Complete the user QA checklist. This is a prerequisite for store submission.
+2. **Short-term (F-11)**: Complete rate limiting and QB caching for AI value suggestions. This unblocks full F-11 delivery.
+3. **Medium-term (F-7 → F-8 → F-9 → F-10)**: Batch scanning, custom presets, sync analytics, and Chrome Web Store launch — in that order. Each phase builds on the previous.
