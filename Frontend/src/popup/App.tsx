@@ -3,6 +3,7 @@ import { useAuth } from './hooks/useAuth';
 import { useQuickBooks } from './hooks/useQuickBooks';
 import { useLocations } from './hooks/useLocations';
 import { QBContextProvider } from './contexts/QBContext';
+import { ScanProvider, useScanContext } from './contexts/ScanContext';
 import { hasPerm } from './lib/permissions';
 import { api } from './lib/api';
 import { getOnboardingState, type OnboardingState } from './lib/onboarding';
@@ -47,17 +48,35 @@ const ROLE_META: Record<string, { icon: string; color: string }> = {
 };
 
 export default function App() {
+  return (
+    <ScanProvider>
+      <AppContent />
+    </ScanProvider>
+  );
+}
+
+function AppContent() {
   const { jwt, user, loading, login, logout, refreshUser } = useAuth();
+  const {
+    scanData,
+    setScanData,
+    scanRecordId,
+    setScanRecordId,
+    scanEntries,
+    setScanEntries,
+    activeScanEntryId,
+    setActiveScanEntryId,
+    scanMode,
+    setScanMode,
+    selectedLocationId,
+    setSelectedLocationId,
+    selectedTemplateForScan,
+    setSelectedTemplateForScan,
+    clearScanSession,
+  } = useScanContext();
   const [currentTab, setCurrentTab] = useState<TabId>('dashboard');
-  const [scanData, setScanData] = useState<ScanData | null>(null);
-  const [scanRecordId, setScanRecordId] = useState<string | null>(null);
-  const [scanEntries, setScanEntries] = useState<ScanEntry[]>([]);
-  const [activeScanEntryId, setActiveScanEntryId] = useState<string | null>(null);
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [uploadedExcelFile, setUploadedExcelFile] = useState<File | null>(null);
-  const [scanMode, setScanMode] = useState<ScanSource>('pos');
-  const [selectedLocationId, setSelectedLocationId] = useState<string>('');
-  const [selectedTemplateForScan, setSelectedTemplateForScan] = useState<Template | null>(null);
   const [showInvoiceReview, setShowInvoiceReview] = useState(false);
   const [documentClassification, setDocumentClassification] = useState<{ documentType: string; confidence: number; reasoning: string } | null>(null);
   const [parsedCheckData, setParsedCheckData] = useState<{
@@ -233,7 +252,10 @@ export default function App() {
     hasSynced: deferredSynced || hasSyncedBefore,
   });
 
-  const handleHasSynced = useCallback(() => setDeferredSynced(true), []);
+  const handleHasSynced = useCallback(() => {
+    setDeferredSynced(true);
+    clearScanSession();
+  }, [clearScanSession]);
 
   if (showLogoSplash === true) {
     return <LogoSplash onComplete={() => setShowLogoSplash(false)} />;
@@ -511,7 +533,7 @@ export default function App() {
               user={user!}
               scanData={scanData}
               onScanData={setScanData}
-              onClearScanData={() => setScanData(null)}
+              onClearScanData={clearScanSession}
               onScanRecordId={setScanRecordId}
               locationId={selectedLocationId || null}
               onboardingStep={onboardingState.step}

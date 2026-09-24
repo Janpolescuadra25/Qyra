@@ -21,6 +21,15 @@ Last Updated: 2026-09-25
   - Configured Nginx virtual host for `qyra.space` and `www.qyra.space` with 50MB body size limit
   - Issued Let's Encrypt SSL certificate; verified zero-touch isolation across all 3 hosted domains
 
+- [x] **F-6: Scan Data Flow Hardening** (Completed: 2026-09-25)
+  - Centralized scan state into `ScanContext` with `chrome.storage.local` persistence
+  - Preserved scan session across tab switches and popup reopen/close cycles
+  - Cleared persisted session on deliberate new-scan and successful sync completion
+
+## Current Active Focus
+
+- **F-11: AI-Powered Value Mapping Suggestions (Rate Limiting & QB Caching)**
+
 ## Active Phases
 
 ### F-5A: User QA & Verification
@@ -36,14 +45,6 @@ Last Updated: 2026-09-25
   - All 6 verification items pass in Chrome (latest), Firefox (latest), and Edge (latest)
 
 ## Upcoming Phases
-
-### F-6: Scan Data Flow Hardening
-- **Goal**: Harden the scan-to-map data pipeline against state loss on tab switch.
-- **Deliverables**:
-  - Tab-switch state persistence fix to prevent component unmount data loss
-- **Acceptance Criteria**:
-  - Tab switching (scan → map → scan) preserves the parsed file and entries
-  - Backend tests still pass (117+)
 
 ### F-7: Multi-Document Batch Scanning
 - **Goal**: Allow users to upload and scan multiple documents in a single session, with a queue-based workflow and batch sync capability.
