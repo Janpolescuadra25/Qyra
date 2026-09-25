@@ -26,7 +26,7 @@ export interface Mapping {
   id: string;
   locationId: string;
   templateId?: string | null;
-  sourceField: string;
+  sourceField: 'amount' | 'description' | 'category' | 'customer' | 'supplier' | 'terms' | 'taxType' | 'amountType' | string;
   targetAccount: string;
   postingType?: string;
   keepSeparate?: boolean;
@@ -198,7 +198,7 @@ export interface ValueMappingFormData {
 }
 
 export interface ColumnMappingConfig {
-  sourceField: 'payee' | 'bankAccount' | 'category' | 'taxType' | 'vendorRef' | 'apAccountRef' | 'termsRef' | 'account' | 'name' | 'class' | 'tax';
+  sourceField: 'payee' | 'bankAccount' | 'category' | 'taxType' | 'vendorRef' | 'apAccountRef' | 'termsRef' | 'account' | 'name' | 'class' | 'tax' | 'supplier' | 'terms' | 'customer' | 'amountType';
   fieldType: ValueMapping['fieldType'];
   label: string;
   description: string;
@@ -373,6 +373,7 @@ export interface QBBillLineItem {
   accountRef: { value: string; name?: string };
   classRef?: { value: string; name?: string };
   taxCodeRef?: { value: string; name?: string };
+  customerRef?: { value: string; name?: string };
   description?: string;
 }
 
