@@ -14,40 +14,9 @@ Last Updated: 2026-09-25
 - **Extension Store Prep**: STORE_LISTING.md created, manifest description aligned, version 1.0.1, `<all_urls>` fully removed from host_permissions, content_scripts, and web_accessible_resources.
 - **Deployment Infrastructure**: Qyra backend provisioned on Hetzner VPS Slot 3 under PM2 with Nginx + Let's Encrypt; other repo infrastructure remains separate.
 
-## Completed Phases
-
-- [x] **VPS-QYRA-01**: Hetzner VPS Slot 3 Provisioning & Multi-Repo Deployment (Completed: 2026-09-25)
-  - Deployed NestJS backend under PM2 (`qyra-backend`) on internal port 10000
-  - Configured Nginx virtual host for `qyra.space` and `www.qyra.space` with 50MB body size limit
-  - Issued Let's Encrypt SSL certificate; verified zero-touch isolation across all 3 hosted domains
-
-- [x] **F-6: Scan Data Flow Hardening** (Completed: 2026-09-25)
-  - Centralized scan state into `ScanContext` with `chrome.storage.local` persistence
-  - Preserved scan session across tab switches and popup reopen/close cycles
-  - Cleared persisted session on deliberate new-scan and successful sync completion
-
-- [x] **F-11: AI-Powered Value Mapping Suggestions** (Completed: 2026-09-25)
-  - Added `geminiSuggestLimiter` with 10 req/min IP enforcement on `POST /api/mappings/suggest-values`
-  - Added 5-minute in-memory TTL cache for QuickBooks accounts, vendors, customers, and tax codes
-  - Verified API, backend build, and test suite for the completed F-11 implementation
-
 ## Current Active Focus
 
 - **F-5A: User QA & Verification**
-
-## Active Phases
-
-### F-5A: User QA & Verification
-- **Goal**: Complete browser-based QA of all scan and landing page workflows.
-- **What needs to be achieved**:
-  1. Verify cheque Excel flow end-to-end (parse → mapping → review → sync navigation)
-  2. Verify JE Excel preview displays metadata and full transaction rows
-  3. Verify AI Suggest for Excel templates is available and functional
-  4. Verify landing page animations and extension intro interact correctly
-  5. Verify all health endpoints and browser compatibility
-  6. Verify Vendor Credit Excel flow end-to-end (parse → mapping → review → sync navigation)
-- **Acceptance Criteria**:
-  - All 6 verification items pass in Chrome (latest), Firefox (latest), and Edge (latest)
 
 ## Upcoming Phases
 
@@ -76,58 +45,17 @@ Last Updated: 2026-09-25
   - Exported preset JSON can be imported on another device
   - Built-in defaults are never overwritten by user presets
 
-### F-11: AI-Powered Value Mapping Suggestions
-
-**Goal:** Extend AI Suggest to automatically recommend value-to-entity mappings (payee→vendor, bank account→QB account, category→QB account, tax type→QB tax code) by matching scanned data against QuickBooks reference data, with fuzzy matching and confidence levels.
-
-**Context:** Current AI Suggest (`Backend/src/lib/gemini.ts` L576-670, endpoint at `Backend/src/routes/mappings.ts` L120-180) only suggests column-to-account field mappings for Journal Entry POS scans. Value mapping UI exists for Cheque/Bill/JE in EXCEL mode (`Frontend/src/popup/components/MappingView/ValueMappingSection.tsx`) but has zero AI assistance — all value mappings are manual dropdown selection. The `disableAutoDetect` prop in `MappingFilters.tsx` is dead code (defined but never passed from MappingView, defaults to undefined/falsy) — the AI Suggest button is already technically enabled for all templates but the backend only supports account mapping suggestions.
-
-**Deliverables:**
-- [x] **Clean up `disableAutoDetect` dead code**: Remove the prop and all its references from `MappingFilters.tsx` only. This is pure cleanup — removing it changes no behavior since it was never passed.
-- [x] **Backend value suggestion endpoint**: New `POST /api/mappings/suggest-values` endpoint that accepts scan data (extracted row values) + template type + mapping field type (payee/bank/category/tax), queries QB reference data via existing `qb.service.ts` methods (vendors, accounts, tax codes), and returns ranked suggestions with match type (exact/fuzzy/none) and confidence score.
-- [x] **AI-powered fuzzy matching**: Use Gemini to compare scanned values against QB reference data. Exact string match = auto-apply. Substring/abbreviation match (e.g., "Jp" → "Jeypee Enterprises") = suggest with note explaining the match. No match = suggest creating a new QB entity or leaving unmapped. **Fuzzy matches must NEVER be auto-applied** — user must explicitly accept to prevent data integrity issues.
-- [x] **Frontend value suggestion UI**: Add an "AI Suggest Values" button to each `ValueMappingSection` (or a single button above all value mapping accordions). Display suggestions as inline recommendation chips/badges with accept/reject actions. Show confidence level and match reasoning (e.g., "Jeypee Enterprises in QuickBooks may match Jp in your spreadsheet").
-- [x] **Support all EXCEL-mode templates**: Cheque (payee, bank account, category, tax type), Bill (vendor, account, tax type), Journal Entry (payee, account, category). Each template type has different value mapping fields — the endpoint and UI must handle all permutations.
-- [x] **Batch apply**: Allow user to "Accept All" suggestions for a single mapping category (e.g., accept all payee suggestions at once) or individually accept/reject.
-- [-] **Rate limiting and caching**: Add rate limiting to `/api/mappings/suggest-values` to prevent Gemini API cost abuse. Cache QuickBooks reference data (vendors, accounts, tax codes) to reduce API calls — invalidate cache on sync events or after a configurable TTL.
-- [x] **Maintain test suite**: All new code passes existing tests (114 frontend + 6 backend) plus new tests for column builders and suggest-values route validation.
-
-**Acceptance Criteria:**
-- `disableAutoDetect` prop and all references removed from `MappingFilters.tsx`
-- `POST /api/mappings/suggest-values` returns ranked suggestions for any template type + field type
-- Exact matches auto-applied, fuzzy matches shown with explanation (never auto-applied), no matches flagged
-- AI Suggest Values button functional in Cheque, Bill, and Journal Entry EXCEL modes
-- Suggestions include match type, confidence score, and human-readable reasoning
-- User can accept/reject individual suggestions or batch-accept per category
-- Rate limiting active on the new endpoint
-- QB reference data cached to reduce API calls
-- Backend test suite remains 117/117+ passing
-
 ### F-9: Sync Analytics, Auto-Retry & Webhook Status
-
-**Goal:** Strengthen sync reliability and observability through auto-retry, error categorization, alerting, and dashboard metrics.
-
-**Deliverables:**
-- ✅ **Auto-retry with exponential backoff**: 4 attempts in `callQB()` with exponential backoff (1s/2s/4s) — `Backend/src/services/qb.service.ts` L835-861.
-- ✅ **Error categorization & logging**: `QBApiError.category` getter returns `AUTH | TRANSIENT | VALIDATION | FATAL` — `Backend/src/lib/qb-errors.ts` L14-18.
-- ✅ **Manual retry endpoint**: `POST /api/quickbooks/retry/:scanRecordId`, max 3 attempts — `Backend/src/routes/quickbooks.ts` L1747-1813.
-- ✅ **Sync failure alerting**: `startSyncFailureAlertCron()` runs scheduled failure checks — `Backend/src/cron/sync-failure-alerts.ts` L11.
-- ✅ **Error dashboard metrics**: `GET /api/analytics/dashboard` returns `syncStatusBreakdown: { synced, failed, pending }` — `Backend/src/routes/analytics.ts` L98-102.
-- **Aggregated error analytics dashboard UI**: Filterable views, per-category counts, and trend visualization (API endpoint exists, frontend dashboard not yet built).
-- **Sync success rate trends**: Daily/weekly charts over time.
-- **Webhook-based real-time sync status**: Push notification when a background sync completes or fails.
-- **Sync summary email/notification digest**: Daily or per-session summary.
-- **Retry queue persistence**: Persist retry attempts to the database to survive server restarts.
-- **Circuit breaker pattern**: Implement a circuit breaker that temporarily stops retrying after repeated failures to a specific endpoint.
-- **Error archive**: Archive resolved errors after a retention period for audit and compliance purposes.
-
-**Acceptance Criteria:**
-- 4 attempts in `callQB()` with exponential backoff, 3 in manual retry endpoint
-- Errors categorized into 4 types (AUTH, TRANSIENT, VALIDATION, FATAL) with structured logging
-- Failure alerts cron active and notifying on threshold breach
-- Analytics endpoint returns sync status breakdown (synced, failed, pending)
-
-*5 of 12 deliverables completed. 7 remaining.*
+- **Goal**: Strengthen sync reliability and observability through auto-retry, error categorization, alerting, and dashboard metrics.
+- **Deliverables**:
+  - Auto-retry with exponential backoff and retry queue tracking
+  - Error categorization and dashboard metrics
+  - Webhook-driven sync status visibility
+  - Failure alerting and retry summary reporting
+- **Acceptance Criteria**:
+  - Sync failures are retried and surfaced clearly in the dashboard
+  - Error categories are visible for operators and support staff
+  - Users can quickly identify failed vs. successful sync activity
 
 ### F-10: Chrome Web Store Submission & Launch
 - **Goal**: Submit Qyra to the Chrome Web Store and launch publicly.
@@ -151,3 +79,21 @@ Last Updated: 2026-09-25
 1. **Immediate (F-5A)**: Complete the user QA checklist. This is a prerequisite for store submission.
 2. **Short-term (F-7)**: Multi-Document Batch Scanning.
 3. **Medium-term (F-8 → F-9 → F-10)**: Custom presets, sync analytics, and Chrome Web Store launch — in that order.
+
+## Archived Completed Phases
+
+- [x] **VPS-QYRA-01**: Hetzner VPS Slot 3 Provisioning & Multi-Repo Deployment (Completed: 2026-09-25)
+  - Deployed NestJS backend under PM2 (`qyra-backend`) on internal port 10000
+  - Configured Nginx virtual host for `qyra.space` and `www.qyra.space` with 50MB body size limit
+  - Issued Let's Encrypt SSL certificate; verified zero-touch isolation across all 3 hosted domains
+
+- [x] **F-6: Scan Data Flow Hardening & Tab-Switch State Persistence** (Completed: 2026-09-25)
+  - Centralized scan state into `ScanContext` with `chrome.storage.local` persistence
+  - Preserved scan session across tab switches and popup reopen/close cycles
+  - Cleared persisted session on deliberate new-scan and successful sync completion
+
+- [x] **F-11: AI-Powered Value Mapping Suggestions** (Completed: 2026-09-25)
+  - Added `geminiSuggestLimiter` with 10 req/min IP enforcement on `POST /api/mappings/suggest-values`
+  - Added 5-minute in-memory TTL cache for QuickBooks accounts, vendors, customers, and tax codes
+  - Verified API, backend build, and test suite for the completed F-11 implementation
+
