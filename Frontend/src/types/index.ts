@@ -217,16 +217,22 @@ export interface ExcelParseResult {
   selectedSheetName: string;
 }
 
+export type ScanQueueStatus = 'queued' | 'scanning' | 'completed' | 'failed';
+
 export interface ScanEntry {
   id: string;
   source: 'pos' | 'excel' | 'image' | 'pdf';
   type?: 'CHEQUE' | 'BILL';
   fileName?: string;
+  fileSize?: number;
   rowNumber?: number;
   thumbnail?: string;
   header: Record<string, string>;
   lineItems: Record<string, string>[];
   scanRecordId?: string;
+  queueStatus?: ScanQueueStatus;
+  error?: string;
+  processedAt?: string;
 }
 
 export type ScanMode = 'IMAGE' | 'EXCEL' | 'POS';

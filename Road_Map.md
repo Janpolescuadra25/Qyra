@@ -14,12 +14,11 @@ Last Updated: 2026-09-25
 
 ## Current Active Focus
 
-- **F-5A: User QA & Verification**
-  - Direct QuickBooks customer matching in bills and cheques.
-  - Value mapping resolution for customer entities.
-  - Fallback behavior when the customer list is absent.
-  - Cross-browser verification of the 4 transaction templates: Cheque, Bill, Vendor Credit, and Journal Entry.
 - **F-7: Multi-Document Batch Scanning**
+  - Queue state model and document lifecycle tracking.
+  - Multi-upload ingestion and batch session persistence.
+  - Progress tracking and per-document processing status.
+  - Batch review and sync orchestration for queued documents.
 
 ## Upcoming Phases
 
@@ -80,7 +79,13 @@ Last Updated: 2026-09-25
   - Zero critical errors in the first 48 hours post-launch
 
 ## Next Priority
-1. **Immediate (F-5A)**: Complete the user QA checklist.
-2. **Short-term (F-7)**: Multi-Document Batch Scanning.
-3. **Medium-term (F-8 → F-9 → F-10)**: Custom presets, sync analytics, and Chrome Web Store launch.
+1. **Immediate (F-7)**: Multi-Document Batch Scanning (Queue State Model → Multi-Upload UI → Queue Processing → Batch Review & Sync).
+2. **Short-term (F-8)**: Advanced Mapping Presets & User Custom Mappings.
+3. **Medium-term (F-9 → F-10)**: Sync Analytics, Auto-Retry, and Chrome Web Store Launch.
+
+## Completed Phases
+- **F-5A: User QA & Verification** (Completed: 2026-09-26)
+  - Validated all 4 transaction templates (Bills, Cheques, Vendor Credits, Journal Entries) with line-item CustomerRef mapping.
+  - Confirmed value mapping resolution for customer entities and fallback paths.
+  - Completed frontend payload validation and formal QA checklist verification.
 
