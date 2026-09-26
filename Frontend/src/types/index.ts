@@ -221,7 +221,7 @@ export type ScanQueueStatus = 'queued' | 'scanning' | 'completed' | 'failed';
 
 export interface ScanEntry {
   id: string;
-  source: 'pos' | 'excel' | 'image' | 'pdf';
+  source: 'pos' | 'excel' | 'image' | 'pdf' | 'upload';
   type?: 'CHEQUE' | 'BILL';
   fileName?: string;
   fileSize?: number;

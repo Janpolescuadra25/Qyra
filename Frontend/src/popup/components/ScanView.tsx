@@ -6,8 +6,10 @@ import { parseNumericValue } from '../lib/parse-numeric-value';
 import InvoiceReviewPanel from './ScanView/InvoiceReviewPanel';
 import CheckReviewPanel from './ScanView/CheckReviewPanel';
 import ScanHistory from './ScanHistory';
-import { ErrorCard, EmptyState } from './shared';
+import { ErrorCard, EmptyState, StatusBadge } from './shared';
 import { useToast } from './Toast';
+import { useScanContext } from '../contexts/ScanContext';
+import { UploadZone } from './UploadZone';
 
 interface ScanPackModalProps {
   open: boolean;
@@ -109,6 +111,36 @@ const CHEQUE_DEFAULT_COLUMN_MAPPINGS: Record<string, string> = {
   'Customer': 'Customer',
   'QB Memo': 'QB Memo',
   'Tax Type': 'Tax Type',
+};
+
+const BILL_DEFAULT_COLUMN_MAPPINGS: Record<string, string> = {
+  'Supplier': 'Supplier',
+  'Terms': 'Terms',
+  'Bill Date': 'Bill Date',
+  'Due Date': 'Due Date',
+  'Bill No.': 'Bill No.',
+  'Category': 'Category',
+  'Description': 'Description',
+  'Amount': 'Amount',
+  'Tax': 'Tax',
+  'Customer': 'Customer',
+  'Amount Type': 'Amount Type',
+  'Memo': 'Memo',
+};
+
+const VENDOR_CREDIT_DEFAULT_COLUMN_MAPPINGS: Record<string, string> = {
+  'Supplier': 'Supplier',
+  'Terms': 'Terms',
+  'Credit Date': 'Credit Date',
+  'Due Date': 'Due Date',
+  'Credit No.': 'Credit No.',
+  'Category': 'Category',
+  'Description': 'Description',
+  'Amount': 'Amount',
+  'Tax': 'Tax',
+  'Customer': 'Customer',
+  'Amount Type': 'Amount Type',
+  'Memo': 'Memo',
 };
 
 interface Props {
@@ -217,6 +249,14 @@ export default function ScanView({
   const [blurWarning, setBlurWarning] = useState(false);
   const [ocrConfidence, setOcrConfidence] = useState<number | null>(null);
   const { showToast } = useToast();
+  const {
+    enqueueScanEntries,
+    removeQueueEntry,
+    isBatchProcessing = false,
+    batchProgress = 0,
+    setIsBatchProcessing,
+    setBatchProgress,
+  } = useScanContext();
   const [invoiceConfirmSuccess, setInvoiceConfirmSuccess] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -399,6 +439,20 @@ export default function ScanView({
         return {};
       }
       return CHEQUE_DEFAULT_COLUMN_MAPPINGS;
+    }
+    if (selectedTemplate?.transactionType === 'BILL') {
+      if (!BILL_DEFAULT_COLUMN_MAPPINGS || Object.keys(BILL_DEFAULT_COLUMN_MAPPINGS).length === 0) {
+        console.warn('[Qyra] BILL_DEFAULT_COLUMN_MAPPINGS is empty — falling back to empty object');
+        return {};
+      }
+      return BILL_DEFAULT_COLUMN_MAPPINGS;
+    }
+    if (selectedTemplate?.transactionType === 'VENDOR_CREDIT') {
+      if (!VENDOR_CREDIT_DEFAULT_COLUMN_MAPPINGS || Object.keys(VENDOR_CREDIT_DEFAULT_COLUMN_MAPPINGS).length === 0) {
+        console.warn('[Qyra] VENDOR_CREDIT_DEFAULT_COLUMN_MAPPINGS is empty — falling back to empty object');
+        return {};
+      }
+      return VENDOR_CREDIT_DEFAULT_COLUMN_MAPPINGS;
     }
     return selectedTemplate?.columnMappings as Record<string, unknown> | null;
   }, [selectedTemplate]);
@@ -856,9 +910,7 @@ export default function ScanView({
     }
   };
 
-  const handleInvoiceFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    e.target.value = '';
+  const processInvoiceFile = (file: File) => {
     if (invoicePreviewUrl) {
       URL.revokeObjectURL(invoicePreviewUrl);
       setInvoicePreviewUrl(null);
@@ -874,9 +926,59 @@ export default function ScanView({
     setParsedInvoiceLineItems([]);
     setParsedCheckData(null);
 
-    if (file && scanMode === 'image') {
+    if (scanMode === 'image') {
       setInvoicePreviewUrl(URL.createObjectURL(file));
     }
+  };
+
+  const handleInvoiceFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    e.target.value = '';
+
+    if (file) {
+      processInvoiceFile(file);
+    }
+  };
+
+  const handleFilesSelect = (files: File[]) => {
+    if (!files.length) return;
+
+    if (files.length === 1 && files[0].type.startsWith('image/')) {
+      processInvoiceFile(files[0]);
+      return;
+    }
+
+    const entries: Partial<ScanEntry>[] = files.map((file, idx) => {
+      const isImage = file.type.startsWith('image/');
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      const source: ScanEntry['source'] = isImage ? 'image' : isPdf ? 'pdf' : 'upload';
+
+      return {
+        id: `scan-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
+        source,
+        fileName: file.name,
+        fileSize: file.size,
+        thumbnail: isImage ? URL.createObjectURL(file) : undefined,
+        queueStatus: 'queued',
+        header: {},
+        lineItems: [],
+      };
+    });
+
+    setIsBatchProcessing(true);
+    setBatchProgress(0);
+    enqueueScanEntries(entries);
+  };
+
+  const handleRemoveEntry = (id: string, thumbnail?: string) => {
+    if (thumbnail && thumbnail.startsWith('blob:')) {
+      try {
+        URL.revokeObjectURL(thumbnail);
+      } catch {
+        // ignore revocation errors
+      }
+    }
+    removeQueueEntry(id);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -1130,6 +1232,8 @@ export default function ScanView({
     ? `${activeScanEntry.fileName} (row ${activeScanEntry.rowNumber ?? 1})`
     : 'Active scan entry';
 
+  const queueEntries = scanEntries.filter((entry) => entry.fileName || entry.queueStatus || entry.thumbnail);
+
   return (
     <div className="p-3 space-y-4">
       <div className="flex flex-wrap gap-2 mb-3">
@@ -1198,6 +1302,57 @@ export default function ScanView({
         />
       )}
 
+      {queueEntries.length > 0 && (
+        <div className="rounded-xl border border-gray-200 bg-white p-3 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm font-semibold text-gray-900">Upload queue</div>
+            <div className="text-[11px] text-gray-500">{queueEntries.length} file{queueEntries.length === 1 ? '' : 's'}</div>
+          </div>
+          {isBatchProcessing && (
+            <div className="space-y-1">
+              <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
+                <div className="h-full rounded-full bg-emerald-600 transition-all" style={{ width: `${Math.min(100, Math.max(0, batchProgress))}%` }} />
+              </div>
+              <div className="text-[10px] text-gray-500">{Math.round(batchProgress)}% processed</div>
+            </div>
+          )}
+          <div className="space-y-2">
+            {queueEntries.map((entry) => {
+              const status = entry.queueStatus || 'queued';
+              const canRemove = status === 'queued' || status === 'failed';
+              const fileSizeLabel = typeof entry.fileSize === 'number' ? `${(entry.fileSize / (1024 * 1024)).toFixed(2)} MB` : 'Pending';
+
+              return (
+                <div key={entry.id} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-[#F5F5F7] p-2">
+                  {entry.thumbnail ? (
+                    <img src={entry.thumbnail} alt={entry.fileName ?? 'Queued attachment'} className="h-10 w-10 rounded object-cover" />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded bg-gray-200 text-lg text-gray-600">📄</div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-xs font-medium text-gray-900">{entry.fileName ?? 'Queued document'}</div>
+                    <div className="text-[10px] text-gray-500">{fileSizeLabel}</div>
+                    {entry.error && <div className="text-[10px] text-red-600">{entry.error}</div>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={status} />
+                    {canRemove && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveEntry(entry.id, entry.thumbnail)}
+                        className="text-[10px] font-medium text-gray-600 hover:text-gray-900"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {scanMode === 'excel' ? (
         <div className="space-y-4">
           <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
@@ -1247,7 +1402,27 @@ export default function ScanView({
               </div>
             ) : (
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700">
-                ✅ Column mapping is configured for {selectedTemplate.name}.
+                ✅ Ready to parse. {selectedTemplate?.transactionType === 'BILL' ? (
+                  <>
+                    <span className="font-medium">Required Excel format (12 columns):</span><br />
+                    <span className="font-mono">Supplier | Terms | Bill Date | Due Date | Bill No. | Category | Description | Amount | Tax | Customer | Amount Type | Memo</span>
+                  </>
+                ) : selectedTemplate?.transactionType === 'CHEQUE' ? (
+                  <>
+                    <span className="font-medium">Required Excel format (11 columns):</span><br />
+                    <span className="font-mono">Payee | Bank Account | Payment Date | Check No. | Category | Description | Amount | Tax | Customer | QB Memo | Tax Type</span>
+                  </>
+                ) : selectedTemplate?.transactionType === 'VENDOR_CREDIT' ? (
+                  <>
+                    <span className="font-medium">Required Excel format (12 columns):</span><br />
+                    <span className="font-mono">Supplier | Terms | Credit Date | Due Date | Credit No. | Category | Description | Amount | Tax | Customer | Amount Type | Memo</span>
+                  </>
+                ) : selectedTemplate?.transactionType === 'JOURNAL_ENTRY' ? (
+                  <>
+                    <span className="font-medium">Required Excel format:</span><br />
+                    Row 1: Date | Row 2: Journal No. | Row 3: Adjusting | Row 4: Memo | Row 5: Account | Debit | Credit | Description | Name | Class | Tax | Row 6+: data
+                  </>
+                ) : null}
               </div>
             )}
             <div className="flex flex-wrap gap-2">
@@ -1475,13 +1650,7 @@ export default function ScanView({
         </div>
       ) : scanMode === 'image' ? (
         <div className="space-y-4">
-          <div
-            className={`bg-white border rounded-lg p-4 space-y-3 transition ${isDragOver ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'}`}
-            onDragOver={handleDragOver}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
+          <div className="bg-white border rounded-lg p-4 space-y-3 border-gray-200">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold text-gray-900">
@@ -1507,6 +1676,7 @@ export default function ScanView({
               className="hidden"
               onChange={handleInvoiceFileSelect}
             />
+            <UploadZone onFilesSelect={handleFilesSelect} disabled={isBatchProcessing} />
             {invoiceFile ? (
               <div className="space-y-2 text-xs text-gray-600">
                 <div className="flex items-center justify-between gap-2 text-gray-800">
@@ -1530,24 +1700,7 @@ export default function ScanView({
                   />
                 )}
               </div>
-            ) : (
-              <div>
-                <div className="text-xs text-gray-600">No file selected yet.</div>
-                {!invoiceFile && !showInvoiceReview && (
-                  <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                    isDragOver
-                      ? 'border-emerald-400 text-emerald-300'
-                      : 'border-gray-300 text-gray-600'
-                  }`}>
-                    <div className="text-2xl mb-1">📄</div>
-                    <div className="text-xs">
-                      {isDragOver ? 'Drop your file here' : 'Drag & drop a receipt image here'}
-                    </div>
-                    <div className="text-[10px] text-gray-600 mt-1">or use the Choose file button above</div>
-                  </div>
-                )}
-              </div>
-            )}
+            ) : null}
             {invoiceUploadError && (
               <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 flex items-center justify-between gap-3">
                 <span>{invoiceUploadError}</span>

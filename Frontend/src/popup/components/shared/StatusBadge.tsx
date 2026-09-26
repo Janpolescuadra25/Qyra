@@ -18,6 +18,10 @@ const STATUS_STYLES: Record<string, { label: string; classes: string }> = {
   syncing: { label: 'Syncing', classes: 'bg-emerald-50 text-emerald-600' },
   connected: { label: 'Connected', classes: 'bg-emerald-50 text-emerald-600' },
   disconnected: { label: 'Disconnected', classes: 'bg-gray-200 text-gray-700' },
+  queued: { label: 'Queued', classes: 'bg-amber-50 text-amber-700' },
+  scanning: { label: 'Scanning', classes: 'bg-blue-50 text-blue-700 animate-pulse' },
+  completed: { label: 'Completed', classes: 'bg-emerald-50 text-emerald-700' },
+  failed: { label: 'Failed', classes: 'bg-red-50 text-red-700' },
 };
 
 function formatStatus(status: string): string {
