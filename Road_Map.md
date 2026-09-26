@@ -1,5 +1,5 @@
 # Qyra — Product Roadmap
-Last Updated: 2026-09-25
+Last Updated: 2026-09-26
 
 ## Current Verified State
 - **Backend Test Suite**: 22/22 suites passing and 134/134 tests passing.
@@ -14,26 +14,13 @@ Last Updated: 2026-09-25
 
 ## Current Active Focus
 
-- **F-7: Multi-Document Batch Scanning**
-  - Queue state model and document lifecycle tracking.
-  - Multi-upload ingestion and batch session persistence.
-  - Progress tracking and per-document processing status.
-  - Batch review and sync orchestration for queued documents.
+- **F-8: Advanced Mapping Presets & User Custom Mappings**
+  - Built-in catalog presets for common industry mappings.
+  - Custom preset creation, duplication, and scoped access by location.
+  - JSON export/import workflow and protection for built-in defaults.
+  - API-backed preset lifecycle with permission and location enforcement.
 
 ## Upcoming Phases
-
-### F-7: Multi-Document Batch Scanning
-- **Goal**: Allow users to upload and scan multiple documents in a single session, with a queue-based workflow and batch sync capability.
-- **Deliverables**:
-  - Multi-file upload UI (drag-and-drop zone accepts multiple files)
-  - Scan queue panel showing processing status per document
-  - Batch review table consolidating all parsed transactions
-  - "Sync All" bulk action across all documents in the queue
-  - Per-document error handling and retry
-- **Acceptance Criteria**:
-  - User can upload 3+ documents simultaneously
-  - Failed individual scans don't block the rest of the batch
-  - Sync All pushes all valid transactions across all documents
 
 ### F-8: Advanced Mapping Presets & User Custom Mappings
 - **Goal**: Enable users to save, load, and share column mapping presets beyond the built-in template defaults.
@@ -79,13 +66,19 @@ Last Updated: 2026-09-25
   - Zero critical errors in the first 48 hours post-launch
 
 ## Next Priority
-1. **Immediate (F-7)**: Multi-Document Batch Scanning (Queue State Model → Multi-Upload UI → Queue Processing → Batch Review & Sync).
-2. **Short-term (F-8)**: Advanced Mapping Presets & User Custom Mappings.
-3. **Medium-term (F-9 → F-10)**: Sync Analytics, Auto-Retry, and Chrome Web Store Launch.
+1. **Immediate (F-8)**: Advanced Mapping Presets & User Custom Mappings (Backend Presets API → Preset UI Selector & Manager → Import/Export & Offline Caching).
+2. **Short-term (F-9)**: Sync Analytics, Auto-Retry & Webhook Status.
+3. **Medium-term (F-10)**: Chrome Web Store Submission & Launch.
 
 ## Completed Phases
 - **F-5A: User QA & Verification** (Completed: 2026-09-26)
   - Validated all 4 transaction templates (Bills, Cheques, Vendor Credits, Journal Entries) with line-item CustomerRef mapping.
   - Confirmed value mapping resolution for customer entities and fallback paths.
   - Completed frontend payload validation and formal QA checklist verification.
+- **F-7: Multi-Document Batch Scanning** (Completed: 2026-09-26)
+  - Implemented multi-file drag-and-drop UploadZone with MIME/extension and file size validation.
+  - Added scan queue drawer in ScanView with document lifecycle states (`queued`, `scanning`, `completed`, `failed`).
+  - Integrated ScanContext queue helpers (`enqueueScanEntries`, `removeQueueEntry`, batch progress tracking).
+  - Implemented blob URL revocation on entry removal to eliminate memory leaks.
+  - Maintained full backward compatibility with single-file scanning workflows.
 

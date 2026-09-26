@@ -27,6 +27,7 @@ import exportRoutes from './routes/exports';
 import emailVerificationRoutes from './routes/email-verification';
 import checkoutRoutes from './routes/checkout';
 import webhookRoutes from './routes/webhooks';
+import presetsRoutes, { seedDefaultPresets } from './routes/presets';
 import { authenticate } from './middleware/auth.middleware';
 import { apiLimiter } from './middleware/rate-limit';
 import { prisma } from './lib/prisma';
@@ -174,6 +175,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/exports', authenticate, exportRoutes);
 app.use('/api/payee-mappings', payeeMappingRoutes);
 app.use('/api/value-mappings', valueMappingRoutes);
+app.use('/api/presets', authenticate, presetsRoutes);
 app.use('/api/password-reset', passwordResetRoutes);
 app.use('/api/email-verification', emailVerificationRoutes);
 app.use('/api/checkout', checkoutRoutes);
@@ -220,34 +222,42 @@ if (!geminiApiKey) {
 }
 
 if (!isTestEnvironment) {
-  startTimeBombCron(prisma);
-  startTrialWarningCron(prisma);
-  startSyncFailureAlertCron(prisma);
-  startQuotaAlertCron(prisma);
-  startScanCleanupCron(prisma);
-  resetOwnerIfRequested().catch(err => log.error({ err }, 'Owner Reset startup error'));
-  const server = app.listen(PORT, () => {
-    log.info({ port: PORT }, 'Server running');
-    log.info({ environment: process.env.NODE_ENV ?? 'development' }, 'Environment');
-  });
+  void (async () => {
+    try {
+      await seedDefaultPresets();
+    } catch (error) {
+      log.error({ err: error }, 'Preset seeding failed during startup');
+    }
 
-  function gracefulShutdown(signal: string) {
-    log.info({ signal }, 'Shutdown signal received');
-    server.close(() => {
-      log.info('HTTP server closed');
-      prisma.$disconnect().then(() => {
-        log.info('Database disconnected');
-        process.exit(0);
-      });
+    startTimeBombCron(prisma);
+    startTrialWarningCron(prisma);
+    startSyncFailureAlertCron(prisma);
+    startQuotaAlertCron(prisma);
+    startScanCleanupCron(prisma);
+    resetOwnerIfRequested().catch(err => log.error({ err }, 'Owner Reset startup error'));
+    const server = app.listen(PORT, () => {
+      log.info({ port: PORT }, 'Server running');
+      log.info({ environment: process.env.NODE_ENV ?? 'development' }, 'Environment');
     });
-    setTimeout(() => {
-      log.error('Forced shutdown after timeout');
-      process.exit(1);
-    }, 10_000);
-  }
 
-  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    function gracefulShutdown(signal: string) {
+      log.info({ signal }, 'Shutdown signal received');
+      server.close(() => {
+        log.info('HTTP server closed');
+        prisma.$disconnect().then(() => {
+          log.info('Database disconnected');
+          process.exit(0);
+        });
+      });
+      setTimeout(() => {
+        log.error('Forced shutdown after timeout');
+        process.exit(1);
+      }, 10_000);
+    }
+
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  })();
 }
 
 export default app;

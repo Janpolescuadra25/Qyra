@@ -173,6 +173,7 @@ model Location {
   user               User                 @relation("UserLocations", fields: [userId], references: [id], onDelete: Cascade)
   mappingPreferences MappingPreference[]
   mappings           Mapping[]
+  presets            MappingPreset[]
   rules              Rule[]
   scanRecords        ScanRecord[]
   templates          Template[]
@@ -249,6 +250,23 @@ model Mapping {
   @@index([locationId])
   @@index([templateId])
   @@map("mappings")
+}
+
+model MappingPreset {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  isBuiltIn   Boolean   @default(false)
+  industry    String?
+  mappings    Json
+  locationId  String?
+  location    Location? @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([locationId])
+  @@index([isBuiltIn])
+  @@map("mapping_presets")
 }
 
 model MappingPreference {
