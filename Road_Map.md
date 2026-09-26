@@ -2,7 +2,7 @@
 Last Updated: 2026-09-27
 
 ## Current Verified State
-- **Backend Test Suite**: 23/23 suites passing and 142/142 tests passing.
+- **Backend Test Suite**: 24/24 suites passing and 148/148 tests passing.
 - **Frontend Test Suite**: 12/12 files passing and 135/135 tests passing.
 - **Backend Compilation**: Clean (`npm run build` / `tsc --noEmit` exits with 0).
 - **Frontend Build**: Clean (`npm run build` exits with 0, zero bundling/type errors).
@@ -16,12 +16,11 @@ Last Updated: 2026-09-27
 ## Current Active Focus
 
 - **F-9: Sync Analytics, Auto-Retry & Webhook Status** (In Progress)
-  - Foundational manual retry exists (attemptCount tracking).
-  - Upcoming deliverables:
-    1. Background auto-retry queue with exponential backoff for transient failures (HTTP 429 / network blips).
-    2. Sync analytics dashboard (success/failure rates, sync latency, error breakdown).
-    3. Webhook status monitoring & delivery tracking.
-    4. Automated failure alerting and manual batch re-sync actions.
+  - **Step 1: Auto-Retry Foundation & SyncLog Schema Extension** (Completed: 2026-09-27) — See `docs/features/AutoRetryFoundation/README.md`
+  - **Step 2: Sync Failure Analytics Dashboard & Webhook Status Monitoring** (Active Priority)
+    - Expose aggregate sync metrics API (`/api/syncs/metrics`: success/failure rates, retry conversion rate, error breakdown).
+    - Add Sync Analytics & Retry Queue Status metrics cards in `Frontend/src/popup/components/SyncView.tsx`.
+    - Implement webhook delivery status tracking in `Backend/src/routes/webhooks.ts`.
 
 ## Upcoming Phases
 

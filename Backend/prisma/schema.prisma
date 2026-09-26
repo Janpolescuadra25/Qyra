@@ -427,6 +427,10 @@ model SyncLog {
   docNumber        String?
   errorType        String?
   attemptCount     Int         @default(1)
+  nextRetryAt      DateTime?
+  retryInterval    Int?
+  maxAttempts      Int         @default(5)
+  retryCount       Int         @default(0)
   requestPayload   Json?
   requestHash      String?
   syncType         SyncType
@@ -439,6 +443,7 @@ model SyncLog {
   @@index([syncType, requestHash])
   @@index([userId, syncType, requestHash])
   @@index([userId, syncedAt])
+  @@index([status, nextRetryAt])
   @@map("sync_logs")
 }
 

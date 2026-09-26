@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { Prisma, SyncType } from '@prisma/client';
+import { Prisma, SyncStatus, SyncType } from '@prisma/client';
 import { prisma } from './prisma';
 
 function canonicalize(value: unknown): unknown {
@@ -28,6 +28,15 @@ function canonicalize(value: unknown): unknown {
   }
 
   return value;
+}
+
+export function calculateExponentialBackoff(retryCount: number): number {
+  const baseDelay = 1000;
+  const maxDelay = 300000;
+  const exponential = baseDelay * Math.pow(2, retryCount);
+  const capped = Math.min(exponential, maxDelay);
+  const jitter = 0.8 + (Math.random() * 0.4);
+  return Math.round(capped * jitter);
 }
 
 export function hashSyncRequest(syncType: SyncType, payload: unknown): string {
@@ -66,17 +75,21 @@ export async function countSyncAttempts(
 }
 
 export async function createSyncLogEntry(params: {
-  userId: string;
+  userId?: string | null;
   syncType: SyncType;
   scanRecordId?: string | null;
   qbJournalEntryId?: string | null;
   docNumber?: string | null;
-  requestHash: string;
-  status: 'SUCCESS' | 'FAILED';
-  requestPayload: Prisma.JsonValue | null;
-  attemptCount: number;
+  requestHash?: string | null;
+  status: SyncStatus;
+  requestPayload?: Prisma.JsonValue | null;
+  attemptCount?: number;
   errorMessage?: string | null;
   errorType?: string | null;
+  nextRetryAt?: Date | null;
+  retryInterval?: number | null;
+  maxAttempts?: number;
+  retryCount?: number;
 }) {
   const {
     userId,
@@ -90,21 +103,29 @@ export async function createSyncLogEntry(params: {
     attemptCount,
     errorMessage,
     errorType,
+    nextRetryAt,
+    retryInterval,
+    maxAttempts,
+    retryCount,
   } = params;
 
   return prisma.syncLog.create({
     data: {
-      userId,
+      userId: userId ?? null,
       syncType,
       scanRecordId,
       qbJournalEntryId,
       docNumber,
-      requestHash,
+      requestHash: requestHash ?? null,
       status,
-      requestPayload: requestPayload as Prisma.InputJsonValue,
-      attemptCount,
+      requestPayload: requestPayload === null ? Prisma.JsonNull : (requestPayload as Prisma.InputJsonValue | undefined),
+      attemptCount: attemptCount ?? 1,
       errorMessage,
       errorType,
+      nextRetryAt: nextRetryAt ?? null,
+      retryInterval: retryInterval ?? null,
+      maxAttempts: maxAttempts ?? 5,
+      retryCount: retryCount ?? 0,
     },
   });
 }

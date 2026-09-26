@@ -38,6 +38,7 @@ import { startTrialWarningCron } from './cron/trial-warnings';
 import { startSyncFailureAlertCron } from './cron/sync-failure-alerts';
 import { startQuotaAlertCron } from './cron/quota-alerts';
 import { startScanCleanupCron } from './cron/scan-cleanup';
+import { startAutoRetryCron } from './cron/retry-queue';
 import { createErrorHandler } from './lib/errors';
 import { requestId } from './middleware/request-id';
 import { requestLogger } from './middleware/request-logger';
@@ -234,6 +235,7 @@ if (!isTestEnvironment) {
     startSyncFailureAlertCron(prisma);
     startQuotaAlertCron(prisma);
     startScanCleanupCron(prisma);
+    startAutoRetryCron();
     resetOwnerIfRequested().catch(err => log.error({ err }, 'Owner Reset startup error'));
     const server = app.listen(PORT, () => {
       log.info({ port: PORT }, 'Server running');

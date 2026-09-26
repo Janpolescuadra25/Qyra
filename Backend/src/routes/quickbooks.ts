@@ -13,7 +13,8 @@ import { validate } from '../middleware/validate';
 import { billSchema, chequeSchema, vendorCreditSchema, billPaymentSchema, journalEntrySchema } from '../lib/validators';
 import { encrypt, decryptSafe, hashToken } from '../lib/encryption';
 import { QBApiError } from '../lib/qb-errors';
-import { createSyncLogEntry, countSyncAttempts, findDuplicateSync, hashSyncRequest } from '../lib/dedup';
+import { createSyncLogEntry, countSyncAttempts, findDuplicateSync, hashSyncRequest, calculateExponentialBackoff } from '../lib/dedup';
+import { isTransientSyncError } from '../lib/error-classifier';
 import { logAction } from '../middleware/audit';
 import { logger } from '../lib/logger';
 
@@ -30,6 +31,13 @@ if (!QB_CLIENT_ID || !QB_CLIENT_SECRET) {
 const QB_REDIRECT_URI = process.env.QB_REDIRECT_URI ?? '';
 const QB_AUTH_URL = process.env.QB_AUTH_URL ?? 'https://appcenter.intuit.com/connect/oauth2';
 const QB_TOKEN_URL = process.env.QB_TOKEN_URL ?? 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer';
+
+function buildRetryScheduling(error: unknown) {
+  const isTransient = isTransientSyncError(error);
+  const retryInterval = isTransient ? calculateExponentialBackoff(0) : null;
+  const nextRetryAt = isTransient && retryInterval !== null ? new Date(Date.now() + retryInterval) : null;
+  return { isTransient, retryInterval, nextRetryAt };
+}
 
 function restrictSkipDedup(req: AuthRequest, _res: Response, next: NextFunction) {
   if (req.body?.skipDedupCheck) {
@@ -859,6 +867,7 @@ async function syncSingleScan(
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     const errorType = err instanceof QBApiError ? err.category : 'FATAL';
+    const retryMeta = buildRetryScheduling(err);
 
     await createSyncLogEntry({
       userId,
@@ -869,7 +878,11 @@ async function syncSingleScan(
       attemptCount,
       requestPayload: { txnDate, lines, privateNote, docNumber: finalDocNumber } as unknown as Prisma.JsonObject,
       errorMessage: message,
-      errorType,
+      errorType: retryMeta.isTransient ? 'TRANSIENT' : errorType,
+      nextRetryAt: retryMeta.nextRetryAt,
+      retryInterval: retryMeta.retryInterval,
+      maxAttempts: 5,
+      retryCount: 0,
     }).catch((err) => log.error({ err, scanRecordId, requestHash }, 'Failed to create QuickBooks sync log entry'));
 
     if (scanRecordId) {
@@ -1171,6 +1184,7 @@ async function syncSingleCheque(
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     const errorType = err instanceof QBApiError ? err.category : 'FATAL';
+    const retryMeta = buildRetryScheduling(err);
 
     await createSyncLogEntry({
       userId,
@@ -1181,7 +1195,11 @@ async function syncSingleCheque(
       attemptCount,
       requestPayload: { txnDate, bankAccountRef, payeeRef, customerRef, amount, memo, docNumber: finalDocNumber, lines } as unknown as Prisma.JsonObject,
       errorMessage: message,
-      errorType,
+      errorType: retryMeta.isTransient ? 'TRANSIENT' : errorType,
+      nextRetryAt: retryMeta.nextRetryAt,
+      retryInterval: retryMeta.retryInterval,
+      maxAttempts: 5,
+      retryCount: 0,
     }).catch((err) => log.error({ err, scanRecordId, requestHash }, 'Failed to create QuickBooks cheque sync log entry'));
 
     if (scanRecordId) {
@@ -1330,6 +1348,7 @@ async function syncSingleBill(
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     const errorType = err instanceof QBApiError ? err.category : 'FATAL';
+    const retryMeta = buildRetryScheduling(err);
 
     await createSyncLogEntry({
       userId,
@@ -1340,7 +1359,11 @@ async function syncSingleBill(
       attemptCount,
       requestPayload: { txnDate, vendorRef, apAccountRef, termsRef, dueDate, memo, privateNote, docNumber: finalDocNumber, lines } as unknown as Prisma.JsonObject,
       errorMessage: message,
-      errorType,
+      errorType: retryMeta.isTransient ? 'TRANSIENT' : errorType,
+      nextRetryAt: retryMeta.nextRetryAt,
+      retryInterval: retryMeta.retryInterval,
+      maxAttempts: 5,
+      retryCount: 0,
     }).catch((err) => log.error({ err, scanRecordId, requestHash }, 'Failed to create QuickBooks bill sync log entry'));
 
     if (scanRecordId) {
@@ -1469,6 +1492,7 @@ async function syncSingleBillPayment(
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     const errorType = err instanceof QBApiError ? err.category : 'FATAL';
+    const retryMeta = buildRetryScheduling(err);
 
     await createSyncLogEntry({
       userId,
@@ -1479,7 +1503,11 @@ async function syncSingleBillPayment(
       attemptCount,
       requestPayload: { vendorRef, payType, txnDate, totalAmt, lines, bankAccountRef, checkNum } as unknown as Prisma.JsonObject,
       errorMessage: message,
-      errorType,
+      errorType: retryMeta.isTransient ? 'TRANSIENT' : errorType,
+      nextRetryAt: retryMeta.nextRetryAt,
+      retryInterval: retryMeta.retryInterval,
+      maxAttempts: 5,
+      retryCount: 0,
     }).catch((err) => log.error({ err, scanRecordId, requestHash }, 'Failed to create QuickBooks bill payment sync log entry'));
 
     if (scanRecordId) {
