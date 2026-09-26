@@ -14,25 +14,13 @@ Last Updated: 2026-09-26
 
 ## Current Active Focus
 
-- **F-8: Advanced Mapping Presets & User Custom Mappings**
-  - Built-in catalog presets for common industry mappings.
-  - Custom preset creation, duplication, and scoped access by location.
-  - JSON export/import workflow and protection for built-in defaults.
-  - API-backed preset lifecycle with permission and location enforcement.
+- **F-9: Sync Analytics, Auto-Retry & Webhook Status**
+  - Background retry queue with exponential backoff for transient sync failures
+  - Sync analytics dashboard (success/failure rates, sync latency, error breakdown)
+  - Webhook status monitoring & delivery tracking
+  - Automated failure alerting and manual batch re-sync actions
 
 ## Upcoming Phases
-
-### F-8: Advanced Mapping Presets & User Custom Mappings
-- **Goal**: Enable users to save, load, and share column mapping presets beyond the built-in template defaults.
-- **Deliverables**:
-  - "Save as Preset" button in mapping configuration
-  - Preset management panel (list, rename, delete, export/import as JSON)
-  - Apply saved preset to new scans of the same template type
-  - Share preset via clipboard (copy JSON to clipboard)
-- **Acceptance Criteria**:
-  - User can save a custom mapping and reapply it in under 3 clicks
-  - Exported preset JSON can be imported on another device
-  - Built-in defaults are never overwritten by user presets
 
 ### F-9: Sync Analytics, Auto-Retry & Webhook Status
 - **Goal**: Strengthen sync reliability and observability through auto-retry, error categorization, alerting, and dashboard metrics.
@@ -66,9 +54,8 @@ Last Updated: 2026-09-26
   - Zero critical errors in the first 48 hours post-launch
 
 ## Next Priority
-1. **Immediate (F-8)**: Advanced Mapping Presets & User Custom Mappings (Backend Presets API → Preset UI Selector & Manager → Import/Export & Offline Caching).
-2. **Short-term (F-9)**: Sync Analytics, Auto-Retry & Webhook Status.
-3. **Medium-term (F-10)**: Chrome Web Store Submission & Launch.
+1. **Immediate (F-9)**: Sync Analytics, Auto-Retry & Webhook Status.
+2. **Short-term (F-10)**: Chrome Web Store Submission & Launch.
 
 ## Completed Phases
 - **F-5A: User QA & Verification** (Completed: 2026-09-26)
@@ -81,4 +68,11 @@ Last Updated: 2026-09-26
   - Integrated ScanContext queue helpers (`enqueueScanEntries`, `removeQueueEntry`, batch progress tracking).
   - Implemented blob URL revocation on entry removal to eliminate memory leaks.
   - Maintained full backward compatibility with single-file scanning workflows.
+- **F-8: Advanced Mapping Presets & User Custom Mappings** (Completed: 2026-09-26)
+  - Implemented Prisma `MappingPreset` model with location cascading delete and migration.
+  - Built REST API (`Backend/src/routes/presets.ts`) with location-scoped access, permission checks, and built-in preset protection.
+  - Added server startup seeding (`seedDefaultPresets()`) for 3 industry verticals (Retail, Restaurant, Professional Services).
+  - Built frontend `PresetManagerModal.tsx` supporting catalog listing, "Save as Preset", clone, delete, client-side JSON export Blob download & import, and clipboard sharing.
+  - Integrated preset controls into `MappingView/index.tsx` with unsaved changes overwrite protection.
+  - Added unit tests in `Frontend/src/popup/components/MappingView/__tests__/PresetManager.test.tsx` and verified full frontend and backend test suites pass with 100% success rate.
 
