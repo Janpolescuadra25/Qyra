@@ -1,7 +1,7 @@
 # Payload Validation & CustomerRef Mapping — Implementation Documentation
 
 **Directory**: `docs/features/PayloadValidation/`
-**Last Updated**: 2026-09-26
+**Last Updated**: 2026-09-27
 **Status**: DONE (Completed: 2026-09-26)
 
 ---
@@ -17,14 +17,11 @@ The Payload Validation feature ensures data integrity and accounting correctness
   - `resolveCustomerRef()`: Matches raw customer strings against QuickBooks customer entities (`DisplayName`, `CompanyName`).
   - `resolveValueMapping()`: Provides fallback mapping paths for unmatched customer entities to ensure transactions do not fail due to missing references.
   - Supported transaction templates: Bills, Cheques, Vendor Credits, and Journal Entries.
-- **Type Definitions**: `Frontend/src/types/transactions.ts`
-  - Mirrors QuickBooks transaction structures with explicit typings for `QBBillLineItem.customerRef`, `accountRef`, `classRef`, and `taxCodeRef`.
+- **Type Definitions**: All mapping and transaction types are consolidated in `Frontend/src/types/index.ts` (explicit typing for `QBBillLineItem.customerRef`, `accountRef`, `classRef`, and `taxCodeRef`).
 
 ### Backend
-- **Type Contract**: `Backend/src/types/transactions.ts`
-  - Explicit typing for `QBBillLineItem.customerRef` enforcing contract compliance.
-- **Validation Layer**: `Backend/src/lib/validation.ts`
-  - Pre-flight schema validation rejecting malformed payloads before dispatching to QuickBooks API.
+- Payload validation occurs client-side in `Frontend/src/popup/lib/batch-payload-builder.ts` before transmission to the QuickBooks sync endpoints (`Backend/src/routes/quickbooks.ts`).
+- The backend verifies payload structural integrity and handles QuickBooks API authentication and error mapping.
 
 ## 3. Cross-Feature Integration & Error Handling
 - **Integration with Batch Scanning (F-7)**: Multi-document batches in `ScanContext` are transformed one-by-one using `buildBillLikePayload()` before being dispatched to the QuickBooks sync endpoint.

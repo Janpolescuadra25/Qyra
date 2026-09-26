@@ -1,8 +1,9 @@
 # Qyra — Product Roadmap
-Last Updated: 2026-09-26
+Last Updated: 2026-09-27
 
 ## Current Verified State
-- **Backend Test Suite**: 22/22 suites passing and 134/134 tests passing.
+- **Backend Test Suite**: 23/23 suites passing and 142/142 tests passing.
+- **Frontend Test Suite**: 12/12 files passing and 135/135 tests passing.
 - **Backend Compilation**: Clean (`npm run build` / `tsc --noEmit` exits with 0).
 - **Frontend Build**: Clean (`npm run build` exits with 0, zero bundling/type errors).
 - **Frontend Payload Validation**: Bill-like payloads now resolve line-item customer refs from QuickBooks customer matches or value mappings, while preserving the older fallback path when no customer list is available.
@@ -14,11 +15,13 @@ Last Updated: 2026-09-26
 
 ## Current Active Focus
 
-- **F-9: Sync Analytics, Auto-Retry & Webhook Status**
-  - Background retry queue with exponential backoff for transient sync failures
-  - Sync analytics dashboard (success/failure rates, sync latency, error breakdown)
-  - Webhook status monitoring & delivery tracking
-  - Automated failure alerting and manual batch re-sync actions
+- **F-9: Sync Analytics, Auto-Retry & Webhook Status** (In Progress)
+  - Foundational manual retry exists (attemptCount tracking).
+  - Upcoming deliverables:
+    1. Background auto-retry queue with exponential backoff for transient failures (HTTP 429 / network blips).
+    2. Sync analytics dashboard (success/failure rates, sync latency, error breakdown).
+    3. Webhook status monitoring & delivery tracking.
+    4. Automated failure alerting and manual batch re-sync actions.
 
 ## Upcoming Phases
 
@@ -57,22 +60,10 @@ Last Updated: 2026-09-26
 1. **Immediate (F-9)**: Sync Analytics, Auto-Retry & Webhook Status.
 2. **Short-term (F-10)**: Chrome Web Store Submission & Launch.
 
-## Completed Phases
-- **F-5A: User QA & Verification** (Completed: 2026-09-26)
-  - Validated all 4 transaction templates (Bills, Cheques, Vendor Credits, Journal Entries) with line-item CustomerRef mapping.
-  - Confirmed value mapping resolution for customer entities and fallback paths.
-  - Completed frontend payload validation and formal QA checklist verification.
-- **F-7: Multi-Document Batch Scanning** (Completed: 2026-09-26)
-  - Implemented multi-file drag-and-drop UploadZone with MIME/extension and file size validation.
-  - Added scan queue drawer in ScanView with document lifecycle states (`queued`, `scanning`, `completed`, `failed`).
-  - Integrated ScanContext queue helpers (`enqueueScanEntries`, `removeQueueEntry`, batch progress tracking).
-  - Implemented blob URL revocation on entry removal to eliminate memory leaks.
-  - Maintained full backward compatibility with single-file scanning workflows.
-- **F-8: Advanced Mapping Presets & User Custom Mappings** (Completed: 2026-09-26)
-  - Implemented Prisma `MappingPreset` model with location cascading delete and migration.
-  - Built REST API (`Backend/src/routes/presets.ts`) with location-scoped access, permission checks, and built-in preset protection.
-  - Added server startup seeding (`seedDefaultPresets()`) for 3 industry verticals (Retail, Restaurant, Professional Services).
-  - Built frontend `PresetManagerModal.tsx` supporting catalog listing, "Save as Preset", clone, delete, client-side JSON export Blob download & import, and clipboard sharing.
-  - Integrated preset controls into `MappingView/index.tsx` with unsaved changes overwrite protection.
-  - Added unit tests in `Frontend/src/popup/components/MappingView/__tests__/PresetManager.test.tsx` and verified full frontend and backend test suites pass with 100% success rate.
+## Archived Completed Phases
+> All completed phases have comprehensive architecture documentation in `docs/features/`.
+
+- **F-5A: User QA & Payload Validation** (Completed: 2026-09-26) — See `docs/features/PayloadValidation/README.md`
+- **F-7: Multi-Document Batch Scanning** (Completed: 2026-09-26) — See `docs/features/BatchScanning/README.md`
+- **F-8: Advanced Mapping Presets & User Custom Mappings** (Completed: 2026-09-26) — See `docs/features/PresetManager/README.md`
 
