@@ -39,6 +39,26 @@ export interface Mapping {
   createdAt: string;
 }
 
+export interface MappingPreset {
+  id: string;
+  name: string;
+  description?: string | null;
+  industry?: string | null;
+  isBuiltIn: boolean;
+  mappings: Mapping[];
+  locationId?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ImportPresetPayload {
+  version?: string;
+  name: string;
+  description?: string | null;
+  industry?: string | null;
+  mappings: Mapping[];
+}
+
 export interface MappingCondition {
   field: string;
   operator: MappingConditionOperator;
@@ -195,6 +215,11 @@ export interface ValueMappingFormData {
   sourceField?: string | null;
   entityId: string;
   matchingRule?: MatchingRule | null;
+}
+
+export interface QbVendor {
+  value: string;
+  label: string;
 }
 
 export interface ColumnMappingConfig {

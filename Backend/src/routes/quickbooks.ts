@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { AppError, asyncHandler } from '../lib/errors';
 import { randomBytes } from 'crypto';
 import { authenticate, AuthRequest, locationFilter, requireFeaturePermission } from '../middleware/auth.middleware';
-import { authLimiter } from '../middleware/rate-limit';
+import { apiLimiter, authLimiter } from '../middleware/rate-limit';
 import { enforceEffectiveRole } from '../middleware/effective-role';
 import { qbService } from '../services/qb.service';
 import { getFileBuffer } from '../lib/storage';
@@ -37,6 +37,14 @@ function buildRetryScheduling(error: unknown) {
   const retryInterval = isTransient ? calculateExponentialBackoff(0) : null;
   const nextRetryAt = isTransient && retryInterval !== null ? new Date(Date.now() + retryInterval) : null;
   return { isTransient, retryInterval, nextRetryAt };
+}
+
+function getIdempotencyKey(req: Request): string | undefined {
+  const key = req.headers['idempotency-key'] ?? req.headers['x-idempotency-key'];
+  if (Array.isArray(key)) {
+    return key[0];
+  }
+  return typeof key === 'string' ? key : undefined;
 }
 
 function restrictSkipDedup(req: AuthRequest, _res: Response, next: NextFunction) {
@@ -360,7 +368,8 @@ router.post(
       throw new AppError('syncType and payload are required', 400);
     }
 
-    const requestHash = hashSyncRequest(syncType as any, payload);
+    const idempotencyKey = getIdempotencyKey(req);
+    const requestHash = hashSyncRequest(syncType as any, payload, idempotencyKey);
     const existing = await findDuplicateSync(
       req.user!.userId,
       syncType as any,
@@ -453,6 +462,7 @@ router.post('/bill', authenticate, enforceEffectiveRole, requireFeaturePermissio
       lines,
       docNumber,
       Boolean(req.body.skipDedupCheck),
+      getIdempotencyKey(req),
     );
 
     if (result.status === 'SKIPPED') {
@@ -572,6 +582,7 @@ router.post('/vendorcredit', authenticate, enforceEffectiveRole, requireFeatureP
       lines,
       docNumber,
       Boolean(req.body.skipDedupCheck),
+      getIdempotencyKey(req),
     );
 
     if (result.status === 'SKIPPED') {
@@ -694,6 +705,7 @@ router.post('/cheque', authenticate, enforceEffectiveRole, requireFeaturePermiss
       docNumber,
       Boolean(req.body.skipDedupCheck),
       customerRef,
+      getIdempotencyKey(req),
     );
 
     if (result.status === 'SKIPPED') {
@@ -754,9 +766,10 @@ async function syncSingleScan(
   privateNote?: string,
   docNumber?: string,
   skipDedupCheck = false,
+  idempotencyKey?: string,
 ): Promise<SyncSingleResult> {
   const syncType = SyncType.JOURNAL_ENTRY;
-  const requestHash = hashSyncRequest(syncType, { txnDate, lines, privateNote, docNumber });
+  const requestHash = hashSyncRequest(syncType, { txnDate, lines, privateNote, docNumber }, idempotencyKey);
 
   const attemptCount = scanRecordId
     ? (await prisma.syncLog.count({ where: { scanRecordId } })) + 1
@@ -911,9 +924,10 @@ async function syncSingleVendorCredit(
   lines: QBBillLineItem[],
   docNumber?: string,
   skipDedupCheck = false,
+  idempotencyKey?: string,
 ): Promise<SyncSingleResult> {
   const syncType = SyncType.VENDOR_CREDIT;
-  const requestHash = hashSyncRequest(syncType, { txnDate, vendorRef, apAccountRef, memo, privateNote, lines, docNumber });
+  const requestHash = hashSyncRequest(syncType, { txnDate, vendorRef, apAccountRef, memo, privateNote, lines, docNumber }, idempotencyKey);
 
   const attemptCount = scanRecordId
     ? (await prisma.syncLog.count({ where: { scanRecordId } })) + 1
@@ -1067,9 +1081,10 @@ async function syncSingleCheque(
   docNumber?: string,
   skipDedupCheck = false,
   customerRef?: { value: string; name?: string },
+  idempotencyKey?: string,
 ): Promise<SyncSingleResult> {
   const syncType = SyncType.CHEQUE;
-  const requestHash = hashSyncRequest(syncType, { txnDate, bankAccountRef, payeeRef, amount, memo, lines, docNumber, customerRef });
+  const requestHash = hashSyncRequest(syncType, { txnDate, bankAccountRef, payeeRef, amount, memo, lines, docNumber, customerRef }, idempotencyKey);
 
   const attemptCount = scanRecordId
     ? (await prisma.syncLog.count({ where: { scanRecordId } })) + 1
@@ -1230,9 +1245,10 @@ async function syncSingleBill(
   lines: QBBillLineItem[],
   docNumber?: string,
   skipDedupCheck = false,
+  idempotencyKey?: string,
 ): Promise<SyncSingleResult> {
   const syncType = SyncType.BILL;
-  const requestHash = hashSyncRequest(syncType, { txnDate, vendorRef, apAccountRef, termsRef, dueDate, memo, privateNote, lines, docNumber });
+  const requestHash = hashSyncRequest(syncType, { txnDate, vendorRef, apAccountRef, termsRef, dueDate, memo, privateNote, lines, docNumber }, idempotencyKey);
 
   const attemptCount = scanRecordId
     ? (await prisma.syncLog.count({ where: { scanRecordId } })) + 1
@@ -1392,9 +1408,10 @@ async function syncSingleBillPayment(
   bankAccountRef: { value: string; name?: string } | undefined,
   checkNum: string | undefined,
   skipDedupCheck = false,
+  idempotencyKey?: string,
 ): Promise<SyncSingleResult> {
   const syncType = SyncType.BILL_PAYMENT;
-  const requestHash = hashSyncRequest(syncType, { vendorRef, payType, txnDate, totalAmt, lines, bankAccountRef, checkNum });
+  const requestHash = hashSyncRequest(syncType, { vendorRef, payType, txnDate, totalAmt, lines, bankAccountRef, checkNum }, idempotencyKey);
 
   const attemptCount = scanRecordId
     ? (await prisma.syncLog.count({ where: { scanRecordId } })) + 1
@@ -2155,13 +2172,17 @@ router.get('/employees', authenticate, requireFeaturePermission('sync', 'execute
 }));
 
 // ── GET /api/quickbooks/vendors ───────────────────────────────────────────────
-router.get('/vendors', authenticate, requireFeaturePermission('sync', 'execute'), asyncHandler(async(req: AuthRequest, res: Response): Promise<void> => {
+router.get('/vendors', authenticate, apiLimiter, requireFeaturePermission('sync', 'execute'), asyncHandler(async(req: AuthRequest, res: Response): Promise<void> => {
   try {
     const vendors = await qbService.callQB(req.user!.userId, ({ accessToken, realmId }) =>
       qbService.getVendors(realmId, accessToken),
     );
     res.json({ vendors });
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes('not connected') || message.includes('No active QuickBooks connection') || (err as any)?.status === 400) {
+      throw new AppError('QuickBooks account not connected. Please link your QuickBooks account first.', 400);
+    }
     if (err instanceof AppError) throw err;
     log.error({ err }, 'QB vendors error');
     throw new AppError('Failed to fetch vendors', 500);
@@ -2262,6 +2283,7 @@ router.post('/bill-payment', authenticate, enforceEffectiveRole, requireFeatureP
       bankAccountRef,
       checkNum,
       skipDedupCheck ?? false,
+      getIdempotencyKey(req),
     );
 
     if (result.status === 'SYNCED') {

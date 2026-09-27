@@ -1,5 +1,5 @@
 # Qyra — Product Roadmap
-Last Updated: 2026-09-27
+Last Updated: 2026-09-28
 
 ## Current Verified State
 - **Backend Test Suite**: 25/25 suites passing and 154/154 tests passing (includes tenant-isolation coverage).
@@ -15,12 +15,10 @@ Last Updated: 2026-09-27
 
 ## Current Active Focus
 
-- **F-10: Chrome Web Store Submission & Launch** (Active Priority)
-  - Current Status: Initial extension package submitted to Chrome Web Store Developer Dashboard; currently Pending review (Extension ID: bfhobnahngcmhaeklihifgbgdepibii).
-  - Store listing screenshots capture and upload (4 screenshots: scan flow, mapping flow, sync history, settings at 1280x800 or 1920x1080).
-  - Live privacy policy URL verification and link in developer console (`https://api.qyra.io/privacy`).
-  - Chrome Web Store review monitoring and address reviewer feedback.
-  - Post-approval release: Upload production package with VPS HTTPS endpoints once approved.
+- **Chrome Web Store launch actions (user-dependent)**
+  - Capture and upload the 4 required store listing screenshots (scan flow, mapping flow, sync history, settings at 1280x800 or 1920x1080).
+  - Verify the live privacy policy URL and ensure the link is active in the Developer Console (`https://api.qyra.io/privacy`).
+  - Monitor Chrome Web Store review queue and address any reviewer feedback before release.
 
 ## Next Priority
 1. **Immediate (F-10)**: Chrome Web Store Submission & Launch.
@@ -35,4 +33,5 @@ Last Updated: 2026-09-27
 - **F-9: Sync Analytics, Auto-Retry & Webhook Status** (Completed: 2026-09-27) — See `docs/features/AutoRetryFoundation/README.md` and `docs/features/SyncAnalyticsDashboard/README.md`
 - **F-10A: VPS Deployment Infrastructure** (Completed: 2026-09-27) — Hardened Manifest V3 HTTPS permissions, Vite import.meta.env config, backend CORS whitelist, PM2 ecosystem on port 3005, Nginx reverse proxy with SSL/HSTS, and automated start:migrate script. See `docs/features/VPSDeploymentPrep_F-10/README.md`.
 - **F-10B: Landing Page & Legal Pages Upgrade** (Completed: 2026-09-27) — Dedicated Next.js 15 landing page project with cinematic intro, canvas particles, Framer Motion animations, live Stripe pricing reconciliation, and Chrome Web Store legal pages (/privacy, /privacy.html, /terms, /terms.html) deployed statically to Backend/public. See `docs/features/LandingPageUpgrade_F-10/README.md`.
+- **F-10C: Extension Maturation & CWS Review Prep** (Completed: 2026-09-28) — Idempotency key support for sync deduplication, QuickBooks vendor lookup endpoint, frontend UI ergonomic improvements, accountant-friendly negative number formatting, in-app error banners, and Chrome Web Store submission readiness fixes. See `docs/features/ExtensionMaturation_F-10/README.md`.
 

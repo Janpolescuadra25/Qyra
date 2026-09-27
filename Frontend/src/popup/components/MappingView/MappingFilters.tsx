@@ -15,6 +15,8 @@ interface Props {
   onAISuggest: () => void;
   suggesting?: boolean;
   onApplyTemplate: (template: string) => void;
+  onOpenPresets?: () => void;
+  onSavePreset?: () => void;
   onSyncLists: () => void;
   listsLoading: boolean;
   accountsLoaded: boolean;
@@ -33,6 +35,8 @@ export default function MappingFilters({
   onAISuggest,
   suggesting,
   onApplyTemplate,
+  onOpenPresets,
+  onSavePreset,
   onSyncLists,
   listsLoading,
   accountsLoaded,
@@ -41,11 +45,11 @@ export default function MappingFilters({
 }: Props) {
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={onExport}
-          className="text-xs bg-white hover:bg-gray-100 text-gray-600 px-2 py-1.5 rounded border border-gray-300 whitespace-nowrap transition-colors"
+          className="text-xs bg-slate-700 hover:bg-slate-600 text-slate-100 px-3 py-1.5 rounded border border-slate-600 whitespace-nowrap transition-colors"
         >
           📤 Export
         </button>
@@ -53,18 +57,33 @@ export default function MappingFilters({
           <button
             type="button"
             onClick={onImport}
-            className="text-xs bg-white hover:bg-gray-100 text-gray-600 px-2 py-1.5 rounded border border-gray-300 whitespace-nowrap transition-colors"
+            className="text-xs bg-slate-700 hover:bg-slate-600 text-slate-100 px-3 py-1.5 rounded border border-slate-600 whitespace-nowrap transition-colors"
           >
             📥 Import
           </button>
         )}
       </div>
 
-      <div className="flex gap-1.5 flex-wrap">
+      <div className="flex gap-3 flex-wrap">
         <button
+          type="button"
+          onClick={onOpenPresets}
+          className="text-xs bg-slate-700 text-slate-100 px-3 py-1.5 rounded border border-slate-600 transition-colors hover:bg-slate-600"
+        >
+          📚 Presets
+        </button>
+        <button
+          type="button"
+          onClick={onSavePreset}
+          className="text-xs bg-emerald-700 text-white px-3 py-1.5 rounded transition-colors hover:bg-emerald-600"
+        >
+          💾 Save as Preset
+        </button>
+        <button
+          type="button"
           onClick={onAISuggest}
           disabled={suggesting}
-          className={`text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded transition-colors ${suggesting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`}
+          className={`text-xs bg-sky-700 text-white px-3 py-1.5 rounded transition-colors ${suggesting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-sky-600'}`}
         >
           {suggesting ? 'Suggesting…' : '🤖 AI Suggest'}
         </button>
@@ -73,7 +92,7 @@ export default function MappingFilters({
             key={template}
             onClick={disablePresets ? undefined : () => onApplyTemplate(template)}
             title={disablePresets ? 'Presets are designed for POS scans' : undefined}
-            className={`text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded transition-colors ${disablePresets ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`}
+            className={`text-xs bg-slate-700 text-slate-100 px-3 py-1.5 rounded border border-slate-600 transition-colors ${disablePresets ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-600'}`}
           >
             📋 {template}
           </button>
@@ -81,7 +100,7 @@ export default function MappingFilters({
         <button
           onClick={onSyncLists}
           disabled={listsLoading}
-          className="text-xs bg-gray-200 hover:bg-gray-100 disabled:opacity-40 text-gray-600 px-2 py-1 rounded transition-colors ml-auto"
+          className="text-xs bg-slate-700 hover:bg-slate-600 disabled:opacity-40 text-slate-100 px-3 py-1.5 rounded border border-slate-600 transition-colors ml-auto"
           title="Refresh QB lists"
         >
           {listsLoading ? '…' : '↻'}

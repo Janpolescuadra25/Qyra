@@ -30,6 +30,7 @@
 | Phase | Commits | Summary |
 |-------|---------|---------|
 | P-4 | `37d7a92` | Input validation completion: added Zod query schema for analytics dashboard endpoint, extended validate middleware to support query param validation, removed manual date validation, updated test assertions to reach 117/117 total backend tests — all 22 route files now have full Zod validation. |
+| F-10C | `21d026b` | Completed Chrome Extension maturation: CORS idempotency support, QuickBooks vendor lookup, accountant-friendly negative formatting, in-app sync error banners, and store submission readiness docs. |
 | F-10B | `51890a9` | Integrated Next.js 15 landing page with legal pages (privacy/terms) deployed to Backend/public, supporting Chrome Web Store submission requirements. |
 | P-3 | `23f958a` | API error response standardization: implemented global standardized error shape ({ success: false, error: { message, code, requestId, fields? } }), converted 16 direct error responses across 5 routes to AppError throws, proactively fixed capacity middleware direct responses, added 3 new error shape tests to reach 115/115 total backend tests. |
 | O-1 | `df459bb` | Dashboard analytics: monthly scan volume bar chart, sync health pie chart, top 5 mapped accounts table, storage usage gauge, date range selector, GET /api/analytics/dashboard endpoint. |

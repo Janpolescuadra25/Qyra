@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { api } from '../../lib/api';
+import { resolveValueMapping } from '../../lib/resolve-value-mapping';
 import { useLocations } from '../../hooks/useLocations';
 import { useQBContext } from '../../contexts/QBContext';
 import { useQuickBooks } from '../../hooks/useQuickBooks';
@@ -11,14 +12,15 @@ import ProductMappingSection from './ProductMappingSection';
 import PayeeMappingSection from './PayeeMappingSection';
 import ValueMappingSection from './ValueMappingSection';
 import TemplateWizard from '../TemplateWizard';
-import { buildChequeColumnConfigs, buildBillColumnConfigs, buildJournalEntryColumnConfigs } from '../../lib/value-mapping-column-utils';
+import { buildChequeColumnConfigs, buildBillColumnConfigs, buildJournalEntryColumnConfigs, buildVendorCreditColumnConfigs } from '../../lib/value-mapping-column-utils';
 import SearchableSelect from '../SearchableSelect';
 import RuleFormSection from './RuleFormSection';
 import type { SelectOption } from '../SearchableSelect';
 import { sourceToScanMode, getScanModeDisplay, isSectionVisible } from '../../lib/scan-mode-utils';
 import { BILL_FIELD_LABELS, TRANSACTION_TYPE_LABELS, VENDOR_CREDIT_FIELD_LABELS, CHEQUE_FIELD_LABELS } from '../../../types';
-import type { ColumnMapping, ExcelParseResult, Mapping, MappingCondition, MappingSuggestion, Rule, RuleFormData, ScanData, ScanEntry, TabId, ExportTemplate, Template } from '../../../types';
+import type { ColumnMapping, ExcelParseResult, Mapping, MappingCondition, MappingPreset, MappingSuggestion, Rule, RuleFormData, ScanData, ScanEntry, TabId, ExportTemplate, Template, ValueMapping } from '../../../types';
 import type { QBAccount } from '../../types/qb';
+import PresetManagerModal from './PresetManagerModal';
 
 /**
  * Validates that a posting type is consistent with an account type.
@@ -245,6 +247,7 @@ export default function MappingView({
     classes,
     taxCodes,
     vendors,
+    customers,
     terms,
     listsLoaded,
     listsLoading,
@@ -265,12 +268,14 @@ export default function MappingView({
   const [docNumberTemplate, setDocNumberTemplate] = useState('');
   const [bankDefault, setBankDefault] = useState<{ value: string; name?: string }>({ value: '' });
   const [payeeDefault, setPayeeDefault] = useState<{ value: string; name?: string }>({ value: '' });
+  const [vendorDefault, setVendorDefault] = useState<{ value: string; name?: string }>({ value: '' });
   const [apAccountDefault, setApAccountDefault] = useState<{ value: string; name?: string }>({ value: '' });
   const [termsDefault, setTermsDefault] = useState<{ value: string; name?: string }>({ value: '' });
   const [taxCodeDefault, setTaxCodeDefault] = useState<{ value: string; name?: string }>({ value: '' });
   const [privateNoteDefault, setPrivateNoteDefault] = useState<{ value: string; name?: string }>({ value: '' });
   const [qbMemoDefault, setQbMemoDefault] = useState<{ value: string; name?: string }>({ value: '' });
   const [docNumberDefault, setDocNumberDefault] = useState<{ value: string; name?: string }>({ value: '' });
+  const [valueMappings, setValueMappings] = useState<ValueMapping[]>([]);
   const [memoOpen, setMemoOpen] = useState(true);
   const [fieldsExpanded, setFieldsExpanded] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -282,11 +287,14 @@ export default function MappingView({
   const docInputRef = useRef<HTMLInputElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const templateReadyRef = useRef(false);
+  const billAutoAppliedRef = useRef(false);
   const [pendingSwitchTemplateId, setPendingSwitchTemplateId] = useState<string | null>(null);
   const [showSwitchTemplateConfirm, setShowSwitchTemplateConfirm] = useState(false);
   const [showDeleteTemplateConfirm, setShowDeleteTemplateConfirm] = useState(false);
   const [showDeleteMappingConfirm, setShowDeleteMappingConfirm] = useState(false);
   const [pendingDeleteMapping, setPendingDeleteMapping] = useState<LocalMapping | null>(null);
+  const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
+  const [presetModalTab, setPresetModalTab] = useState<'catalog' | 'save'>('catalog');
 
   const [importMode, setImportMode] = useState<'replace' | 'merge'>('merge');
   const [importWarning, setImportWarning] = useState<string | null>(null);
@@ -436,6 +444,8 @@ export default function MappingView({
     }
   }, [selectedTemplate?.columnMappings]);
 
+  const hasUnsavedChanges = localMappings.some((mapping) => mapping.isDirty);
+
   const scanProductNames = useMemo(() => {
     try {
       if (!activeScanEntry || activeScanEntry.lineItems.length === 0) return [];
@@ -473,6 +483,13 @@ export default function MappingView({
     [vendors],
   );
 
+  const customerOptions = useMemo(() =>
+    customers
+      .filter((c) => c.Active)
+      .map((c) => ({ value: c.Id, label: c.DisplayName, subtitle: c.CompanyName ?? undefined })),
+    [customers],
+  );
+
   const apAccountOptions = useMemo(() =>
     accounts
       .filter((a) => a.Active && a.AccountType === 'Accounts Payable')
@@ -494,11 +511,31 @@ export default function MappingView({
     taxCodeOptions,
   }), [chequePayeeOptions, chequeBankOptions, accountOptions, taxCodeOptions]);
 
+  const amountTypeOptions = useMemo((): SelectOption[] => [
+    { value: 'Exclusive of tax', label: 'Exclusive of tax' },
+    { value: 'Inclusive of tax', label: 'Inclusive of tax' },
+    { value: 'Out of Scope of tax', label: 'Out of Scope of tax' },
+  ], []);
+
   const billColumnConfigs = useMemo(() => buildBillColumnConfigs({
     billVendorOptions: chequePayeeOptions,
     apAccountOptions,
     termsOptions,
-  }), [chequePayeeOptions, apAccountOptions, termsOptions]);
+    accountOptions,
+    taxCodeOptions,
+    customerOptions,
+    amountTypeOptions,
+  }), [chequePayeeOptions, apAccountOptions, termsOptions, accountOptions, taxCodeOptions, customerOptions, amountTypeOptions]);
+
+  const vendorCreditColumnConfigs = useMemo(() => buildVendorCreditColumnConfigs({
+    billVendorOptions: chequePayeeOptions,
+    apAccountOptions,
+    termsOptions,
+    accountOptions,
+    taxCodeOptions,
+    customerOptions,
+    amountTypeOptions,
+  }), [chequePayeeOptions, apAccountOptions, termsOptions, accountOptions, taxCodeOptions, customerOptions, amountTypeOptions]);
 
   const jeClassOptions = useMemo(() =>
     classes
@@ -518,6 +555,9 @@ export default function MappingView({
   const isVendorCredit = selectedTemplate?.transactionType === 'VENDOR_CREDIT';
   const isCheque = selectedTemplate?.transactionType === 'CHEQUE';
   const isJE = selectedTemplate?.transactionType === 'JOURNAL_ENTRY';
+  // Bill>Excel is always fixed 12-column format (same as ScanView.tsx effectiveColumnMappings behavior).
+  // No import needed — matches isCheque/isJE pattern using only template type.
+  const isBill12Col = selectedTemplate?.transactionType === 'BILL';
 
   const getPreviewLabel = () => {
     switch (selectedTemplate?.transactionType) {
@@ -567,18 +607,99 @@ export default function MappingView({
   }, [activeScanEntry, excelSheets, selectedExcelSheetName]);
 
   useEffect(() => {
-    if (!selectedTemplate?.columnMappings) {
-      setLocalColMap({});
+    billAutoAppliedRef.current = false;
+
+    if (selectedTemplate?.columnMappings) {
+      const cm = selectedTemplate.columnMappings as Record<string, unknown>;
+      const lineItemKeys = Object.keys(cm).filter((key) => !key.startsWith('_header_'));
+      const parsed: Record<string, string> = {};
+      for (const key of lineItemKeys) {
+        parsed[key] = String(cm[key] ?? '');
+      }
+      setLocalColMap(parsed);
       return;
     }
-    const cm = selectedTemplate.columnMappings as Record<string, unknown>;
-    const lineItemKeys = Object.keys(cm).filter((key) => !key.startsWith('_header_'));
-    const parsed: Record<string, string> = {};
-    for (const key of lineItemKeys) {
-      parsed[key] = String(cm[key] ?? '');
+
+    if (
+      selectedTemplate?.transactionType === 'BILL' &&
+      activeScanEntry?.source === 'excel'
+    ) {
+      const firstLine = activeScanEntry.lineItems?.[0] as Record<string, unknown> | undefined;
+      if (
+        firstLine &&
+        Object.prototype.hasOwnProperty.call(firstLine, 'category') &&
+        Object.prototype.hasOwnProperty.call(firstLine, 'customer')
+      ) {
+        billAutoAppliedRef.current = true;
+        setLocalColMap({
+          productColumn: 'category',
+          amountColumn: 'amount',
+          descriptionColumn: 'description',
+          taxCodeColumn: 'tax',
+        });
+        return;
+      }
     }
-    setLocalColMap(parsed);
+
+    setLocalColMap({});
   }, [selectedTemplate]);
+
+  useEffect(() => {
+    if (!jwt || !selectedTemplate?.id) return;
+    api.getValueMappings(jwt, selectedTemplate.id)
+      .then(setValueMappings)
+      .catch(() => {});
+  }, [jwt, selectedTemplate?.id]);
+
+  useEffect(() => {
+    if (!selectedTemplate || selectedTemplate.transactionType !== 'BILL') return;
+    if (activeScanEntry?.source !== 'excel') return;
+    if (!valueMappings.length) return;
+    const h = activeScanEntry.header;
+    if (!h) return;
+
+    if (!vendorDefault.value) {
+      const vendorName = String(h.vendor || '').trim();
+      if (vendorName) {
+        const vmResult = resolveValueMapping(
+          vendorName,
+          'name',
+          valueMappings,
+          (id) => {
+            if (id.startsWith('vendor:')) return vendors.find((v) => v.Id === id.replace('vendor:', ''));
+            return undefined;
+          },
+          'supplier',
+        );
+        if (vmResult.matched && vmResult.entityId.startsWith('vendor:')) {
+          const vendorId = vmResult.entityId.replace('vendor:', '');
+          const vendor = vendors.find((v) => v.Id === vendorId);
+          if (vendor) {
+            setVendorDefault({ value: vendor.Id, name: vendor.DisplayName });
+          }
+        }
+      }
+    }
+
+    if (!termsDefault.value) {
+      const termsName = String(h.terms || '').trim();
+      if (termsName) {
+        const vmResult = resolveValueMapping(
+          termsName,
+          'name',
+          valueMappings,
+          (id) => terms.find((term) => term.Id === id),
+          'terms',
+        );
+        if (vmResult.matched) {
+          const term = terms.find((t) => t.Id === vmResult.entityId);
+          if (term) {
+            setTermsDefault({ value: term.Id, name: term.Name });
+          }
+        }
+      }
+    }
+  }, [activeScanEntry, selectedTemplate, valueMappings, vendors, terms, vendorDefault.value, termsDefault.value]);
 
   const getColumnFieldLabel = (field: string) => {
     if (selectedTemplate?.transactionType === 'CHEQUE') {
@@ -633,6 +754,7 @@ export default function MappingView({
     const chequeDefaults = selectedTemplate.defaults as Record<string, { value: string; name?: string }> | null | undefined;
     if (chequeDefaults?.bankAccountRef) setBankDefault(chequeDefaults.bankAccountRef);
     if (chequeDefaults?.payeeRef) setPayeeDefault(chequeDefaults.payeeRef);
+    if (chequeDefaults?.vendorRef) setVendorDefault(chequeDefaults.vendorRef);
     if (chequeDefaults?.apAccountRef) setApAccountDefault(chequeDefaults.apAccountRef);
     if (chequeDefaults?.termsRef) setTermsDefault(chequeDefaults.termsRef);
     if (chequeDefaults?.taxCodeRef) setTaxCodeDefault(chequeDefaults.taxCodeRef);
@@ -695,6 +817,16 @@ export default function MappingView({
     }
     setSelectedTemplateId(templateId);
   };
+
+  const handleApplyPreset = useCallback((preset: MappingPreset) => {
+    const nextMappings: LocalMapping[] = Array.isArray(preset.mappings)
+      ? preset.mappings.map((mapping) => decodeFromApi(mapping))
+      : [];
+    setLocalMappings(nextMappings);
+    setIsPresetModalOpen(false);
+    setPresetModalTab('catalog');
+    showToast(`Preset '${preset.name}' applied successfully`, 'success');
+  }, [showToast]);
 
   const confirmSwitchTemplate = () => {
     if (!pendingSwitchTemplateId) return;
@@ -1151,6 +1283,11 @@ export default function MappingView({
       } else {
         delete merged.apAccountRef;
       }
+      if (vendorDefault.value) {
+        merged.vendorRef = { value: vendorDefault.value, name: vendorDefault.name };
+      } else {
+        delete merged.vendorRef;
+      }
       if (termsDefault.value) {
         merged.termsRef = { value: termsDefault.value, name: termsDefault.name };
       } else {
@@ -1313,11 +1450,31 @@ export default function MappingView({
         onAISuggest={suggestMappings}
         suggesting={suggesting}
         onApplyTemplate={applyTemplate}
+        onOpenPresets={() => setIsPresetModalOpen(true)}
+        onSavePreset={() => {
+          setPresetModalTab('save');
+          setIsPresetModalOpen(true);
+        }}
         onSyncLists={() => void syncAllLists()}
         listsLoading={listsLoading}
         accountsLoaded={accounts.length > 0}
         showImportButton={showMappingControls}
         disablePresets={isExcelMode}
+      />
+
+      <PresetManagerModal
+        isOpen={isPresetModalOpen}
+        onClose={() => {
+          setIsPresetModalOpen(false);
+          setPresetModalTab('catalog');
+        }}
+        jwt={jwt}
+        locationId={selectedLocationId || locId}
+        currentMappings={localMappings}
+        onApplyPreset={handleApplyPreset}
+        hasUnsavedChanges={hasUnsavedChanges}
+        encodeToApi={encodeToApi}
+        initialTab={presetModalTab}
       />
 
       <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-3">
@@ -1845,6 +2002,18 @@ export default function MappingView({
                       />
                   </div>
                   <div>
+                      <label className="block text-xs text-gray-600 mb-1">Default Vendor</label>
+                      <SearchableSelect
+                          options={chequePayeeOptions}
+                          value={vendorDefault.value}
+                          onChange={(value) => {
+                              const selected = vendors.find((v) => v.Id === value);
+                              setVendorDefault({ value, name: selected?.DisplayName });
+                          }}
+                          placeholder="Select vendor…"
+                      />
+                  </div>
+                  <div>
                       <label className="block text-xs text-gray-600 mb-1">Default Terms</label>
                       <SearchableSelect
                           options={termsOptions}
@@ -2037,6 +2206,24 @@ export default function MappingView({
         </div>
       )}
 
+      {isVendorCredit && activeScanMode === 'EXCEL' && selectedTemplateId && (
+        <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
+          <h3 className="text-sm font-semibold text-gray-900">Vendor Credit Value Mappings</h3>
+          <p className="text-sm text-gray-500 mb-4">Map each vendor credit header field to the correct QuickBooks target</p>
+          <div className="space-y-4">
+            {vendorCreditColumnConfigs.map((config) => (
+              <ValueMappingSection
+                key={config.sourceField}
+                jwt={jwt}
+                templateId={selectedTemplateId}
+                columnConfig={config}
+                scanEntries={scanEntries ?? []}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {isCheque && activeScanMode === 'EXCEL' && selectedTemplateId && (
         <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
           <h3 className="text-sm font-semibold text-gray-900">Cheque Value Mappings</h3>
@@ -2056,10 +2243,10 @@ export default function MappingView({
       )}
 
       {isSectionVisible('columnMapping', activeScanMode, selectedTemplate?.transactionType) && (
-        (isJE || isCheque) && activeScanMode === 'EXCEL' ? (
+        (isJE || isCheque || isBill12Col || isVendorCredit) && activeScanMode === 'EXCEL' ? (
           <div className="rounded-md bg-amber-50 border border-amber-200 p-4 mt-3">
             <p className="text-sm font-medium text-amber-800 mb-2">
-              {isJE ? 'Required Excel Format for Journal Entry' : 'Fixed format required (11 columns)'}
+              {isJE ? 'Required Excel Format for Journal Entry' : isBill12Col || isVendorCredit ? 'Fixed format required (12 columns)' : 'Fixed format required (11 columns)'}
             </p>
             {isJE ? (
               <pre className="text-xs text-amber-700 whitespace-pre leading-relaxed">
@@ -2070,6 +2257,16 @@ Row 4:  Memo          | (memo text)
 Row 5:  Account | Debit | Credit | Description | Name | Class | Tax
 Row 6+: (data rows with values matching column headers)`}
               </pre>
+            ) : isBill12Col ? (
+              <div className="text-xs text-amber-700 leading-relaxed">
+                Fixed format required (12 columns):<br />
+                Supplier | Terms | Bill Date | Due Date | Bill No. | Category | Description | Amount | Tax | Customer | Amount Type | Memo
+              </div>
+            ) : isVendorCredit ? (
+              <div className="text-xs text-amber-700 leading-relaxed">
+                Fixed format required (12 columns):<br />
+                Supplier | Terms | Credit Date | Due Date | Credit No. | Category | Description | Amount | Tax | Customer | Amount Type | Memo
+              </div>
             ) : (
               <div className="text-xs text-amber-700 leading-relaxed">
                 Fixed format required (11 columns):<br />
@@ -2229,21 +2426,21 @@ Row 6+: (data rows with values matching column headers)`}
               </span>
             </div>
           )}
-          <div className="flex gap-2">
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              onClick={() => onTabChange('preview')}
+              className="text-xs bg-slate-700 hover:bg-slate-600 text-slate-100 px-3 py-2 rounded-lg transition-colors"
+            >
+              📋 Preview {getPreviewLabel()} →
+            </button>
             <button
               onClick={() => {
                 localMappings.filter((mapping) => mapping.isDirty).forEach((mapping) => void saveMapping(mapping));
               }}
               disabled={!localMappings.some((mapping) => mapping.isDirty)}
-              className="flex-1 text-xs bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white py-2 rounded-lg transition-colors"
+              className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white px-4 py-2 rounded-lg transition-colors"
             >
               💾 Save All Changes
-            </button>
-            <button
-              onClick={() => onTabChange('preview')}
-              className="flex-1 text-xs bg-gray-200 hover:bg-gray-100 text-gray-600 py-2 rounded-lg transition-colors"
-            >
-              📋 Preview {getPreviewLabel()} →
             </button>
           </div>
         </div>

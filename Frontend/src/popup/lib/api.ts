@@ -1,5 +1,6 @@
-import type { Location, LocationAttachment, Mapping, ScanMode, Template, Rule, RuleFormData, ScanData, ScanRecord, ScanEntry, Product, ProductFormData, ProductMapping, ProductMappingFormData, PayeeMapping, PayeeMappingFormData, ValueMapping, ValueMappingFormData, QBStatus, ScanHealth, AuditLogEntry, OwnerAuditLogEntry, ExportTemplate, ImportResult, InviteLink, TeamMember, BatchSyncItem, BatchSyncResult, BatchSyncSummary, RetryBatchResult, RetryBatchSummary, ExcelParseResult, ExcelDataParseResult, OutstandingBill, VendorCreditItem, BillPaymentLineItem, QBTerm, MappingSuggestion, ProductMappingSuggestion, DuplicateCheckResult } from '../../types';
+import type { Location, LocationAttachment, Mapping, ScanMode, Template, Rule, RuleFormData, ScanData, ScanRecord, ScanEntry, Product, ProductFormData, ProductMapping, ProductMappingFormData, PayeeMapping, PayeeMappingFormData, ValueMapping, ValueMappingFormData, QBStatus, ScanHealth, AuditLogEntry, OwnerAuditLogEntry, ExportTemplate, ImportResult, InviteLink, TeamMember, BatchSyncItem, BatchSyncResult, BatchSyncSummary, RetryBatchResult, RetryBatchSummary, ExcelParseResult, ExcelDataParseResult, OutstandingBill, VendorCreditItem, BillPaymentLineItem, QBTerm, MappingSuggestion, ProductMappingSuggestion, DuplicateCheckResult, MappingPreset } from '../../types';
 import type { QBAccount, QBClass, QBEmployee, QBVendor, QBCustomer, QBTaxCode } from '../types/qb';
+import type { QbVendor } from '../../types';
 import { BACKEND_URL as BASE_URL } from '../../lib/config';
 
 export class ApiError extends Error {
@@ -24,8 +25,16 @@ export interface ValueMappingSuggestion {
   reason: string;
 }
 
-async function headers(jwt?: string | null): Promise<Record<string, string>> {
+function generateIdempotencyKey(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `sync-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+async function headers(jwt?: string | null, idempotencyKey?: string): Promise<Record<string, string>> {
   const h: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (idempotencyKey) h['Idempotency-Key'] = idempotencyKey;
   if (jwt) h['Authorization'] = `Bearer ${jwt}`;
   return h;
 }
@@ -47,7 +56,13 @@ async function parseResponse<T>(res: Response, path: string): Promise<T> {
 
   if (!res.ok) {
     const message = payload?.error ?? `API ${path} failed`;
-    throw new ApiError(message, res.status, payload);
+    const normalized = typeof message === 'string' ? message : '';
+    if (
+      /access token expired|expired authentication|AUTHENTICATION|oauth|not connected|QuickBooks account not connected/i.test(normalized)
+    ) {
+      throw new ApiError('Your QuickBooks connection has expired. Please reconnect your QuickBooks account in Settings.', 401, payload);
+    }
+    throw new ApiError(normalized || `API ${path} failed`, res.status, payload);
   }
 
   if ('success' in payload && !payload.success) {
@@ -82,9 +97,10 @@ export async function downloadCSV(jwt: string, path: string, filename: string): 
 }
 
 async function post<T>(path: string, body: unknown, jwt?: string | null): Promise<T> {
+  const idempotencyKey = path.startsWith('/api/quickbooks/') ? generateIdempotencyKey() : undefined;
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
-    headers: await headers(jwt),
+    headers: await headers(jwt, idempotencyKey),
     body: JSON.stringify(body),
   });
   return parseResponse<T>(res, path);
@@ -100,18 +116,20 @@ async function postForm<T>(path: string, form: FormData, jwt?: string | null): P
 }
 
 async function put<T>(path: string, body: unknown, jwt?: string | null): Promise<T> {
+  const idempotencyKey = path.startsWith('/api/quickbooks/') ? generateIdempotencyKey() : undefined;
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'PUT',
-    headers: await headers(jwt),
+    headers: await headers(jwt, idempotencyKey),
     body: JSON.stringify(body),
   });
   return parseResponse<T>(res, path);
 }
 
 async function patch<T>(path: string, body: unknown, jwt?: string | null): Promise<T> {
+  const idempotencyKey = path.startsWith('/api/quickbooks/') ? generateIdempotencyKey() : undefined;
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'PATCH',
-    headers: await headers(jwt),
+    headers: await headers(jwt, idempotencyKey),
     body: JSON.stringify(body),
   });
   return parseResponse<T>(res, path);
@@ -123,6 +141,14 @@ async function del<T = void>(path: string, jwt?: string | null): Promise<T> {
     headers: await headers(jwt),
   });
   return parseResponse<T>(res, path);
+}
+
+export async function getQuickbooksVendors(jwt?: string | null): Promise<QbVendor[]> {
+  const data = await get<{ vendors?: Array<{ Id: string; DisplayName: string; Active?: boolean }> }>('/api/quickbooks/vendors', jwt ?? null);
+  return (data.vendors ?? []).map((vendor) => ({
+    value: vendor.Id,
+    label: vendor.DisplayName,
+  }));
 }
 
 export interface Plan {
@@ -528,6 +554,29 @@ export const api = {
     put<Mapping>(`/api/mappings/${id}`, data, jwt),
 
   deleteMapping: (jwt: string, id: string) => del(`/api/mappings/${id}`, jwt),
+
+  getPresets: (jwt: string) =>
+    get<MappingPreset[]>('/api/presets', jwt),
+
+  createPreset: (jwt: string, payload: { name: string; description?: string; industry?: string; mappings: Mapping[]; locationId: string }) => {
+    if (!payload.locationId) {
+      throw new Error('locationId is required to create a custom preset');
+    }
+    return post<MappingPreset>('/api/presets', payload, jwt);
+  },
+
+  updatePreset: (jwt: string, id: string, payload: { name?: string; description?: string; industry?: string; mappings?: Mapping[] }) =>
+    put<MappingPreset>(`/api/presets/${id}`, payload, jwt),
+
+  deletePreset: (jwt: string, id: string) =>
+    del<{ success: boolean }>(`/api/presets/${id}`, jwt),
+
+  clonePreset: (jwt: string, id: string, locationId: string) => {
+    if (!locationId) {
+      throw new Error('locationId is required to clone a preset');
+    }
+    return post<MappingPreset>(`/api/presets/${id}/clone`, { locationId }, jwt);
+  },
 
   suggestMappings: (jwt: string, locationId: string, scanFields: string[], transactionType?: string) =>
     post<{ suggestions: MappingSuggestion[] }>('/api/mappings/suggest', { locationId, scanFields, transactionType }, jwt),

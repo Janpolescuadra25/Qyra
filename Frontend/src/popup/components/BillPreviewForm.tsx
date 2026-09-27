@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { api, ApiError } from '../lib/api';
+import { api, ApiError, getQuickbooksVendors } from '../lib/api';
 import { extractLineItems, getAutoFillSummary, evaluateProductMatch } from '../lib/column-extractor';
 import { resolveValueMapping } from '../lib/resolve-value-mapping';
 import { useLocations } from '../hooks/useLocations';
@@ -11,7 +11,7 @@ import ErrorCard from './shared/ErrorCard';
 import { PreSyncChecklist } from './shared';
 import { useDuplicateCheck } from '../hooks/useDuplicateCheck';
 import type { PreSyncCheck } from './shared/PreSyncChecklist';
-import type { DuplicateCheckResult, ExtractedLineItem, ScanData, ScanEntry, Mapping, Template, PayeeMapping, ValueMapping } from '../../types';
+import type { DuplicateCheckResult, ExtractedLineItem, ScanData, ScanEntry, Mapping, Template, PayeeMapping, ValueMapping, QbVendor } from '../../types';
 import type { SelectOption } from './SearchableSelect';
 import type { QBAccount } from '../types/qb';
 import { decodeMapping } from '../lib/je-builder';
@@ -26,6 +26,7 @@ interface BillLine {
   classId: string;
   taxCodeId: string;
   amount: string;
+  customer: string;
 }
 
 function newLine(overrides?: Partial<BillLine>): BillLine {
@@ -37,6 +38,7 @@ function newLine(overrides?: Partial<BillLine>): BillLine {
     classId: '',
     taxCodeId: '',
     amount: '',
+    customer: '',
     ...overrides,
   };
 }
@@ -75,6 +77,9 @@ function parseScanDate(raw: string | undefined): string | undefined {
 }
 
 function fmt(amount: number): string {
+  if (amount < 0) {
+    return `(${Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+  }
   return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
@@ -107,6 +112,7 @@ export default function BillPreviewForm({
     accounts,
     classes,
     vendors,
+    customers,
     taxCodes,
     terms,
     listsLoaded,
@@ -116,6 +122,14 @@ export default function BillPreviewForm({
   } = useQBContext();
 
   const today = toYMD(new Date());
+
+  useEffect(() => {
+    if (!jwt) return;
+    getQuickbooksVendors(jwt)
+      .then(setKnownVendors)
+      .catch(() => {});
+  }, [jwt]);
+
   const [txnDate, setTxnDate] = useState(today);
   const [vendorRef, setVendorRef] = useState<{ value: string; name?: string }>({ value: '' });
   const [valueMappings, setValueMappings] = useState<ValueMapping[]>([]);
@@ -136,7 +150,9 @@ export default function BillPreviewForm({
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ id: string; txnDate: string; docNumber?: string; skipped?: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [knownVendors, setKnownVendors] = useState<QbVendor[]>([]);
   const [approvalSubmitted, setApprovalSubmitted] = useState(false);
   const canSyncDirectly = !userRole || userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'MANAGER';
 
@@ -157,7 +173,7 @@ export default function BillPreviewForm({
     if (activeScanEntry.source === 'pos') {
       return;
     }
-    if (!selectedTemplate?.columnMappings || !selectedTemplate?.id) {
+    if (!selectedTemplate?.id) {
       return;
     }
     if (!jwt || !locId) return;
@@ -168,11 +184,74 @@ export default function BillPreviewForm({
     let cancelled = false;
     (async () => {
       try {
+        const rawLineItems = ruleTransformedLineItems ?? activeScanEntry.lineItems ?? [];
+        const isNewFixedBill = rawLineItems.length > 0 && Object.prototype.hasOwnProperty.call(rawLineItems[0], 'category') && Object.prototype.hasOwnProperty.call(rawLineItems[0], 'customer');
+        const hasColumnMappings = Boolean(selectedTemplate.columnMappings);
+
+        if (isNewFixedBill) {
+          const mappedLines = rawLineItems.map((row: Record<string, string>) => {
+            const category = String(row.category ?? '').trim();
+            const description = String(row.description ?? '').trim() || category || '';
+            const amountRaw = String(row.amount ?? '').trim();
+            const amountValue = parseFloat(amountRaw.replace(/[^0-9.-]+/g, '')) || 0;
+            const tax = String(row.tax ?? '').trim();
+            const customerText = String(row.customer ?? '').trim();
+
+            let accountId = '';
+            let accountName = '';
+            if (category) {
+              const vmResult = resolveValueMapping(
+                category,
+                'account',
+                valueMappings,
+                (id) => accountsRef.current.find((a) => a.Id === id),
+                'category',
+              );
+              if (vmResult.matched) {
+                accountId = vmResult.entityId;
+                accountName = vmResult.entityName;
+              }
+            }
+
+            let taxCodeId = '';
+            if (tax) {
+              const vmResult = resolveValueMapping(
+                tax,
+                'taxCode',
+                valueMappings,
+                (id) => taxCodes.find((t) => t.Id === id),
+                'tax',
+              );
+              if (vmResult.matched) {
+                taxCodeId = vmResult.entityId;
+              }
+            }
+
+            return newLine({
+              accountId,
+              accountName,
+              description,
+              classId: '',
+              taxCodeId,
+              amount: amountValue.toFixed(2),
+              customer: customerText,
+            });
+          });
+
+          setLines(mappedLines.length > 0 ? mappedLines : [newLine(), newLine()]);
+          setAutoFillSummary(null);
+          setUnmatchedItems([]);
+          return;
+        }
+
+        if (!hasColumnMappings) {
+          return;
+        }
+
         const productMappings = await api.getProductMappings(jwt, selectedTemplate.id);
         if (cancelled) return;
-        const itemsToExtract = ruleTransformedLineItems ?? activeScanEntry.lineItems ?? [];
         const extracted = extractLineItems({
-          lineItems: itemsToExtract,
+          lineItems: rawLineItems,
           columnMappings: selectedTemplate.columnMappings,
           productMappings,
           defaultPostingType: 'Credit',
@@ -385,6 +464,7 @@ export default function BillPreviewForm({
   useEffect(() => {
     if (!activeScanEntry) return;
     if (activeScanEntry.source === 'pos') return;
+    if (userHasEditedLinesRef.current) return;
     const h = activeScanEntry.header;
     if (!h || !Object.keys(h).length) return;
 
@@ -393,6 +473,7 @@ export default function BillPreviewForm({
       const vendorName = (h.vendor || '').trim();
       if (!vendorName) return prev;
 
+      const sourceField = activeScanEntry.source === 'excel' ? 'supplier' : undefined;
       const vmResult = resolveValueMapping(
         vendorName,
         'name',
@@ -401,6 +482,7 @@ export default function BillPreviewForm({
           if (id.startsWith('vendor:')) return vendors.find((v) => v.Id === id.replace('vendor:', ''));
           return undefined;
         },
+        sourceField,
       );
       if (vmResult.matched && vmResult.entityId.startsWith('vendor:')) {
         const vendorId = vmResult.entityId.replace('vendor:', '');
@@ -438,9 +520,28 @@ export default function BillPreviewForm({
       return prev;
     });
 
+    setTermsRef((prev) => {
+      if (prev.value) return prev;
+      const termsName = String(h.terms || '').trim();
+      if (!termsName) return prev;
+
+      const vmResult = resolveValueMapping(
+        termsName,
+        'name',
+        valueMappings,
+        (id) => terms.find((term) => term.Id === id),
+        activeScanEntry.source === 'excel' ? 'terms' : undefined,
+      );
+      if (vmResult.matched) {
+        const term = terms.find((t) => t.Id === vmResult.entityId);
+        if (term) return { value: term.Id, name: term.Name };
+      }
+      return prev;
+    });
+
     setDocNumber((prev) => {
       if (prev) return prev;
-      return (h.invoiceNumber || '').trim() || prev;
+      return (h.docNumber || '').trim() || prev;
     });
 
     const parsedDate = parseScanDate(h.invoiceDate);
@@ -595,6 +696,13 @@ export default function BillPreviewForm({
   const totalMismatch = scannedTotal !== null && totalAmount > 0 && Math.abs(totalAmount - scannedTotal) > 0.01
     ? Math.abs(totalAmount - scannedTotal)
     : null;
+  const currentVendorName = (vendorRef.name || vendors.find((v) => v.Id === vendorRef.value)?.DisplayName || '').trim();
+  const isKnownVendor = useMemo(() => {
+    if (!currentVendorName || knownVendors.length === 0) {
+      return true;
+    }
+    return knownVendors.some((vendor) => vendor.label.trim().toLowerCase() === currentVendorName.toLowerCase());
+  }, [currentVendorName, knownVendors]);
 
   const dedupPayload = useMemo(() => {
     if (!vendorRef.value || !txnDate) return null;
@@ -689,6 +797,7 @@ export default function BillPreviewForm({
     if (!hasHeader || !allMapped || !hasAmount) return;
     setSyncing(true);
     setError(null);
+    setSyncError(null);
     setDuplicateWarning(null);
     setSyncResult(null);
 
@@ -720,10 +829,12 @@ export default function BillPreviewForm({
 
       setSyncResult({ id: result.billId ?? result.qbJournalEntryId ?? '', txnDate: result.txnDate ?? txnDate, skipped: Boolean(result.skipped), docNumber: result.docNumber });
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Bill sync failed';
       if (err instanceof ApiError && err.status === 409) {
         setDuplicateWarning(err.payload?.error ?? err.message);
       } else {
-        setError(err instanceof Error ? err.message : 'Bill sync failed');
+        setSyncError(message);
+        setError(null);
       }
     } finally {
       setSyncing(false);
@@ -781,6 +892,21 @@ export default function BillPreviewForm({
           {listsLoading ? '…' : '↻'}
         </button>
       </div>
+      {syncError && (
+        <div className="rounded-lg border border-red-500/40 bg-red-900/30 p-3.5 text-sm text-red-200 shadow-sm flex items-start justify-between gap-3">
+          <div className="flex items-start gap-2">
+            <span className="font-bold text-red-400">Sync Error:</span>
+            <span>{syncError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSyncError(null)}
+            className="text-red-400 hover:text-red-200 text-xs font-semibold px-2 py-1 rounded border border-red-500/30 hover:bg-red-500/20"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
       {attachments && attachments.length > 0 && (
         <div className="flex items-center gap-2 text-xs text-gray-500 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
           <span>📎</span>
@@ -797,11 +923,19 @@ export default function BillPreviewForm({
           <SmartDatePicker value={txnDate} onChange={setTxnDate} />
         </div>
         <div>
-          <div className="text-sm font-medium text-gray-700 mb-1">Vendor</div>
+          <div className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+            <span>Vendor</span>
+            {!isKnownVendor && currentVendorName && (
+              <span className="inline-flex items-center rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-300">
+                New Vendor in QBO
+              </span>
+            )}
+          </div>
           <SearchableSelect
             options={vendorOptions}
             value={vendorRef.value}
             onChange={(value) => {
+              userHasEditedLinesRef.current = true;
               const selected = vendors.find((v) => v.Id === value);
               setVendorRef({ value, name: selected?.DisplayName });
             }}
@@ -810,7 +944,10 @@ export default function BillPreviewForm({
         </div>
         <div>
           <div className="text-sm font-medium text-gray-700 mb-1">Due Date</div>
-          <SmartDatePicker value={dueDate} onChange={setDueDate} />
+          <SmartDatePicker value={dueDate} onChange={(value) => {
+            userHasEditedLinesRef.current = true;
+            setDueDate(value);
+          }} />
         </div>
         <div className="col-span-2">
           <div className="text-sm font-medium text-gray-700 mb-1">Terms</div>
@@ -819,6 +956,7 @@ export default function BillPreviewForm({
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900 focus:border-emerald-500 focus:outline-none"
               value={termsRef.value}
               onChange={(e) => {
+                userHasEditedLinesRef.current = true;
                 const selected = terms.find((term) => term.Id === e.target.value);
                 setTermsRef({ value: e.target.value, name: selected?.Name });
               }}
@@ -832,7 +970,10 @@ export default function BillPreviewForm({
             <input
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900 focus:border-emerald-500 focus:outline-none"
               value={termsRef.value}
-              onChange={(e) => setTermsRef({ value: e.target.value })}
+              onChange={(e) => {
+                userHasEditedLinesRef.current = true;
+                setTermsRef({ value: e.target.value });
+              }}
               placeholder="Terms reference…"
             />
           )}
@@ -860,7 +1001,10 @@ export default function BillPreviewForm({
           <input
             className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900 focus:border-emerald-500 focus:outline-none"
             value={docNumber}
-            onChange={(e) => setDocNumber(e.target.value)}
+            onChange={(e) => {
+              userHasEditedLinesRef.current = true;
+              setDocNumber(e.target.value);
+            }}
             placeholder="Optional bill number"
           />
         </div>
@@ -923,6 +1067,14 @@ export default function BillPreviewForm({
                       maxLength={4000}
                     />
                   </td>
+                  <td className="px-3 py-2 min-w-[140px]">
+                    <input
+                      className="w-full bg-[#F5F5F7] border border-gray-200 text-gray-600 text-sm rounded-md px-3 py-2 focus:border-emerald-500 focus:outline-none"
+                      value={line.customer}
+                      onChange={(e) => updateLine(line.localId, { customer: e.target.value })}
+                      placeholder="Customer…"
+                    />
+                  </td>
                   <td className="px-3 py-2 min-w-[120px] max-w-[160px]">
                     <SearchableSelect
                       options={classOptions}
@@ -941,7 +1093,7 @@ export default function BillPreviewForm({
                   </td>
                   <td className="px-3 py-2 text-right w-24">
                     <input
-                      className="w-full bg-[#F5F5F7] border border-gray-200 text-gray-600 text-sm rounded-md px-3 py-2 text-right focus:border-emerald-500 focus:outline-none"
+                      className="w-full bg-[#F5F5F7] border border-gray-200 text-gray-600 text-sm rounded-md px-3 py-2 text-right font-mono focus:border-emerald-500 focus:outline-none"
                       value={line.amount}
                       onChange={(e) => updateLine(line.localId, { amount: e.target.value })}
                       placeholder="0.00"
@@ -964,7 +1116,7 @@ export default function BillPreviewForm({
             <tfoot>
               <tr className="border-t border-gray-300 bg-gray-100 font-semibold">
                 <td className="px-3 py-3 text-gray-600">{effectiveLines.length}</td>
-                <td colSpan={4} className="px-3 py-3 text-gray-600">Total</td>
+                <td colSpan={5} className="px-3 py-3 text-gray-600">Total</td>
                 <td className="px-3 py-3 text-right font-mono text-emerald-300">${fmt(totalAmount)}</td>
                 <td />
               </tr>
@@ -1032,7 +1184,7 @@ export default function BillPreviewForm({
         </div>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex items-center justify-end gap-4 pt-2">
         <button
           type="button"
           onClick={handleClearAll}
@@ -1044,7 +1196,7 @@ export default function BillPreviewForm({
           type="button"
           onClick={canSyncDirectly ? () => void handleSync() : () => void handleSubmitForApproval()}
           disabled={syncing || !hasHeader || !allMapped || !hasAmount}
-          className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-200 disabled:text-gray-600 text-white text-sm font-bold rounded-lg transition-colors"
+          className="min-w-[220px] py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-200 disabled:text-gray-600 text-white text-sm font-bold rounded-lg transition-colors"
         >
           {syncing
             ? (canSyncDirectly ? 'Syncing Bill…' : 'Submitting…')
