@@ -132,9 +132,9 @@ chrome.runtime.onMessage.addListener((message: ExtMessage, _sender, sendResponse
         if (qbAuthCleanupTimer !== null) {
           clearTimeout(qbAuthCleanupTimer);
         }
-        qbAuthCleanupTimer = window.setTimeout(() => {
+        qbAuthCleanupTimer = setTimeout(() => {
           cleanupQBAuth();
-        }, 5 * 60 * 1000);
+        }, 5 * 60 * 1000) as unknown as number;
       }
       sendResponse({ ok: true });
     });

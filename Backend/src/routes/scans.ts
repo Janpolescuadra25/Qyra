@@ -443,7 +443,13 @@ router.post('/:id/submit', requireFeaturePermission('scan', 'write'), validate(s
   const id = String(req.params['id']);
   const userId = req.user!.userId;
 
-  const scan = await prisma.scanRecord.findFirst({ where: { id }, select: { status: true, locationId: true } });
+  const scan = await prisma.scanRecord.findFirst({
+    where: {
+      id,
+      location: { ...locationFilter(req.user!) },
+    },
+    select: { status: true, locationId: true },
+  });
   if (!scan) {
     throw new AppError('Scan record not found', 404);
   }
@@ -479,7 +485,13 @@ router.post('/:id/approve', requireFeaturePermission('drafts', 'execute'), valid
   const id = String(req.params['id']);
   const userId = req.user!.userId;
 
-  const scan = await prisma.scanRecord.findFirst({ where: { id }, select: { status: true, locationId: true, submittedById: true } });
+  const scan = await prisma.scanRecord.findFirst({
+    where: {
+      id,
+      location: { ...locationFilter(req.user!) },
+    },
+    select: { status: true, locationId: true, submittedById: true },
+  });
   if (!scan) {
     throw new AppError('Scan record not found', 404);
   }
@@ -515,7 +527,13 @@ router.post('/:id/reject', requireFeaturePermission('drafts', 'execute'), valida
   const userId = req.user!.userId;
   const { notes } = req.body as { notes?: string };
 
-  const scan = await prisma.scanRecord.findFirst({ where: { id }, select: { status: true, locationId: true } });
+  const scan = await prisma.scanRecord.findFirst({
+    where: {
+      id,
+      location: { ...locationFilter(req.user!) },
+    },
+    select: { status: true, locationId: true },
+  });
   if (!scan) {
     throw new AppError('Scan record not found', 404);
   }

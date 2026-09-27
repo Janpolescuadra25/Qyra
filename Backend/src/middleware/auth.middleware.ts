@@ -71,7 +71,9 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
       return next(new AppError('Account is disabled', 403));
     }
 
-    if (user.mustChangePassword && req.method !== 'GET' && req.path !== '/api/auth/change-password') {
+    const currentPath = (req.originalUrl ? req.originalUrl.split('?')[0] : req.path);
+
+    if (user.mustChangePassword && req.method !== 'GET' && currentPath !== '/api/auth/change-password') {
       res.status(403).json({ error: 'You must change your password before continuing.', code: 'MUST_CHANGE_PASSWORD' });
       return;
     }
@@ -107,7 +109,7 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
         '/api/auth/session',
         '/api/auth/welcome',
       ];
-      if (!exemptPaths.some((p) => req.path.startsWith(p))) {
+      if (!exemptPaths.some((p) => currentPath.startsWith(p))) {
         res.status(403).json({
           error: 'EMAIL_NOT_VERIFIED',
           message: 'Please verify your email address to continue.',
