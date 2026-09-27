@@ -2,7 +2,7 @@
 Last Updated: 2026-09-27
 
 ## Current Verified State
-- **Backend Test Suite**: 24/24 suites passing and 149/149 tests passing.
+- **Backend Test Suite**: 25/25 suites passing and 154/154 tests passing (includes tenant-isolation coverage).
 - **Frontend Test Suite**: 12/12 files passing and 135/135 tests passing.
 - **Backend Compilation**: Clean (`npm run build` / `tsc --noEmit` exits with 0).
 - **Frontend Build**: Clean (`npm run build` exits with 0, zero bundling/type errors).
@@ -30,7 +30,7 @@ Last Updated: 2026-09-27
   - Open Chrome Web Store developer account (one-time $5 fee)
   - Provide live privacy policy URL (landing page `/privacy` or external)
 - **Deliverables**:
-  - Final production build (frontend + backend) deployed to Render.com
+  - Final production build (frontend + backend) deployed to the vortex VPS (Slot #3 @ 2.28.120.85) via PM2, continuous auto-retry cron worker, and local PostgreSQL (Render.com suspended per architectural directive)
   - Chrome Web Store listing published (description from STORE_LISTING.md, screenshots, category, privacy policy)
   - Store review process monitored and any rejections addressed
   - Public announcement (landing page live, social links if applicable)
