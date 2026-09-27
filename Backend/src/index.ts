@@ -54,38 +54,25 @@ app.set('trust proxy', 1);
 
 // ── Middleware ──────────────────────────────────────────────────────────────
 app.use(requestId);
+
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://api.qyra.io',
+  'https://qyra.io',
+  'https://qyra.vortexsdo.com',
+];
+
 app.use(cors({
   origin: (origin, callback) => {
-    // No origin = server-to-server request (webhooks, health checks). Always allow.
     if (!origin) {
       return callback(null, true);
     }
 
-    // In development, allow all origins
-    if (process.env.NODE_ENV !== 'production') {
+    if (allowedOrigins.includes(origin) || origin.startsWith('chrome-extension://')) {
       return callback(null, true);
     }
 
-    // In production, only allow whitelisted origins
-    const allowedOrigins = [process.env.APP_URL, process.env.LANDING_PAGE_URL].filter(Boolean);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    // Allow the specific Chrome extension by ID (if configured)
-    const allowedExtensionId = process.env.ALLOWED_EXTENSION_ID;
-    if (allowedExtensionId && origin === `chrome-extension://${allowedExtensionId}`) {
-      return callback(null, true);
-    }
-
-    // Allow any chrome-extension:// origin when ALLOWED_EXTENSION_ID is not set.
-    // Extension IDs vary per computer when loaded unpacked. Set ALLOWED_EXTENSION_ID
-    // to lock to a specific ID after publishing to the Chrome Web Store.
-    if (origin.startsWith('chrome-extension://')) {
-      return callback(null, true);
-    }
-
-    // Reject non-whitelisted origins — server-side rejection, route handler never executes
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
