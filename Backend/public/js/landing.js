@@ -120,7 +120,7 @@ if (signupForm) {
         signupMessage.className = 'mt-4 text-sm text-emerald-600';
         signupMessage.innerHTML =
           '<p class="text-green-700 text-sm mt-2">Account created! Check your email to verify your account.</p>' +
-          '<a href="https://chromewebstore.google.com/detail/nest-restaurant-financial/ccghhfmkjbcakhnoamgihifonfiammoc" target="_blank" class="text-emerald-600 hover:text-emerald-700 text-sm underline mt-1 inline-block">Install Qyra from Chrome Web Store →</a>';
+          '<a href="https://chrome.google.com/webstore/detail/bfhobnahngcmhaeklihifgfbgdepibii" target="_blank" class="text-emerald-600 hover:text-emerald-700 text-sm underline mt-1 inline-block">Install Qyra from Chrome Web Store →</a>';
       } else {
         setMessage(signupMessage, data.error || 'Something went wrong. Please try again.', 'error');
       }

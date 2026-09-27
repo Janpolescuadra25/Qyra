@@ -84,19 +84,37 @@ app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'", "https://cdn.tailwindcss.com"],
-      imgSrc: ["'self'", 'data:'],
-      fontSrc: ["'self'"],
-      connectSrc: ["'self'"],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com"],
+        scriptSrc: ["'self'", "https://cdn.tailwindcss.com", "'unsafe-eval'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "blob:"],
+        fontSrc: ["'self'"],
+        connectSrc: ["'self'"],
+        mediaSrc: ["'self'"],
+        workerSrc: ["'self'"],
+      },
     },
-  },
-}));
+  })
+);
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Backward compatibility routes for Chrome Web Store privacy & terms
+app.get('/privacy.html', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../public/privacy.html'));
+});
+app.get('/privacy', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../public/privacy.html'));
+});
+app.get('/terms.html', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../public/terms.html'));
+});
+app.get('/terms', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../public/terms.html'));
+});
 
 // ── Health Check — before globalLimiter so Render's poller is never 429'd ──
 function sendLiveHealth(res: express.Response): void {
