@@ -16,9 +16,11 @@ Last Updated: 2026-09-27
 ## Current Active Focus
 
 - **F-10: Chrome Web Store Submission & Launch** (Active Priority)
-  - Manifest audit and extension packaging.
-  - Store listing screenshots, privacy policy verification, and review preparation.
-  - Production deployment cleanup and launch monitoring.
+  - Current Status: Initial extension package submitted to Chrome Web Store Developer Dashboard; currently Pending review (Extension ID: bfhobnahngcmhaeklihifgbgdepibii).
+  - Store listing screenshots capture and upload (4 screenshots: scan flow, mapping flow, sync history, settings at 1280x800 or 1920x1080).
+  - Live privacy policy URL verification and link in developer console.
+  - Chrome Web Store review monitoring and address reviewer feedback.
+  - Post-approval release: Upload production package with VPS HTTPS endpoints once approved.
 
 ## Upcoming Phases
 
@@ -52,4 +54,5 @@ Last Updated: 2026-09-27
 - **F-7: Multi-Document Batch Scanning** (Completed: 2026-09-26) — See `docs/features/BatchScanning/README.md`
 - **F-8: Advanced Mapping Presets & User Custom Mappings** (Completed: 2026-09-26) — See `docs/features/PresetManager/README.md`
 - **F-9: Sync Analytics, Auto-Retry & Webhook Status** (Completed: 2026-09-27) — See `docs/features/AutoRetryFoundation/README.md` and `docs/features/SyncAnalyticsDashboard/README.md`
+- **F-10A: VPS Deployment Infrastructure** (Completed: 2026-09-27) — Hardened Manifest V3 HTTPS permissions, Vite import.meta.env config, backend CORS whitelist, PM2 ecosystem on port 3005, Nginx reverse proxy with SSL/HSTS, and automated start:migrate script. See `docs/features/VPSDeploymentPrep_F-10/README.md`.
 
