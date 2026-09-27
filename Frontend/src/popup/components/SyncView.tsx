@@ -78,6 +78,11 @@ export default function SyncView({ jwt, selectedLocationId, onLocationChange, on
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [syncStatusFilter, setSyncStatusFilter] = useState<string>('ALL');
   const [expandedScanId, setExpandedScanId] = useState<string | null>(null);
+  const [syncMetrics, setSyncMetrics] = useState<{
+    successRate: number;
+    retryConversionRate: number;
+    pendingQueueCount: number;
+  } | null>(null);
 
   useEffect(() => {
     if (mode === 'review') {
@@ -90,6 +95,38 @@ export default function SyncView({ jwt, selectedLocationId, onLocationChange, on
       setStatusFilter('ALL');
     }
   }, [mode]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadMetrics() {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/analytics/metrics', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+
+        if (!res.ok) {
+          return;
+        }
+
+        const data = await res.json();
+        if (isMounted) {
+          setSyncMetrics({
+            successRate: Number(data?.successRate ?? 100),
+            retryConversionRate: Number(data?.retryConversionRate ?? 0),
+            pendingQueueCount: Number(data?.pendingQueueCount ?? 0),
+          });
+        }
+      } catch (err) {
+        console.warn('[SyncView] Failed to load sync metrics:', err);
+      }
+    }
+
+    void loadMetrics();
+    return () => { isMounted = false; };
+  }, [jwt]);
+
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
 
@@ -667,7 +704,7 @@ export default function SyncView({ jwt, selectedLocationId, onLocationChange, on
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
           <div className="bg-white border border-gray-200 rounded-lg p-3 text-center">
             <div className="text-2xl font-bold text-gray-900">{safeScans.length}</div>
             <div className="text-xs text-gray-600 mt-0.5">Total Scans</div>
@@ -683,6 +720,14 @@ export default function SyncView({ jwt, selectedLocationId, onLocationChange, on
           <div className="bg-white border border-amber-200 rounded-lg p-3 text-center">
             <div className="text-2xl font-bold text-amber-600">{totalPending}</div>
             <div className="text-xs text-gray-600 mt-0.5">Pending</div>
+          </div>
+          <div className="bg-white border border-emerald-200 rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-emerald-600">{syncMetrics ? `${syncMetrics.successRate}%` : '100%'}</div>
+            <div className="text-xs text-gray-600 mt-0.5">Sync Success</div>
+          </div>
+          <div className="bg-white border border-indigo-200 rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-indigo-600">{syncMetrics?.pendingQueueCount ?? 0}</div>
+            <div className="text-xs text-gray-600 mt-0.5">Retries in Queue</div>
           </div>
         </div>
       )}

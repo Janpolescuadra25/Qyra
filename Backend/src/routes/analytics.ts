@@ -113,4 +113,60 @@ router.get('/dashboard', authenticate, requireFeaturePermission('scan', 'write')
   }
 }));
 
+router.get('/metrics', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const userWhere = { userId };
+
+    const [
+      totalSyncs,
+      successfulSyncs,
+      failedSyncs,
+      recoveredRetries,
+      transientFailures,
+      permanentFailures,
+      pendingQueueCount,
+    ] = await Promise.all([
+      prisma.syncLog.count({ where: userWhere }),
+      prisma.syncLog.count({ where: { ...userWhere, status: 'SUCCESS' } }),
+      prisma.syncLog.count({ where: { ...userWhere, status: 'FAILED' } }),
+      prisma.syncLog.count({ where: { ...userWhere, status: 'SUCCESS', attemptCount: { gt: 1 } } }),
+      prisma.syncLog.count({ where: { ...userWhere, status: 'FAILED', errorType: 'TRANSIENT' } }),
+      prisma.syncLog.count({ where: { ...userWhere, status: 'FAILED', errorType: 'FATAL' } }),
+      prisma.syncLog.count({
+        where: {
+          ...userWhere,
+          status: 'FAILED',
+          nextRetryAt: { lte: new Date() },
+          retryCount: { lt: 5 },
+        },
+      }),
+    ]);
+
+    const successRate = totalSyncs > 0 ? Math.round((successfulSyncs / totalSyncs) * 100) : 100;
+    const retryConversionRate = failedSyncs + recoveredRetries > 0
+      ? Math.round((recoveredRetries / (failedSyncs + recoveredRetries)) * 100)
+      : 0;
+
+    log.info({ userId, totalSyncs, successfulSyncs, failedSyncs, recoveredRetries, pendingQueueCount }, 'Sync metrics requested');
+
+    return res.json({
+      totalSyncs,
+      successfulSyncs,
+      failedSyncs,
+      recoveredRetries,
+      successRate,
+      retryConversionRate,
+      errorBreakdown: {
+        transient: transientFailures,
+        permanent: permanentFailures,
+      },
+      pendingQueueCount,
+    });
+  } catch (error) {
+    log.error({ err: error, userId: req.user?.id }, 'Failed to load sync metrics');
+    return res.status(500).json({ error: 'Failed to retrieve sync metrics' });
+  }
+});
+
 export default router;

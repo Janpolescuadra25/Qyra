@@ -2,7 +2,7 @@
 Last Updated: 2026-09-27
 
 ## Current Verified State
-- **Backend Test Suite**: 24/24 suites passing and 148/148 tests passing.
+- **Backend Test Suite**: 24/24 suites passing and 149/149 tests passing.
 - **Frontend Test Suite**: 12/12 files passing and 135/135 tests passing.
 - **Backend Compilation**: Clean (`npm run build` / `tsc --noEmit` exits with 0).
 - **Frontend Build**: Clean (`npm run build` exits with 0, zero bundling/type errors).
@@ -15,26 +15,12 @@ Last Updated: 2026-09-27
 
 ## Current Active Focus
 
-- **F-9: Sync Analytics, Auto-Retry & Webhook Status** (In Progress)
-  - **Step 1: Auto-Retry Foundation & SyncLog Schema Extension** (Completed: 2026-09-27) — See `docs/features/AutoRetryFoundation/README.md`
-  - **Step 2: Sync Failure Analytics Dashboard & Webhook Status Monitoring** (Active Priority)
-    - Expose aggregate sync metrics API (`/api/syncs/metrics`: success/failure rates, retry conversion rate, error breakdown).
-    - Add Sync Analytics & Retry Queue Status metrics cards in `Frontend/src/popup/components/SyncView.tsx`.
-    - Implement webhook delivery status tracking in `Backend/src/routes/webhooks.ts`.
+- **F-10: Chrome Web Store Submission & Launch** (Active Priority)
+  - Manifest audit and extension packaging.
+  - Store listing screenshots, privacy policy verification, and review preparation.
+  - Production deployment cleanup and launch monitoring.
 
 ## Upcoming Phases
-
-### F-9: Sync Analytics, Auto-Retry & Webhook Status
-- **Goal**: Strengthen sync reliability and observability through auto-retry, error categorization, alerting, and dashboard metrics.
-- **Deliverables**:
-  - Auto-retry with exponential backoff and retry queue tracking
-  - Error categorization and dashboard metrics
-  - Webhook-driven sync status visibility
-  - Failure alerting and retry summary reporting
-- **Acceptance Criteria**:
-  - Sync failures are retried and surfaced clearly in the dashboard
-  - Error categories are visible for operators and support staff
-  - Users can quickly identify failed vs. successful sync activity
 
 ### F-10: Chrome Web Store Submission & Launch
 - **Status**: Pending review / launch prep
@@ -56,8 +42,8 @@ Last Updated: 2026-09-27
   - Zero critical errors in the first 48 hours post-launch
 
 ## Next Priority
-1. **Immediate (F-9)**: Sync Analytics, Auto-Retry & Webhook Status.
-2. **Short-term (F-10)**: Chrome Web Store Submission & Launch.
+1. **Immediate (F-10)**: Chrome Web Store Submission & Launch.
+2. **Follow-on**: Post-launch monitoring and user feedback iteration.
 
 ## Archived Completed Phases
 > All completed phases have comprehensive architecture documentation in `docs/features/`.
@@ -65,4 +51,5 @@ Last Updated: 2026-09-27
 - **F-5A: User QA & Payload Validation** (Completed: 2026-09-26) — See `docs/features/PayloadValidation/README.md`
 - **F-7: Multi-Document Batch Scanning** (Completed: 2026-09-26) — See `docs/features/BatchScanning/README.md`
 - **F-8: Advanced Mapping Presets & User Custom Mappings** (Completed: 2026-09-26) — See `docs/features/PresetManager/README.md`
+- **F-9: Sync Analytics, Auto-Retry & Webhook Status** (Completed: 2026-09-27) — See `docs/features/AutoRetryFoundation/README.md` and `docs/features/SyncAnalyticsDashboard/README.md`
 

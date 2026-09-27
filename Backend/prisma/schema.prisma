@@ -543,6 +543,28 @@ model StripeEvent {
   @@map("stripe_events")
 }
 
+enum WebhookDeliveryStatus {
+  SUCCESS
+  FAILED
+  IGNORED
+}
+
+model WebhookDeliveryLog {
+  id           String                  @id @default(cuid())
+  eventId      String?
+  eventType    String
+  status       WebhookDeliveryStatus
+  statusCode   Int                     @default(200)
+  errorMessage String?
+  payload      Json?
+  receivedAt   DateTime                @default(now())
+
+  @@index([eventType])
+  @@index([status])
+  @@index([receivedAt])
+  @@map("webhook_delivery_logs")
+}
+
 enum UserRole {
   OWNER
   ADMIN

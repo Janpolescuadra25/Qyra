@@ -13,6 +13,9 @@ jest.mock('../src/lib/prisma', () => ({
       groupBy: jest.fn(),
       count: jest.fn(),
     },
+    syncLog: {
+      count: jest.fn(),
+    },
     mapping: {
       groupBy: jest.fn(),
     },
@@ -34,6 +37,9 @@ describe('Analytics dashboard API', () => {
     $queryRaw: jest.Mock;
     scanRecord: {
       groupBy: jest.Mock;
+      count: jest.Mock;
+    };
+    syncLog: {
       count: jest.Mock;
     };
     mapping: {
@@ -143,5 +149,30 @@ describe('Analytics dashboard API', () => {
         dateFrom: expect.stringContaining('Too small'),
       }),
     });
+  });
+
+  it('GET /api/analytics/metrics returns sync health aggregation for the current user', async () => {
+    mockedPrisma.syncLog.count
+      .mockResolvedValueOnce(100)
+      .mockResolvedValueOnce(85)
+      .mockResolvedValueOnce(15)
+      .mockResolvedValueOnce(10)
+      .mockResolvedValueOnce(7)
+      .mockResolvedValueOnce(5)
+      .mockResolvedValueOnce(3);
+
+    const response = await request(app).get('/api/analytics/metrics');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(expect.objectContaining({
+      totalSyncs: 100,
+      successfulSyncs: 85,
+      failedSyncs: 15,
+      recoveredRetries: 10,
+      successRate: 85,
+      retryConversionRate: 40,
+      errorBreakdown: { transient: 7, permanent: 5 },
+      pendingQueueCount: 3,
+    }));
   });
 });

@@ -1,7 +1,11 @@
 import { calculateExponentialBackoff } from '../src/lib/dedup';
 import { isTransientSyncError } from '../src/lib/error-classifier';
+import { stopAutoRetryCron } from '../src/cron/retry-queue';
 
 describe('Phase F-9 Auto-Retry Foundation', () => {
+  afterAll(() => {
+    stopAutoRetryCron();
+  });
   describe('calculateExponentialBackoff', () => {
     it('calculates delay around base 1000ms with jitter for attempt 0', () => {
       const delay = calculateExponentialBackoff(0);
