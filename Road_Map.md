@@ -18,30 +18,9 @@ Last Updated: 2026-09-27
 - **F-10: Chrome Web Store Submission & Launch** (Active Priority)
   - Current Status: Initial extension package submitted to Chrome Web Store Developer Dashboard; currently Pending review (Extension ID: bfhobnahngcmhaeklihifgbgdepibii).
   - Store listing screenshots capture and upload (4 screenshots: scan flow, mapping flow, sync history, settings at 1280x800 or 1920x1080).
-  - Live privacy policy URL verification and link in developer console.
+  - Live privacy policy URL verification and link in developer console (`https://api.qyra.io/privacy`).
   - Chrome Web Store review monitoring and address reviewer feedback.
   - Post-approval release: Upload production package with VPS HTTPS endpoints once approved.
-
-## Upcoming Phases
-
-### F-10: Chrome Web Store Submission & Launch
-- **Status**: Pending review / launch prep
-- **Goal**: Submit Qyra to the Chrome Web Store and launch publicly.
-- **Prerequisites (user-dependent)**:
-  - Capture 4 Chrome Web Store screenshots (scan flow, map flow, sync history, settings) at 1280×800 or 1920×1080
-  - Open Chrome Web Store developer account (one-time $5 fee)
-  - Provide live privacy policy URL (landing page `/privacy` or external)
-- **Deliverables**:
-  - Final production build (frontend + backend) deployed to the vortex VPS (Slot #3 @ 2.28.120.85) via PM2, continuous auto-retry cron worker, and local PostgreSQL (Render.com suspended per architectural directive)
-  - Chrome Web Store listing published (description from STORE_LISTING.md, screenshots, category, privacy policy)
-  - Store review process monitored and any rejections addressed
-  - Public announcement (landing page live, social links if applicable)
-  - Post-launch monitoring (error tracking, user feedback channel)
-- **Acceptance Criteria**:
-  - Extension is live and installable from the Chrome Web Store
-  - All store assets are approved by Chrome Web Store review
-  - Production backend health endpoints respond within SLA
-  - Zero critical errors in the first 48 hours post-launch
 
 ## Next Priority
 1. **Immediate (F-10)**: Chrome Web Store Submission & Launch.
@@ -55,4 +34,5 @@ Last Updated: 2026-09-27
 - **F-8: Advanced Mapping Presets & User Custom Mappings** (Completed: 2026-09-26) — See `docs/features/PresetManager/README.md`
 - **F-9: Sync Analytics, Auto-Retry & Webhook Status** (Completed: 2026-09-27) — See `docs/features/AutoRetryFoundation/README.md` and `docs/features/SyncAnalyticsDashboard/README.md`
 - **F-10A: VPS Deployment Infrastructure** (Completed: 2026-09-27) — Hardened Manifest V3 HTTPS permissions, Vite import.meta.env config, backend CORS whitelist, PM2 ecosystem on port 3005, Nginx reverse proxy with SSL/HSTS, and automated start:migrate script. See `docs/features/VPSDeploymentPrep_F-10/README.md`.
+- **F-10B: Landing Page & Legal Pages Upgrade** (Completed: 2026-09-27) — Dedicated Next.js 15 landing page project with cinematic intro, canvas particles, Framer Motion animations, live Stripe pricing reconciliation, and Chrome Web Store legal pages (/privacy, /privacy.html, /terms, /terms.html) deployed statically to Backend/public. See `docs/features/LandingPageUpgrade_F-10/README.md`.
 
