@@ -4,8 +4,8 @@
 ### Overview
 Prepared the Qyra extension and backend infrastructure for dedicated hosting on the vortex VPS (Slot #3 @ 2.28.120.85) behind an Nginx reverse proxy with SSL:
 1. Updated Manifest V3 host permissions and CSP to enforce HTTPS-only endpoints:
-   - https://api.qyra.io
-   - https://*.vortexsdo.com
+   - https://api.qyra.space
+   - https://*.qyra.space
    - https://2.28.120.85
 2. Migrated frontend API client configuration to Vite environment variables (import.meta.env.VITE_BACKEND_URL) with PROD fallback.
 3. Updated backend CORS policy in Backend/src/index.ts to allow production VPS domains.
@@ -32,7 +32,7 @@ On the vortex VPS (2.28.120.85):
    npm install -g pm2
    apt install nginx certbot python3-certbot-nginx -y
 2. Prerequisite SSL Certificate Generation:
-   certbot --nginx -d api.qyra.io -d qyra.vortexsdo.com
+   certbot --nginx -d api.qyra.space -d qyra.space
 3. Copy Backend/deploy/nginx-qyra.conf to /etc/nginx/sites-available/qyra.
 4. Enable site:
    ln -s /etc/nginx/sites-available/qyra /etc/nginx/sites-enabled/
@@ -46,7 +46,7 @@ On the vortex VPS (2.28.120.85):
 
 ### Post-Deployment Smoke Tests & Health Check
 After deployment on the VPS:
-1. curl -I https://api.qyra.io/health
+1. curl -I https://api.qyra.space/health
 2. Verify response includes HTTP 200 OK and Strict-Transport-Security header.
 
 ### Rollback Procedures

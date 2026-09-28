@@ -10,5 +10,5 @@
 ### Store Listing Copy
 - **Name**: Qyra — Financial Automation for QuickBooks
 - **Summary**: One-click bill and invoice scanning, AI field extraction, and instant synchronization to QuickBooks Online.
-- **Privacy Policy**: https://api.qyra.io/privacy
-- **Terms of Service**: https://api.qyra.io/terms
+- **Privacy Policy**: https://qyra.space/privacy
+- **Terms of Service**: https://qyra.space/terms

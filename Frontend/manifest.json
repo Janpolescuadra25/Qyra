@@ -6,8 +6,9 @@
   "permissions": ["activeTab", "storage", "tabs", "scripting", "windows"],
   "host_permissions": [
     "http://localhost:3000/*",
-    "https://api.qyra.io/*",
-    "https://*.vortexsdo.com/*",
+    "https://qyra.space/*",
+    "https://api.qyra.space/*",
+    "https://*.qyra.space/*",
     "https://2.28.120.85/*",
     "*://*.toasttab.com/*",
     "*://*.salido.com/*",
@@ -42,6 +43,6 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' data: http://localhost:3000 https://api.qyra.io https://*.vortexsdo.com https://2.28.120.85 https://appcenter.intuit.com https://oauth.platform.intuit.com https://sandbox-quickbooks.api.intuit.com"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' data: http://localhost:3000 https://qyra.space https://api.qyra.space https://*.qyra.space https://2.28.120.85 https://appcenter.intuit.com https://oauth.platform.intuit.com https://sandbox-quickbooks.api.intuit.com https://quickbooks.api.intuit.com https://developer.intuit.com"
   }
 }

@@ -17,7 +17,7 @@ Last Updated: 2026-09-28
 
 - **Chrome Web Store launch actions (user-dependent)**
   - Capture and upload the 4 required store listing screenshots (scan flow, mapping flow, sync history, settings at 1280x800 or 1920x1080).
-  - Verify the live privacy policy URL and ensure the link is active in the Developer Console (`https://api.qyra.io/privacy`).
+  - Verify the live privacy policy URL and ensure the link is active in the Developer Console (`https://qyra.space/privacy`).
   - Monitor Chrome Web Store review queue and address any reviewer feedback before release.
 
 ## Next Priority

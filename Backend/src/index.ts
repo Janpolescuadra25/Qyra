@@ -58,22 +58,18 @@ app.use(requestId);
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
-  'https://api.qyra.io',
-  'https://qyra.io',
-  'https://qyra.vortexsdo.com',
+  'https://qyra.space',
+  'https://api.qyra.space',
+  'https://www.qyra.space',
 ];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) {
+    if (!origin || allowedOrigins.includes(origin) || origin.startsWith('chrome-extension://') || origin.endsWith('.qyra.space')) {
       return callback(null, true);
     }
 
-    if (allowedOrigins.includes(origin) || origin.startsWith('chrome-extension://')) {
-      return callback(null, true);
-    }
-
-    return callback(new Error('Not allowed by CORS'));
+    return callback(new Error('Not allowed by CORS: ' + origin));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -93,7 +89,18 @@ app.use(
         scriptSrc: ["'self'", "https://cdn.tailwindcss.com", "'unsafe-eval'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "blob:"],
         fontSrc: ["'self'"],
-        connectSrc: ["'self'"],
+        connectSrc: [
+          "'self'",
+          'https://qyra.space',
+          'https://api.qyra.space',
+          'https://www.qyra.space',
+          'https://2.28.120.85',
+          'https://appcenter.intuit.com',
+          'https://oauth.platform.intuit.com',
+          'https://sandbox-quickbooks.api.intuit.com',
+          'https://quickbooks.api.intuit.com',
+          'https://developer.intuit.com',
+        ],
         mediaSrc: ["'self'"],
         workerSrc: ["'self'"],
       },
