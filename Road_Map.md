@@ -2,7 +2,7 @@
 Last Updated: 2026-09-28
 
 ## Current Verified State
-- **Backend Test Suite**: 25/25 suites passing and 154/154 tests passing (includes tenant-isolation coverage).
+- **Backend Test Suite**: 26/26 suites passing and 157/157 tests passing (includes tenant-isolation coverage).
 - **Frontend Test Suite**: 12/12 files passing and 135/135 tests passing.
 - **Backend Compilation**: Clean (`npm run build` / `tsc --noEmit` exits with 0).
 - **Frontend Build**: Clean (`npm run build` exits with 0, zero bundling/type errors).
@@ -34,4 +34,5 @@ Last Updated: 2026-09-28
 - **F-10A: VPS Deployment Infrastructure** (Completed: 2026-09-27) — Hardened Manifest V3 HTTPS permissions, Vite import.meta.env config, backend CORS whitelist, PM2 ecosystem on port 3005, Nginx reverse proxy with SSL/HSTS, and automated start:migrate script. See `docs/features/VPSDeploymentPrep_F-10/README.md`.
 - **F-10B: Landing Page & Legal Pages Upgrade** (Completed: 2026-09-27) — Dedicated Next.js 15 landing page project with cinematic intro, canvas particles, Framer Motion animations, live Stripe pricing reconciliation, and Chrome Web Store legal pages (/privacy, /privacy.html, /terms, /terms.html) deployed statically to Backend/public. See `docs/features/LandingPageUpgrade_F-10/README.md`.
 - **F-10C: Extension Maturation & CWS Review Prep** (Completed: 2026-09-28) — Idempotency key support for sync deduplication, QuickBooks vendor lookup endpoint, frontend UI ergonomic improvements, accountant-friendly negative number formatting, in-app error banners, and Chrome Web Store submission readiness fixes. See `docs/features/ExtensionMaturation_F-10/README.md`.
+- **F-10D: Production Domain Migration to qyra.space** (Completed: 2026-09-29) — Migrated all legacy qyra.io/vortexsdo.com references to the registered production domain qyra.space across backend CORS, Helmet CSP, Chrome Extension manifest permissions, and frontend core settings. See `docs/features/DomainMigration_F-10/README.md`.
 
