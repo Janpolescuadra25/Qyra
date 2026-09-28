@@ -8,4 +8,5 @@ dist/
 .codely-cli/
 .codely/
 Frontend/tsccheck*.txt
+Frontend/qyra-extension.zip
 jest-output.json
