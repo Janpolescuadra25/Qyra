@@ -1,5 +1,5 @@
 # Qyra — Product Roadmap
-Last Updated: 2026-09-29
+Last Updated: 2026-09-30
 
 ## Current Verified State
 - **Backend Test Suite**: 26/26 suites passing and 157/157 tests passing (includes tenant-isolation coverage).
@@ -36,4 +36,5 @@ Last Updated: 2026-09-29
 - **F-10C: Extension Maturation & CWS Review Prep** (Completed: 2026-09-28) — Idempotency key support for sync deduplication, QuickBooks vendor lookup endpoint, frontend UI ergonomic improvements, accountant-friendly negative number formatting, in-app error banners, and Chrome Web Store submission readiness fixes. See `docs/features/ExtensionMaturation_F-10/README.md`.
 - **F-10D: Production Domain Migration to qyra.space** (Completed: 2026-09-29) — Migrated all legacy qyra.io/vortexsdo.com references to the registered production domain qyra.space across backend CORS, Helmet CSP, Chrome Extension manifest permissions, and frontend core settings. See `docs/features/DomainMigration_F-10/README.md`.
 - **F-10E: Chrome Web Store Version Bump & Package Rebuild** (Completed: 2026-09-29) — Bumped extension version from 1.0.1 to 1.0.2, cleaned and rebuilt the frontend dist bundle, regenerated the qyra-extension.zip production package (1,593,746 bytes), and committed all changes. See `docs/features/CWSPackageRebuild_F-10/README.md`.
+- **F-10F: Landing Page Intro Hardening & Legal Metadata Update** (Completed: 2026-09-30) — Hardened Next.js landing page with sessionStorage guard for session-limited intro playback, Escape key skip, 6.5s safety timeout with cleanup, preserved production CWS URL, and added support contact to legal pages. See `docs/features/LandingPageHardening_F10F/README.md`.
 
