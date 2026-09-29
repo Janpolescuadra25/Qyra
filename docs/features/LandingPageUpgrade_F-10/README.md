@@ -1,25 +1,19 @@
-# Landing Page & Legal Pages Upgrade (Phase F-10)
-## Status: DONE (Completed: 2026-09-27)
+# Static Landing Page Implementation (F-10B)
+## Status: DONE (Completed: 2026-09-29)
 
-### Overview
-Integrated the high-performance Next.js 15 landing page suite into a dedicated `landing-page/` project and deployed static assets to `Backend/public/`:
-1. **Interactive Experience**: Cinematic intro sequence, WebGL canvas particle field, smooth Framer Motion reveals, and video preview.
-2. **Full Legal Suite**: Privacy Policy (`/privacy`, `/privacy.html`) and Terms of Service (`/terms`, `/terms.html`) matching Chrome Web Store requirements.
-3. **Pricing Accuracy**: Fully reconciled with live Stripe configuration:
-   - Free ($0), Starter ($19/mo, $15/mo annual), Professional ($39/mo, $31/mo annual), Premium ($79/mo, $63/mo annual).
-   - Enterprise ($149/mo, $119/mo annual) card added.
-   - Scan Packs add-on grid (100 for $19, 250 for $39, 500 for $69) integrated with CWS link.
-4. **Static Export**: Built via Next.js static HTML export (`output: 'export'`) and deployed to `Backend/public/` for Express and Nginx root delivery. Legacy `web/` folder preserved.
-5. **CSP Hardening**: Updated Express Helmet CSP to permit Next.js client chunks, video media, and Framer Motion runtime.
+### Architecture & Structure
+- File: web/index.html (standalone static HTML file)
+- Hosting: Compatible with Vercel and Hetzner Nginx static root (/var/www/qyra/web/)
+- Styling: Tailwind CSS CDN (zero build dependencies, instant loading)
+- Interactive Elements: Cinematic 3-slide intro overlay, canvas particle background, mobile navigation menu
 
-### Deliverables Verified
-- `landing-page/`: Dedicated Next.js 15 source project with static export configuration.
-- `Backend/public/index.html`: Production landing page.
-- `Backend/public/privacy/index.html` & `Backend/public/privacy.html`: Live privacy policy endpoints.
-- `Backend/public/terms/index.html` & `Backend/public/terms.html`: Live terms of service endpoints.
-- `Backend/src/index.ts`: Routes, path import, and CSP updated.
+### Implementation Details
+- Maintained standalone static HTML architecture to eliminate Next.js server runtime dependencies and asset 404 hazards
+- Restaurant-specific headline: "Your books, done before the rush hour."
+- POS Integrations showcase: Toast Tab, SALIDO, Oracle Restaurants (Symphony/Micros), Square, Clover
+- Legal pages: web/privacy.html and web/terms.html linked cleanly
 
-### Security & Static Export Notes
-- The reference landing page included an incompatible `/api` route for an example server; it was removed for static export compatibility.
-- `landing-page/` was kept separate from legacy `web/` assets to preserve the original storefront bundle.
-- The landing-page static export is purposely deployed to `Backend/public` so Express can serve the production legal pages without breaking the extension or API subpaths.
+### Verification & Commit Reference
+- Commit Hash: 8d1e2c54ecc8b9dfdfd07ef3f73d9ea8cb459c22
+- Pushed to remote: origin/main
+- All Node.js headline, meta tag, and CDN assertions: PASS
