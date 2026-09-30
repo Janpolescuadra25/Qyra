@@ -3,8 +3,8 @@
 ## Current Verified State (2026-10-01)
 - **Frontend Chrome Extension**: Manifest V3 v1.0.2 ready in `Frontend/` (12 test files, 135/135 tests passing). Clean zip package generated.
 - **Backend API Server**: Express TypeScript server on port 3005 with PostgreSQL Prisma schema, QuickBooks Online sync engine, Stripe billing, and failure alerts (26 test suites, 157/157 tests passing). Deployed to Hetzner VPS Slot 3 (`vortex`, 2.28.120.85) under PM2.
-- **Landing Page & Web**: Next.js 16 static export hosted on Hetzner VPS via Nginx at `https://qyra.space/` with SSL, hardened intro sequence (F-10H), and preserved Stripe checkout callbacks (`billing-success.html`, `billing-cancel.html`).
-- **All Core Development Phases (F-5A through F-10H) are 100% COMPLETE**.
+- **Landing Page & Web**: Next.js 16 static export hosted on Hetzner VPS via Nginx at `https://qyra.space/` with SSL, hardened intro sequence (F-10H), SSR mount guard, motion-primitives fallback, and preserved Stripe checkout callbacks (`billing-success.html`, `billing-cancel.html`).
+- **All Core Development Phases (F-5A through F-11) are 100% COMPLETE**.
 
 ---
 
@@ -17,13 +17,13 @@ The codebase and infrastructure are 100% production-ready. The remaining launch 
 ---
 
 ## Post-Launch Priorities (Planned)
-- **F-11**: AI-Powered Value Mapping & Self-Learning Field Extraction (see `docs/features/F-11-AI-Value-Mapping.md`).
 - **F-12**: Multi-Currency Reconciliation & Advanced Accounting Rules.
 
 ---
 
 ## Archived Completed Phases (100% Code-Verified)
-- **F-10H: Intro Sequence Timer & Skip Reliability Fix (Completed: 2026-10-01)** — Resolved timer restart race condition, stabilized Escape listener, updated Next.js static export. See `docs/features/IntroSequenceFix_F10H/README.md`.
+- **F-11: AI-Powered Value Mapping & Self-Learning Field Extraction (Completed: 2026-09-25)** — Implemented Gemini-powered value suggestion engine, fuzzy matching for OCR data, and backend API (`POST /api/mappings/suggest-values`). See `docs/features/F-11-AI-Value-Mapping.md`.
+- **F-10H: Intro Sequence SSR Guard & Motion Primitive Fallbacks (Completed: 2026-10-01)** — Added client-side mount guard to prevent intro overlay from rendering in static HTML, added opacity-100 fallback for reduced-motion and non-JS users, resolved timer restart race condition, stabilized Escape listener, and updated Next.js static export. See `docs/features/IntroSequenceFix_F10H/README.md` and `docs/features/LandingPageSSRFix_20261001/README.md`.
 - **F-10G: Static Next.js Landing Page Deployment to VPS (Completed: 2026-09-30)** — Executed static export of Next.js landing page to `web/` for Hetzner VPS Nginx serving, preserved Stripe billing callbacks. See `docs/features/LandingPageDeployment_F10G/README.md`.
 - **SecurityFixes_QYRA-PROD-SEC-01: Critical Production Security Hardening (Completed: 2026-09-30)** — Hardened webhook signatures, rate limiting, and environment variable isolation. See `docs/features/SecurityFixes_QYRA-PROD-SEC-01/README.md`.
 - **F-10F: Landing Page Intro Hardening (Completed: 2026-09-30)** — Added `sessionStorage` safeguard and Escape key listener. See `docs/features/LandingPageHardening_F10F/README.md`.
@@ -35,5 +35,5 @@ The codebase and infrastructure are 100% production-ready. The remaining launch 
 - **F-9: Sync Analytics & Auto-Retry (Completed: 2026-09-27)** — Background retry queue, error classification, analytics endpoints. See `docs/features/SyncAnalyticsDashboard/README.md`.
 - **F-8: Advanced Mapping Presets (Completed: 2026-09-26)** — Preset manager modal, custom account mappings, Prisma schema. See `docs/features/PresetManager/README.md`.
 - **F-7: Multi-Document Batch Scanning (Completed: 2026-09-26)** — Batch scanner, multi-file upload, queue processing. See `docs/features/BatchScanning/README.md`.
-- **F-5A: User QA & Payload Validation (Completed: 2026-09-26)** — QuickBooks customer ref resolution, field validation. See `docs/features/PayloadValidation/README.md`. 
+- **F-5A: User QA & Payload Validation (Completed: 2026-09-26)** — QuickBooks customer ref resolution, field validation. See `docs/features/PayloadValidation/README.md`.
 
