@@ -1,49 +1,73 @@
-# Qyra - Project Roadmap & Architecture
-**Last updated: 2026-10-01**
+# Qyra Project Roadmap
 
-## Current Verified State
-- **Frontend Chrome Extension**: Manifest V3 v1.0.2 ready in `Frontend/` (12 test files, 135/135 tests passing). Multi-document batch scanner and payload builder active, production package ready in `Frontend/dist/` and `Frontend/qyra-extension.zip`.
-- **Backend API Server**: Express TypeScript server on port 3005 with PostgreSQL Prisma schema (52 migrations), QuickBooks Online sync engine with idempotent retry tracking, Stripe billing webhooks, Gemini AI value suggestion endpoint in `src/routes/mappings.ts`, and root route serving Next.js landing page. Deployed to Hetzner VPS Slot 3 (`vortex`, 2.28.120.85) under PM2.
-- **Landing Page & Web**: Next.js 16 static export hosted on Hetzner VPS via Express/Nginx at `https://qyra.space/` with SSL, hardened intro sequence (F-10H), client mount guard, motion-primitives fallback, and preserved Stripe checkout callbacks (`billing-success.html`, `billing-cancel.html`).
-- **All Core Development Phases (F-5A through F-11) are 100% COMPLETE**.
+## OVERVIEW
+This roadmap documents the implementation progress of Qyra, an automated POS-to-QuickBooks accounting integration platform.
 
 ---
 
-## Active Priority: Chrome Web Store Submission & Launch (User-Dependent)
-The codebase and infrastructure are 100% production-ready. The remaining launch actions are user-dependent store submission tasks:
-1. **Store Screenshots**: Capture 4 extension screenshots (1280x800) per `docs/chrome-web-store/SCREENSHOTS_SPEC.md`.
-2. **Store Submission**: Upload `Frontend/qyra-extension.zip` to Chrome Web Store Developer Dashboard, confirm privacy URL (`https://qyra.space/privacy`), and submit for review.
-3. **Launch Monitoring**: Monitor review queue and track post-launch user telemetry.
+## COMPLETED PHASES (VERIFIED IN CODE)
+
+### Phase 1: Core Backend Infrastructure
+**Status: DONE (Verified October 2026)**
+- Express server architecture with 24 routes and centralized error handling (AppError, asyncHandler).
+- Prisma ORM setup with 20+ relational database models and migrations.
+- Health: 157/157 backend tests passing, clean npm run build.
+
+### Phase 2: QuickBooks Full Integration
+**Status: DONE (Verified October 2026)**
+- Full QuickBooks Online OAuth 2.0 token management and auto-refresh.
+- Complete createBillPayment service with CreateBillPaymentInput typing.
+- Dedicated routes in src/routes/quickbooks.ts for bills, payments, cheques, and journal entries.
+- Idempotency hashing via hashSyncRequest and deduplication engine.
+
+### Phase 3: Frontend Chrome Extension Core
+**Status: DONE (Verified October 2026)**
+- Manifest V3 architecture with background service worker.
+- 3 POS scanner content scripts: Toasttab (scanner.ts), Salido (salido-scanner.ts), and Oracle Restaurants (oracle-scanner.ts).
+- Full React-based popup interface (40+ components/views including Dashboard, Mappings, Scans, Sync).
+- Packaging pipeline: node scripts/build.js && node scripts/package.js producing qyra-extension.zip (1555.59 KB).
+- Health: 135/135 frontend tests passing.
+
+### Phase 4: Stripe Payment & Subscription System
+**Status: DONE (Verified October 2026)**
+- Stripe Checkout session creation and customer portal.
+- Webhook signature verification and subscription lifecycle handlers (webhooks.ts).
+- User subscription tracking and tier enforcement.
+
+### Phase 5: RBAC & Security Middleware
+**Status: DONE (Verified October 2026)**
+- 9 specialized middleware modules (auth, permissions, audit, rate-limit, capacity, effective-role, validate, request-id, request-logger).
+- Granular permission checks across all private endpoints.
+
+### Phase 6: Scan Processing & Rules Engine
+**Status: DONE (Verified October 2026)**
+- Scan record management and status transitions (scans.ts).
+- Configurable rules engine (rules.engine.ts) for automated accounting category assignment.
+- Payee and product mapping workflows.
+
+### Phase 7: Production Environment & Deployment
+**Status: DONE (Verified October 2026)**
+- Production environment configuration (.env.production with VITE_BACKEND_URL=https://api.qyra.space).
+- Zero CSP violations in extension runtime.
+- Automated Hetzner VPS deployment pipeline with PM2 and systemd.
 
 ---
 
-## Immediate Operational Priority: Production Landing Page Validation
-Following server pull on Hetzner VPS (`cd /var/www/qyra && git pull origin main && npm --prefix Backend run build && pm2 restart qyra-backend`):
-- Validate that `https://qyra.space/` loads the Next.js fail-safe landing page with visible content.
-- Confirm browser console has zero CSP violations.
-- Verify authentication routes (`/invite`, `/reset-password`, `/verify-email`) and legal routes (`/privacy`, `/terms`) are fully responsive.
+## UPCOMING PHASES
 
----
+### Phase 8: Chrome Web Store Submission
+**Status: READY FOR EXECUTION**
+**Description**: Complete final store listing requirements and submit qyra-extension.zip (v1.0.2) to Chrome Web Store Developer Dashboard.
+**Dependencies**: Phase 3, Phase 7.
+**Completion Criteria**:
+- 4 listing screenshots captured per docs/chrome-web-store/SCREENSHOTS_SPEC.md.
+- Extension uploaded to Developer Dashboard.
+- Store listing submitted for Google review.
 
-## Post-Launch Priorities (Planned)
-- **F-12**: Multi-Currency Reconciliation & Advanced Accounting Rules (Foreign currency conversion, exchange rate tracking, and automated multi-currency line-item reconciliation with QuickBooks Online).
-
----
-
-## Archived Completed Phases (100% Code-Verified)
-- **Backend-Landing-Migration: Express Root Route to Next.js Landing Page (Completed: 2026-10-01)** — Switched Express root route to serve `../public/index.html`, synchronized whitelisted Next.js static assets, and preserved all authentication assets. See `Backend/README.md`.
-- **F-11: AI-Powered Value Mapping & Self-Learning Field Extraction (Completed: 2026-09-25)** — Implemented Gemini-powered value suggestion engine, fuzzy matching for OCR data, and backend API (`POST /api/mappings/suggest-values`). See `docs/features/F-11-AI-Value-Mapping.md`.
-- **F-10H: Intro Sequence SSR Guard & Motion Primitive Fallbacks (Completed: 2026-10-01)** — Added client-side mount guard to prevent intro overlay from rendering in static HTML, added opacity-100 fallback for reduced-motion and non-JS users, resolved timer restart race condition, stabilized Escape listener, and updated Next.js static export. See `docs/features/IntroSequenceFix_F10H/README.md` and `docs/features/LandingPageSSRFix_20261001/README.md`.
-- **F-10G: Static Next.js Landing Page Deployment to VPS (Completed: 2026-09-30)** — Executed static export of Next.js landing page to `web/` for Hetzner VPS Nginx serving, preserved Stripe billing callbacks. See `docs/features/LandingPageDeployment_F10G/README.md`.
-- **SecurityFixes_QYRA-PROD-SEC-01: Critical Production Security Hardening (Completed: 2026-09-30)** — Hardened webhook signatures, rate limiting, and environment variable isolation. See `docs/features/SecurityFixes_QYRA-PROD-SEC-01/README.md`.
-- **F-10F: Landing Page Intro Hardening (Completed: 2026-09-30)** — Added `sessionStorage` safeguard and Escape key listener. See `docs/features/LandingPageHardening_F10F/README.md`.
-- **F-10E: CWS Version Bump & Package Rebuild (Completed: 2026-09-30)** — Version bumped to 1.0.2, rebuilt production zip. See `docs/features/CWSPackageRebuild_F-10/README.md`.
-- **F-10D: Production Domain Migration (Completed: 2026-09-29)** — Migrated all endpoints to `qyra.space` and `api.qyra.space`. See `docs/features/DomainMigration_F-10/README.md`.
-- **F-10C: Extension Maturation & CWS Prep (Completed: 2026-09-28)** — Complete CWS checklist, screenshots spec, extension hardening. See `docs/features/ExtensionMaturation_F-10/README.md`.
-- **F-10B: Landing Page & Legal Pages Upgrade (Completed: 2026-09-28)** — Added privacy and terms pages. See `docs/features/LandingPageUpgrade_F-10/README.md`.
-- **F-10A: VPS Deployment Infrastructure (Completed: 2026-09-27)** — Hetzner cx33 VPS setup, Nginx reverse proxy, PM2. See `docs/features/VPSDeploymentPrep_F-10/README.md`.
-- **F-9: Sync Analytics & Auto-Retry (Completed: 2026-09-27)** — Background retry queue, error classification, analytics endpoints. See `docs/features/SyncAnalyticsDashboard/README.md`.
-- **F-8: Advanced Mapping Presets (Completed: 2026-09-26)** — Preset manager modal, custom account mappings, Prisma schema. See `docs/features/PresetManager/README.md`.
-- **F-7: Multi-Document Batch Scanning (Completed: 2026-09-26)** — Batch scanner, multi-file upload, queue processing. See `docs/features/BatchScanning/README.md`.
-- **F-5A: User QA & Payload Validation (Completed: 2026-09-26)** — QuickBooks customer ref resolution, field validation. See `docs/features/PayloadValidation/README.md`.
-
+### Phase 9: Post-Launch Monitoring & Auto-Retry Enhancements
+**Status: NOT STARTED**
+**Description**: Implement automated telemetry alerts and enhanced background retry queues for transient POS/QuickBooks sync failures.
+**Dependencies**: Phase 8.
+**Completion Criteria**:
+- Sentry/telemetry alerting configured.
+- Automated retry queue for failed sync jobs.
