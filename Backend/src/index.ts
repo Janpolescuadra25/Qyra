@@ -197,7 +197,7 @@ app.get('/favicon.ico', (_req, res) => res.status(204).end());
 
 // ── Web Pages ───────────────────────────────────────────────────────────────
 app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../public/landing/index.html'));
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 app.get('/reset-password', (_req, res) => {
   res.sendFile(path.join(__dirname, '../public/reset-password/index.html'));
