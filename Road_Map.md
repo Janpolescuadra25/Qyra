@@ -1,9 +1,10 @@
 # Qyra - Project Roadmap & Architecture
+**Last updated: 2026-10-01**
 
-## Current Verified State (2026-10-01)
-- **Frontend Chrome Extension**: Manifest V3 v1.0.2 ready in `Frontend/` (12 test files, 135/135 tests passing). Clean zip package generated.
-- **Backend API Server**: Express TypeScript server on port 3005 with PostgreSQL Prisma schema, QuickBooks Online sync engine, Stripe billing, and failure alerts (26 test suites, 157/157 tests passing). Deployed to Hetzner VPS Slot 3 (`vortex`, 2.28.120.85) under PM2.
-- **Landing Page & Web**: Next.js 16 static export hosted on Hetzner VPS via Nginx at `https://qyra.space/` with SSL, hardened intro sequence (F-10H), SSR mount guard, motion-primitives fallback, and preserved Stripe checkout callbacks (`billing-success.html`, `billing-cancel.html`).
+## Current Verified State
+- **Frontend Chrome Extension**: Manifest V3 v1.0.2 ready in `Frontend/` (12 test files, 135/135 tests passing). Multi-document batch scanner and payload builder active, production package ready in `Frontend/dist/` and `Frontend/qyra-extension.zip`.
+- **Backend API Server**: Express TypeScript server on port 3005 with PostgreSQL Prisma schema (52 migrations), QuickBooks Online sync engine with idempotent retry tracking, Stripe billing webhooks, Gemini AI value suggestion endpoint in `src/routes/mappings.ts`, and root route serving Next.js landing page. Deployed to Hetzner VPS Slot 3 (`vortex`, 2.28.120.85) under PM2.
+- **Landing Page & Web**: Next.js 16 static export hosted on Hetzner VPS via Express/Nginx at `https://qyra.space/` with SSL, hardened intro sequence (F-10H), client mount guard, motion-primitives fallback, and preserved Stripe checkout callbacks (`billing-success.html`, `billing-cancel.html`).
 - **All Core Development Phases (F-5A through F-11) are 100% COMPLETE**.
 
 ---
@@ -16,12 +17,21 @@ The codebase and infrastructure are 100% production-ready. The remaining launch 
 
 ---
 
+## Immediate Operational Priority: Production Landing Page Validation
+Following server pull on Hetzner VPS (`cd /var/www/qyra && git pull origin main && npm --prefix Backend run build && pm2 restart qyra-backend`):
+- Validate that `https://qyra.space/` loads the Next.js fail-safe landing page with visible content.
+- Confirm browser console has zero CSP violations.
+- Verify authentication routes (`/invite`, `/reset-password`, `/verify-email`) and legal routes (`/privacy`, `/terms`) are fully responsive.
+
+---
+
 ## Post-Launch Priorities (Planned)
-- **F-12**: Multi-Currency Reconciliation & Advanced Accounting Rules.
+- **F-12**: Multi-Currency Reconciliation & Advanced Accounting Rules (Foreign currency conversion, exchange rate tracking, and automated multi-currency line-item reconciliation with QuickBooks Online).
 
 ---
 
 ## Archived Completed Phases (100% Code-Verified)
+- **Backend-Landing-Migration: Express Root Route to Next.js Landing Page (Completed: 2026-10-01)** — Switched Express root route to serve `../public/index.html`, synchronized whitelisted Next.js static assets, and preserved all authentication assets. See `Backend/README.md`.
 - **F-11: AI-Powered Value Mapping & Self-Learning Field Extraction (Completed: 2026-09-25)** — Implemented Gemini-powered value suggestion engine, fuzzy matching for OCR data, and backend API (`POST /api/mappings/suggest-values`). See `docs/features/F-11-AI-Value-Mapping.md`.
 - **F-10H: Intro Sequence SSR Guard & Motion Primitive Fallbacks (Completed: 2026-10-01)** — Added client-side mount guard to prevent intro overlay from rendering in static HTML, added opacity-100 fallback for reduced-motion and non-JS users, resolved timer restart race condition, stabilized Escape listener, and updated Next.js static export. See `docs/features/IntroSequenceFix_F10H/README.md` and `docs/features/LandingPageSSRFix_20261001/README.md`.
 - **F-10G: Static Next.js Landing Page Deployment to VPS (Completed: 2026-09-30)** — Executed static export of Next.js landing page to `web/` for Hetzner VPS Nginx serving, preserved Stripe billing callbacks. See `docs/features/LandingPageDeployment_F10G/README.md`.
