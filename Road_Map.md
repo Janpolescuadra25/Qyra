@@ -60,7 +60,7 @@ This roadmap documents the implementation progress of Qyra, an automated POS-to-
 **Description**: Complete final store listing requirements and submit qyra-extension.zip (v1.0.2) to Chrome Web Store Developer Dashboard.
 **Dependencies**: Phase 3, Phase 7.
 **Completion Criteria**:
-- 4 listing screenshots captured per docs/chrome-web-store/SCREENSHOTS_SPEC.md.
+- [IN PROGRESS] 4 listing screenshots captured per docs/chrome-web-store/SCREENSHOTS_SPEC.md (only remaining task for Phase 8).
 - Extension uploaded to Developer Dashboard.
 - Store listing submitted for Google review.
 
