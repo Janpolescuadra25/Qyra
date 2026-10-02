@@ -29,6 +29,19 @@ describe('value-mapping-column-utils', () => {
     termsOptions: [
       { value: 'terms-1', label: 'Net 30', subtitle: 'Standard' },
     ],
+    accountOptions: [
+      { value: 'acct-1', label: 'Expense Account', subtitle: 'Expense' },
+    ],
+    taxCodeOptions: [
+      { value: 'tax-1', label: 'Tax One', subtitle: 'Standard' },
+    ],
+    customerOptions: [
+      { value: 'customer-1', label: 'Customer One', subtitle: 'Customer' },
+    ],
+    amountTypeOptions: [
+      { value: 'Exclusive of tax', label: 'Exclusive of tax' },
+      { value: 'Inclusive of tax', label: 'Inclusive of tax' },
+    ],
   };
 
   const mockJEOptions = {
@@ -66,24 +79,62 @@ describe('value-mapping-column-utils', () => {
     expect(configs[1].targetOptions).not.toBe(configs[2].targetOptions);
   });
 
-  it('buildBillColumnConfigs returns 3 configs with correct metadata', () => {
+  it('buildBillColumnConfigs returns 9 configs with correct metadata', () => {
     const configs = buildBillColumnConfigs(mockBillOptions);
 
-    expect(configs).toHaveLength(3);
-    expect(configs.map((config) => config.sourceField)).toEqual(['vendorRef', 'apAccountRef', 'termsRef']);
-    expect(configs.map((config) => config.fieldType)).toEqual(['name', 'account', 'name']);
-    expect(configs.map((config) => config.label)).toEqual(['Vendor', 'AP Account', 'Terms']);
+    expect(configs).toHaveLength(9);
+    expect(configs.map((config) => config.sourceField)).toEqual([
+      'vendorRef',
+      'apAccountRef',
+      'termsRef',
+      'supplier',
+      'terms',
+      'category',
+      'tax',
+      'customer',
+      'amountType',
+    ]);
+    expect(configs.map((config) => config.fieldType)).toEqual([
+      'name',
+      'account',
+      'name',
+      'name',
+      'name',
+      'account',
+      'taxCode',
+      'name',
+      'taxCode',
+    ]);
+    expect(configs.map((config) => config.label)).toEqual([
+      'Vendor',
+      'AP Account',
+      'Terms',
+      'Supplier',
+      'Terms',
+      'Category',
+      'Tax',
+      'Customer',
+      'Amount Type',
+    ]);
     expect(configs[0].targetOptions).toBe(mockBillOptions.billVendorOptions);
     expect(configs[1].targetOptions).toBe(mockBillOptions.apAccountOptions);
     expect(configs[2].targetOptions).toBe(mockBillOptions.termsOptions);
+    expect(configs[3].targetOptions).toBe(mockBillOptions.billVendorOptions);
+    expect(configs[4].targetOptions).toBe(mockBillOptions.termsOptions);
+    expect(configs[5].targetOptions).toBe(mockBillOptions.accountOptions);
+    expect(configs[6].targetOptions).toBe(mockBillOptions.taxCodeOptions);
+    expect(configs[7].targetOptions).toBe(mockBillOptions.customerOptions);
+    expect(configs[8].targetOptions).toBe(mockBillOptions.amountTypeOptions);
   });
 
-  it('buildBillColumnConfigs assigns correct target options to each column', () => {
+  it('buildBillColumnConfigs assigns amountType and customer target options correctly', () => {
     const configs = buildBillColumnConfigs(mockBillOptions);
 
-    expect(configs[0].targetOptions).toBe(mockBillOptions.billVendorOptions);
-    expect(configs[1].targetOptions).toBe(mockBillOptions.apAccountOptions);
-    expect(configs[2].targetOptions).toBe(mockBillOptions.termsOptions);
+    const customerConfig = configs.find((config) => config.sourceField === 'customer');
+    const amountTypeConfig = configs.find((config) => config.sourceField === 'amountType');
+
+    expect(customerConfig?.targetOptions).toBe(mockBillOptions.customerOptions);
+    expect(amountTypeConfig?.targetOptions).toBe(mockBillOptions.amountTypeOptions);
   });
 
   it('buildJournalEntryColumnConfigs returns 4 configs with correct metadata', () => {

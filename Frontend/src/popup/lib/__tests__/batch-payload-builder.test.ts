@@ -558,6 +558,114 @@ describe('buildBillLikePayload', () => {
     expect(result!.termsRef).toEqual({ value: 'term-30', name: 'Net 30' });
   });
 
+  it('resolves customerRef for bill line items from a direct customer match', () => {
+    const billDefaults = {
+      vendorRef: { value: 'vendor-default', name: 'Default Vendor' },
+      apAccountRef: { value: 'acc-default', name: 'Default AP' },
+      docNumber: { value: 'BILL-007' },
+    };
+
+    const scanEntry: ScanEntry = {
+      id: 'scan-bill-7',
+      source: 'excel',
+      header: { vendorRef: 'Acme Supplies' },
+      lineItems: [{ Rent: '1500', customer: 'ACME Corp' }],
+    };
+
+    const result = buildBillLikePayload({
+      scanRecordId: 'scan-bill-7',
+      transactionType: 'BILL',
+      scanData: {},
+      mappings: mockMappings,
+      accounts: mockAccounts,
+      customers: mockCustomers,
+      vendors: [{ Id: 'vendor-1', DisplayName: 'Acme Supplies', CompanyName: 'Acme Supplies Co.' }],
+      txnDate: '2026-01-15',
+      defaults: billDefaults,
+      scanEntry,
+      valueMappings: [],
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.lines).toHaveLength(1);
+    expect((result!.lines[0] as QBBillLineItem).customerRef).toEqual({ value: 'cust-123', name: 'ACME Corp' });
+  });
+
+  it('falls back to customer value mappings when line item customer text does not directly match a QB customer', () => {
+    const billDefaults = {
+      vendorRef: { value: 'vendor-default', name: 'Default Vendor' },
+      apAccountRef: { value: 'acc-default', name: 'Default AP' },
+      docNumber: { value: 'BILL-008' },
+    };
+
+    const scanEntry: ScanEntry = {
+      id: 'scan-bill-8',
+      source: 'excel',
+      header: { vendorRef: 'Acme Supplies' },
+      lineItems: [{ Rent: '1500', customer: 'ACME Corp' }],
+    };
+
+    const result = buildBillLikePayload({
+      scanRecordId: 'scan-bill-8',
+      transactionType: 'BILL',
+      scanData: {},
+      mappings: mockMappings,
+      accounts: mockAccounts,
+      customers: mockCustomers,
+      vendors: [{ Id: 'vendor-1', DisplayName: 'Acme Supplies', CompanyName: 'Acme Supplies Co.' }],
+      txnDate: '2026-01-15',
+      defaults: billDefaults,
+      scanEntry,
+      valueMappings: [
+        {
+          id: 'vm-customer-1',
+          templateId: 'tmpl-1',
+          fieldType: 'name',
+          scannedText: 'ACME Corp',
+          sourceField: 'customer',
+          entityId: 'cust-123',
+          matchingRule: null,
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    });
+
+    expect(result).not.toBeNull();
+    expect((result!.lines[0] as QBBillLineItem).customerRef).toEqual({ value: 'cust-123', name: 'ACME Corp' });
+  });
+
+  it('does not set line customerRef when customers are not supplied', () => {
+    const billDefaults = {
+      vendorRef: { value: 'vendor-default', name: 'Default Vendor' },
+      apAccountRef: { value: 'acc-default', name: 'Default AP' },
+      docNumber: { value: 'BILL-009' },
+    };
+
+    const scanEntry: ScanEntry = {
+      id: 'scan-bill-9',
+      source: 'excel',
+      header: { vendorRef: 'Acme Supplies' },
+      lineItems: [{ Rent: '1500', customer: 'ACME Corp' }],
+    };
+
+    const result = buildBillLikePayload({
+      scanRecordId: 'scan-bill-9',
+      transactionType: 'BILL',
+      scanData: {},
+      mappings: mockMappings,
+      accounts: mockAccounts,
+      vendors: [{ Id: 'vendor-1', DisplayName: 'Acme Supplies', CompanyName: 'Acme Supplies Co.' }],
+      txnDate: '2026-01-15',
+      defaults: billDefaults,
+      scanEntry,
+      valueMappings: [],
+    });
+
+    expect(result).not.toBeNull();
+    expect((result!.lines[0] as QBBillLineItem).customerRef).toBeUndefined();
+  });
+
   it('resolves taxCodeRef for bill line items using taxType mapping', () => {
     const billDefaults = {
       vendorRef: { value: 'vendor-default', name: 'Default Vendor' },

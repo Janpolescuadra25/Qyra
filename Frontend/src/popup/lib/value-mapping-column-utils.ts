@@ -50,6 +50,10 @@ interface BillColumnOptions {
   billVendorOptions: Array<{ value: string; label: string; subtitle?: string }>;
   apAccountOptions: Array<{ value: string; label: string; subtitle?: string }>;
   termsOptions: Array<{ value: string; label: string; subtitle?: string }>;
+  accountOptions: Array<{ value: string; label: string; subtitle?: string }>;
+  taxCodeOptions: Array<{ value: string; label: string; subtitle?: string }>;
+  customerOptions: Array<{ value: string; label: string; subtitle?: string }>;
+  amountTypeOptions: Array<{ value: string; label: string; subtitle?: string }>;
 }
 
 export function buildBillColumnConfigs(options: BillColumnOptions): ColumnMappingConfig[] {
@@ -74,6 +78,116 @@ export function buildBillColumnConfigs(options: BillColumnOptions): ColumnMappin
       label: 'Terms',
       description: 'Map terms text from your Excel to QuickBooks terms',
       targetOptions: options.termsOptions,
+    },
+    {
+      sourceField: 'supplier',
+      fieldType: 'name',
+      label: 'Supplier',
+      description: 'Map raw supplier names from your Excel to QuickBooks vendors',
+      targetOptions: options.billVendorOptions,
+    },
+    {
+      sourceField: 'terms',
+      fieldType: 'name',
+      label: 'Terms',
+      description: 'Map terms text from your Excel to QuickBooks terms',
+      targetOptions: options.termsOptions,
+    },
+    {
+      sourceField: 'category',
+      fieldType: 'account',
+      label: 'Category',
+      description: 'Map raw category names from your Excel to QuickBooks accounts',
+      targetOptions: options.accountOptions,
+    },
+    {
+      sourceField: 'tax',
+      fieldType: 'taxCode',
+      label: 'Tax',
+      description: 'Map raw tax names from your Excel to QuickBooks tax codes',
+      targetOptions: options.taxCodeOptions,
+    },
+    {
+      sourceField: 'customer',
+      fieldType: 'name',
+      label: 'Customer',
+      description: 'Map raw customer names from your Excel to QuickBooks customers',
+      targetOptions: options.customerOptions,
+    },
+    {
+      sourceField: 'amountType',
+      fieldType: 'taxCode',
+      label: 'Amount Type',
+      description: 'Map amount type text from your Excel to QuickBooks tax code types',
+      targetOptions: options.amountTypeOptions,
+    },
+  ];
+}
+
+export function buildVendorCreditColumnConfigs(options: BillColumnOptions): ColumnMappingConfig[] {
+  return [
+    {
+      sourceField: 'vendorRef',
+      fieldType: 'name',
+      label: 'Vendor',
+      description: 'Map raw vendor names from your Excel to QuickBooks vendors',
+      targetOptions: options.billVendorOptions,
+    },
+    {
+      sourceField: 'apAccountRef',
+      fieldType: 'account',
+      label: 'AP Account',
+      description: 'Map raw AP account names from your Excel to QuickBooks accounts',
+      targetOptions: options.apAccountOptions,
+    },
+    {
+      sourceField: 'termsRef',
+      fieldType: 'name',
+      label: 'Terms',
+      description: 'Map terms text from your Excel to QuickBooks terms',
+      targetOptions: options.termsOptions,
+    },
+    {
+      sourceField: 'supplier',
+      fieldType: 'name',
+      label: 'Supplier',
+      description: 'Map raw supplier names from your Excel to QuickBooks vendors',
+      targetOptions: options.billVendorOptions,
+    },
+    {
+      sourceField: 'terms',
+      fieldType: 'name',
+      label: 'Terms',
+      description: 'Map terms text from your Excel to QuickBooks terms',
+      targetOptions: options.termsOptions,
+    },
+    {
+      sourceField: 'category',
+      fieldType: 'account',
+      label: 'Category',
+      description: 'Map raw category names from your Excel to QuickBooks accounts',
+      targetOptions: options.accountOptions,
+    },
+    {
+      sourceField: 'tax',
+      fieldType: 'taxCode',
+      label: 'Tax',
+      description: 'Map raw tax names from your Excel to QuickBooks tax codes',
+      targetOptions: options.taxCodeOptions,
+    },
+    {
+      sourceField: 'customer',
+      fieldType: 'name',
+      label: 'Customer',
+      description: 'Map raw customer names from your Excel to QuickBooks customers',
+      targetOptions: options.customerOptions,
+    },
+    {
+      sourceField: 'amountType',
+      fieldType: 'taxCode',
+      label: 'Amount Type',
+      description: 'Map amount type text from your Excel to QuickBooks tax code types',
+      targetOptions: options.amountTypeOptions,
     },
   ];
 }

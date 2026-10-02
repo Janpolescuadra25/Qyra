@@ -19,7 +19,9 @@
 - **Token Refresh Coordination**:
   - `pendingRefreshes = Map<string, Promise<string>>`: Coordinates concurrent refresh requests per realm to prevent duplicate token rotations.
 - **Payload Builders**:
-  - `buildBillPaymentPayload()`, `buildJournalEntryPayload()`, `buildBillPayload()`: Enforces required QB fields and validates Journal Entry debit/credit balance equality.
+  - `buildBillPaymentPayload()`: Constructs bill-payment payloads with linked transaction references.
+  - `buildJournalEntryPayload()`: Enforces required QB fields and validates Journal Entry debit/credit balance equality.
+  - `buildBillPayload()`: Constructs valid QB Bill payloads with support for accountRef, classRef, taxCodeRef, and per-line-item customerRef.
 
 ### `rules.engine.ts` (Business Rules Engine)
 - **Status**: Active

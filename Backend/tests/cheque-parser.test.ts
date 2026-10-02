@@ -263,4 +263,38 @@ describe('Bill fixed-column Excel parser', () => {
     expect(res.body.transactions[0].type).toBe('BILL');
     expect(res.body.transactions[0].header.docNumber).toBe('BILL-2002');
   });
+
+  it('parses the new 12-column bill format and groups duplicate line items', async () => {
+    const data = [
+      ['Supplier', 'Terms', 'Bill Date', 'Due Date', 'Bill No', 'Category', 'Description', 'Amount', 'Tax', 'Customer', 'Amount Type', 'Memo'],
+      ['Vendor A', 'Net 30', '2026-08-10', '2026-08-30', 'BILL-1001', 'Office Supplies', 'Pens', '150.00', 'Taxable', 'Customer A', 'Exclusive of tax', 'First line'],
+      ['Vendor A', 'Net 30', '2026-08-10', '2026-08-30', 'BILL-1001', 'Office Supplies', 'Pens', '100.00', 'Taxable', 'Customer A', 'Exclusive of tax', 'First line'],
+      ['Vendor A', 'Net 30', '2026-08-10', '2026-08-30', 'BILL-1001', 'Office Supplies', 'Paper', '50.00', 'Taxable', 'Customer B', 'Exclusive of tax', 'Second line'],
+      ['Vendor A', 'Net 30', '2026-08-10', '2026-08-30', 'BILL-1001', 'Office Supplies', 'Paper', '50.00', 'Taxable', 'Customer B', 'Exclusive of tax', 'Second line'],
+    ];
+    const buf = await createChequeWorkbook(data);
+
+    const res = await request(app)
+      .post('/api/templates/parse-excel-data?templateId=test-template-2')
+      .attach('file', buf, {
+        filename: 'bill.xlsx',
+        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.transactions).toHaveLength(1);
+    const transaction = res.body.transactions[0];
+    expect(transaction.type).toBe('BILL');
+    expect(transaction.header.vendor).toBe('Vendor A');
+    expect(transaction.header.docNumber).toBe('BILL-1001');
+    expect(transaction.header.terms).toBe('Net 30');
+    expect(transaction.header.date).toBe('2026-08-10');
+    expect(transaction.header.dueDate).toBe('2026-08-30');
+    expect(transaction.header.amountType).toBe('Exclusive of tax');
+    expect(transaction.header.taxType).toBe('Exclusive of tax');
+    expect(transaction.lineItems).toHaveLength(2);
+    expect(transaction.lineItems.map((item: any) => item.amount).sort()).toEqual(['100.00', '250.00']);
+    expect(transaction.lineItems.find((item: any) => item.description === 'Pens')?.amount).toBe('250.00');
+    expect(transaction.lineItems.find((item: any) => item.description === 'Paper')?.amount).toBe('100.00');
+  });
 });

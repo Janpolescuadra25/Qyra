@@ -487,6 +487,7 @@ function buildBillPayload(input: CreateBillInput): object {
 
     if (line.classRef) lineDetail.ClassRef = line.classRef;
     if (line.taxCodeRef) lineDetail.TaxCodeRef = line.taxCodeRef;
+    if (line.customerRef) lineDetail.CustomerRef = line.customerRef;
 
     const qbLine: Record<string, unknown> = {
       Amount: line.amount,

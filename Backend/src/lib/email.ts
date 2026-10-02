@@ -99,7 +99,7 @@ export async function sendWelcomeEmail({
         <li>Connect your QuickBooks Online account</li>
         <li>Invite your team members</li>
       </ol>
-      <p style="margin:0 0 24px;"><a href="https://chromewebstore.google.com/detail/nest-restaurant-financial/ccghhfmkjbcakhnoamgihifonfiammoc" style="color:#22d3ee;text-decoration:none;">Install Qyra from the Chrome Web Store</a></p>
+      <p style="margin:0 0 24px;"><a href="https://chrome.google.com/webstore/detail/bfhobnahngcmhaeklihifgfbgdepibii" style="color:#22d3ee;text-decoration:none;">Install Qyra from the Chrome Web Store</a></p>
     `);
 
     await resend.emails.send({

@@ -10,3 +10,13 @@ dist/
 Frontend/tsccheck*.txt
 Frontend/qyra-extension.zip
 jest-output.json
+
+.vscode/
+backend-jest-summary.json
+backend-test-results.json
+backend-tests.txt
+frontend-test-results.json
+Backend/backend-jest-summary.json
+Backend/backend-test-results.json
+Backend/backend-tests.txt
+Frontend/frontend-test-results.json

@@ -149,7 +149,7 @@ async function checkSyncFailures(prisma: PrismaClient): Promise<void> {
         continue;
       }
 
-      const dashboardLink = 'https://chromewebstore.google.com/detail/nest-restaurant-financial/ccghhfmkjbcakhnoamgihifonfiammoc';
+      const dashboardLink = 'https://chrome.google.com/webstore/detail/bfhobnahngcmhaeklihifgfbgdepibii';
 
       const emailResult = await sendSyncFailureAlert({
         to: data.email,

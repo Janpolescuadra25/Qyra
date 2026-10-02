@@ -39,9 +39,12 @@ export function calculateExponentialBackoff(retryCount: number): number {
   return Math.round(capped * jitter);
 }
 
-export function hashSyncRequest(syncType: SyncType, payload: unknown): string {
+export function hashSyncRequest(syncType: SyncType, payload: unknown, idempotencyKey?: string): string {
   const normalized = JSON.stringify(canonicalize(payload));
-  return createHash('sha256').update(`${syncType}:${normalized}`, 'utf8').digest('hex');
+  const root = idempotencyKey
+    ? `${syncType}:${idempotencyKey}:${normalized}`
+    : `${syncType}:${normalized}`;
+  return createHash('sha256').update(root, 'utf8').digest('hex');
 }
 
 export async function findDuplicateSync(

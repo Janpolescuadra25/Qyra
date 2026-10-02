@@ -55,6 +55,7 @@ export interface QBBillLineItem {
   classRef?: { value: string; name?: string };
   taxCodeRef?: { value: string; name?: string };
   description?: string;
+  customerRef?: { value: string; name?: string };
 }
 
 export interface QBChequeLineItem {

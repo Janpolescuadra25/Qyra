@@ -73,7 +73,10 @@ function loadColVis(): Record<ColKey, boolean> {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(n: number): string {
-  return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (n < 0) {
+    return `($${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+  }
+  return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function newLine(overrides?: Partial<LineItem>): LineItem {

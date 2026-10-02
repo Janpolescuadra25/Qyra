@@ -13,6 +13,7 @@ export function buildBillLikePayload(params: {
   scanData: ScanData;
   mappings: Mapping[];
   accounts: QBAccount[];
+  customers?: QBCustomer[];
   vendors?: Array<{ Id: string; DisplayName?: string; CompanyName?: string }>;
   terms?: QBTerm[];
   taxCodes?: Array<{ Id: string; Name?: string; Description?: string }>;
@@ -21,62 +22,110 @@ export function buildBillLikePayload(params: {
   scanEntry?: ScanEntry;
   valueMappings: ValueMapping[];
 }): BatchSyncItem | null {
-  const { scanRecordId, transactionType, scanData, mappings, accounts, vendors, terms, taxCodes, txnDate, defaults, scanEntry, valueMappings } = params;
+  const { scanRecordId, transactionType, scanData, mappings, accounts, customers, vendors, terms, taxCodes, txnDate, defaults, scanEntry, valueMappings } = params;
   const decoded = mappings.map(decodeMapping);
 
-  const scanFields: ScanData = scanEntry
-    ? Object.fromEntries(
-        Object.entries(scanEntry.lineItems?.[0] ?? {})
+  const resolveCustomerRef = (rawCustomer: string): { value: string; name?: string } | undefined => {
+    const value = String(rawCustomer ?? '').trim();
+    if (!value) return undefined;
+
+    const normalized = value.toLowerCase();
+    if (customers?.length) {
+      const matchedCustomer = customers.find((customer) => {
+        const candidate = String(customer.DisplayName || customer.CompanyName || '').toLowerCase();
+        return candidate.includes(normalized) || normalized.includes(candidate);
+      });
+      if (matchedCustomer) {
+        return { value: matchedCustomer.Id, name: matchedCustomer.DisplayName || matchedCustomer.CompanyName || undefined };
+      }
+    }
+
+    if (valueMappings.length > 0) {
+      const vmResult = resolveValueMapping(
+        value,
+        'name',
+        valueMappings,
+        (id) => customers?.find((customer) => customer.Id === id),
+        'customer',
+      );
+      if (vmResult.matched) {
+        return { value: vmResult.entityId, name: vmResult.entityName || undefined };
+      }
+    }
+
+    return undefined;
+  };
+
+  const buildLineEntry = (
+    itemFields: ScanData,
+    lineCustomerRef?: { value: string; name?: string },
+    taxTypeValue?: string,
+  ): QBBillLineItem[] =>
+    Object.entries(itemFields)
+      .filter(([, amount]) => amount !== 0)
+      .map(([field, amount]) => {
+        const mapping = resolveMapping(decoded, field, itemFields);
+        let accountId = mapping?.accountId ?? '';
+        if (!accountId) {
+          const vmResult = resolveValueMapping(
+            field,
+            'account',
+            valueMappings,
+            (id) => accounts.find((a) => a.Id === id),
+          );
+          if (vmResult.matched) {
+            accountId = vmResult.entityId;
+          }
+        }
+        const accountName = accounts.find((a) => a.Id === accountId)?.FullyQualifiedName ?? '';
+        const description = mapping?.description ?? field;
+        const classId = mapping?.classId;
+
+        const taxType = String(taxTypeValue ?? '').trim();
+        let taxCodeRef;
+        if (taxType && valueMappings.length > 0) {
+          const vmResult = resolveValueMapping(
+            taxType,
+            'taxCode',
+            valueMappings,
+            (id) => taxCodes?.find((taxCode) => taxCode.Id === id),
+            'taxCodeRef',
+          );
+          if (vmResult.matched) {
+            taxCodeRef = { value: vmResult.entityId, name: vmResult.entityName ?? undefined };
+          }
+        }
+
+        return {
+          amount: Math.abs(amount),
+          accountRef: { value: accountId, name: accountName || undefined },
+          description: description || undefined,
+          classRef: classId ? { value: classId } : undefined,
+          ...(taxCodeRef ? { taxCodeRef } : {}),
+          ...(lineCustomerRef ? { customerRef: lineCustomerRef } : {}),
+        };
+      });
+
+  const lines: QBBillLineItem[] = [];
+
+  if (scanEntry?.lineItems?.length) {
+    for (const lineItem of scanEntry.lineItems) {
+      const itemFields = Object.fromEntries(
+        Object.entries(lineItem)
           .map(([key, value]) => [key, parseNumericValue(value)])
           .filter(([, value]) => !Number.isNaN(value)),
-      ) as ScanData
-    : scanData;
+      ) as ScanData;
 
-  const taxTypeForLines = scanEntry?.lineItems?.[0] ?? {};
+      if (Object.keys(itemFields).length === 0) continue;
 
-  const lines: QBBillLineItem[] = Object.entries(scanFields)
-    .filter(([, amount]) => amount !== 0)
-    .map(([field, amount]) => {
-      const mapping = resolveMapping(decoded, field, scanFields);
-      let accountId = mapping?.accountId ?? '';
-      if (!accountId) {
-        const vmResult = resolveValueMapping(
-          field,
-          'account',
-          valueMappings,
-          (id) => accounts.find((a) => a.Id === id),
-        );
-        if (vmResult.matched) {
-          accountId = vmResult.entityId;
-        }
-      }
-      const accountName = accounts.find((a) => a.Id === accountId)?.FullyQualifiedName ?? '';
-      const description = mapping?.description ?? field;
-      const classId = mapping?.classId;
-
-      const taxType = String(taxTypeForLines.taxType ?? taxTypeForLines.TaxType ?? '').trim();
-      let taxCodeRef;
-      if (taxType && valueMappings.length > 0) {
-        const vmResult = resolveValueMapping(
-          taxType,
-          'taxCode',
-          valueMappings,
-          (id) => taxCodes?.find((taxCode) => taxCode.Id === id),
-          'taxCodeRef',
-        );
-        if (vmResult.matched) {
-          taxCodeRef = { value: vmResult.entityId, name: vmResult.entityName ?? undefined };
-        }
-      }
-
-      return {
-        amount: Math.abs(amount),
-        accountRef: { value: accountId, name: accountName || undefined },
-        description: description || undefined,
-        classRef: classId ? { value: classId } : undefined,
-        ...(taxCodeRef ? { taxCodeRef } : {}),
-      };
-    });
+      const lineCustomerRef = resolveCustomerRef(String(lineItem.customer ?? lineItem.Customer ?? ''));
+      const taxTypeValue = String(lineItem.taxType ?? lineItem.TaxType ?? '').trim();
+      lines.push(...buildLineEntry(itemFields, lineCustomerRef, taxTypeValue));
+    }
+  } else {
+    const scanFields: ScanData = scanData;
+    lines.push(...buildLineEntry(scanFields));
+  }
 
   if (lines.length === 0) return null;
 

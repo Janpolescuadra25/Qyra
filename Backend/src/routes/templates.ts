@@ -414,6 +414,127 @@ router.post('/parse-excel-data', requireFeaturePermission('templates', 'read'), 
     return;
   } else if (template.transactionType === 'BILL') {
     const headerRow = (rows[0] || []).map((h: unknown) => String(h ?? '').trim().toLowerCase());
+    const isNewBill12ColumnCandidate = headerRow.length === 12;
+    const matchesNewBill12Header = isNewBill12ColumnCandidate
+      && headerRow[0] === 'supplier'
+      && headerRow[1] === 'terms'
+      && headerRow[2] === 'bill date'
+      && headerRow[3] === 'due date'
+      && headerRow[4] === 'bill no'
+      && headerRow[5] === 'category'
+      && headerRow[6] === 'description'
+      && headerRow[7] === 'amount'
+      && headerRow[8] === 'tax'
+      && headerRow[9] === 'customer'
+      && headerRow[10] === 'amount type'
+      && headerRow[11] === 'memo';
+
+    if (isNewBill12ColumnCandidate && matchesNewBill12Header) {
+      if (rows.length < 2) {
+        throw new AppError('Bill file must contain at least a header row and one data row.', 400);
+      }
+
+      const rawRows = rows.slice(1).map((row, rowIndex) => {
+        if (!row || row.length === 0) return null;
+        if (!row.some((cell) => cell != null && String(cell).trim() !== '')) return null;
+        if (row.length < 12 || row.slice(12).some((cell) => cell != null && String(cell).trim() !== '')) {
+          throw new AppError(`Bill Excel must have exactly 12 non-empty data columns in data rows. Row ${rowIndex + 2} has ${row.length}.`, 400);
+        }
+
+        const amountRaw = String(row[7] ?? '').trim();
+        const amountValue = parseFloat(amountRaw.replace(/[^0-9.-]+/g, ''));
+        if (Number.isNaN(amountValue)) {
+          throw new AppError(`Invalid amount '${amountRaw}' in row ${rowIndex + 2}`, 400);
+        }
+
+        return {
+          supplier: String(row[0] ?? '').trim(),
+          terms: String(row[1] ?? '').trim(),
+          billDate: String(row[2] ?? '').trim(),
+          dueDate: String(row[3] ?? '').trim(),
+          billNo: String(row[4] ?? '').trim(),
+          category: String(row[5] ?? '').trim(),
+          description: String(row[6] ?? '').trim(),
+          amount: amountValue,
+          tax: String(row[8] ?? '').trim(),
+          customer: String(row[9] ?? '').trim(),
+          amountType: String(row[10] ?? '').trim(),
+          memo: String(row[11] ?? '').trim(),
+        };
+      }).filter(Boolean) as Array<{
+        supplier: string;
+        terms: string;
+        billDate: string;
+        dueDate: string;
+        billNo: string;
+        category: string;
+        description: string;
+        amount: number;
+        tax: string;
+        customer: string;
+        amountType: string;
+        memo: string;
+      }>;
+
+      const grouped = new Map<string, Array<typeof rawRows[number]>>();
+      rawRows.forEach((row) => {
+        const billNoKey = row.billNo ? row.billNo : `__ROW_${Math.random().toString(36).slice(2)}`;
+        const groupKey = `${billNoKey}|${row.supplier}|${row.terms}|${row.billDate}|${row.dueDate}|${row.amountType}`;
+        if (!grouped.has(groupKey)) grouped.set(groupKey, []);
+        grouped.get(groupKey)!.push(row);
+      });
+
+      const transactions: any[] = [];
+      for (const [groupKey, groupRows] of grouped.entries()) {
+        const headerValues = groupRows[0];
+        const lineItemGroups = new Map<string, { category: string; description: string; amount: number; tax: string; customer: string }>();
+
+        groupRows.forEach((row) => {
+          const lineKey = `${row.category}||${row.description}||${row.tax}||${row.customer}`;
+          const existing = lineItemGroups.get(lineKey);
+          if (existing) {
+            existing.amount += row.amount;
+          } else {
+            lineItemGroups.set(lineKey, {
+              category: row.category,
+              description: row.description,
+              amount: row.amount,
+              tax: row.tax,
+              customer: row.customer,
+            });
+          }
+        });
+
+        const lineItems = Array.from(lineItemGroups.values()).map((item) => ({
+          category: item.category,
+          description: item.description,
+          amount: item.amount.toFixed(2),
+          tax: item.tax,
+          customer: item.customer,
+          postingType: 'Credit',
+        }));
+
+        transactions.push({
+          type: 'BILL',
+          header: {
+            date: headerValues.billDate,
+            vendor: headerValues.supplier,
+            supplier: headerValues.supplier,
+            docNumber: headerValues.billNo,
+            dueDate: headerValues.dueDate,
+            amountType: headerValues.amountType,
+            taxType: headerValues.amountType,
+            terms: headerValues.terms,
+            memo: headerValues.memo,
+          },
+          lineItems,
+        });
+      }
+
+      res.json({ transactions, totalRows: rawRows.length, skippedRows: 0 });
+      return;
+    }
+
     const matchesFixedBillHeader = headerRow.length >= 7
       && headerRow[0] === 'date'
       && headerRow[1] === 'vendor'
