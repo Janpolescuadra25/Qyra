@@ -1,3 +1,69 @@
+# Chrome Web Store Launch Checklist & Listing Metadata
+**App Name:** Qyra - POS to QuickBooks Automation
+**Extension Version:** 1.0.2
+**Manifest Version:** Manifest V3
+**Target Category:** Productivity / Accounting & Finance
+**Last Updated:** October 2026
+
+---
+
+## 1. Store Listing Copy
+
+### Title (Max 45 chars)
+Qyra: POS to QuickBooks Sync & Automation
+
+### Short Summary / Description (Max 132 chars)
+Seamlessly scan invoices, map POS categories, and sync bills and journal entries directly into QuickBooks Online with one click.
+
+### Detailed Description
+Qyra bridges the gap between restaurant POS platforms and QuickBooks Online. Designed specifically for multi-location operators, hospitality accountants, and bookkeepers, Qyra eliminates manual data entry, transcription errors, and end-of-day reconciliation delays.
+
+**Key Features:**
+- **Instant POS Scanning:** Automatic OCR extraction from POS daily sales summaries, invoices, and checkout reports (Toast, Salido, Oracle Restaurants).
+- **Intelligent Entity & Chart of Accounts Mapping:** Rule-based matching for vendors, expense categories, payment tenders, and tax lines.
+- **Location-Scoped Presets:** Save, clone, and export mapping presets across multiple store branches or concepts.
+- **12-Column Fixed-Format Parsers:** Native support for fixed-format Bills, Cheques, and Vendor Credits.
+- **Audit-Proof Sync:** Direct API integration with QuickBooks Online featuring strict idempotency keys to guarantee zero duplicate transactions.
+- **Failure Alerts & Logging:** Automated detection and alerts for sync exceptions with detailed transaction status tracking.
+
+### Support & Contact Information
+- **Support Email:** support@qyra.space
+- **Privacy Policy URL:** https://qyra.space/privacy
+- **Terms of Service URL:** https://qyra.space/terms
+
+---
+
+## 2. Single Purpose & Permissions Justification
+
+### Single Purpose Statement
+To extract sales and invoice data from supported point-of-sale (POS) web portals and automate the synchronization of bills, payments, and journal entries into QuickBooks Online.
+
+### Permissions Justification
+- `activeTab`: Used strictly when the user clicks the extension popup on a supported POS report tab to extract table data and invoice text for processing.
+- `storage`: Used to persist local user UI preferences, active session tokens, and location mapping selections securely within the browser.
+- `tabs`: Used to detect when a supported POS URL is active and display the relevant scan action banner.
+- `scripting`: Used to inject deterministic content extractors on authorized POS portals to parse document figures into standardized payloads.
+- `windows`: Used to open focused OAuth authorization popups for QuickBooks and Stripe connections.
+- `host_permissions`: Strictly limited to Qyra backend APIs and authorized POS domains (Toast, Salido, Oracle MICROS).
+
+---
+
+## 3. Pre-Submission Checklist
+- [x] Manifest V3 compliance verified (Frontend/manifest.json v1.0.2).
+- [x] Production build and zip package generated (`Frontend/qyra-extension.zip`).
+- [x] Store listing metadata and description verified.
+- [x] Single purpose and permissions justification documented.
+- [ ] 4 Store Screenshots captured (1280x800 px) per `SCREENSHOTS_SPEC.md`:
+  - [ ] 01-scan-flow.png
+  - [ ] 02-mapping-flow.png
+  - [ ] 03-sync-history.png
+  - [ ] 04-settings.png
+- [ ] Developer Dashboard submission completed.
+
+---
+
+## 4. Preserved Historical Verification Notes
+
 # Chrome Web Store Launch Pre-Flight Checklist
 ## Status: READY FOR USER STORE SUBMISSION
 Date: 2026-09-30
