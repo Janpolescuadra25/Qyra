@@ -20,5 +20,5 @@
 - Functionality: Deterministic parsing of fixed 12-column Bill, Cheque, and Vendor Credit spreadsheet templates.
 
 ## Remaining Work
-1. [IN PROGRESS] Sentry/telemetry alerting configuration on live deployment.
+1. [NOT STARTED] Sentry/telemetry alerting configuration on live deployment.
 2. [NOT STARTED] Automated background retry queue for transient sync failures.

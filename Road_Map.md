@@ -29,5 +29,5 @@ This roadmap documents the implementation progress of Qyra, an automated POS-to-
 - [COMPLETED] Basic sync failure alerting via daily cron (Backend/src/cron/sync-failure-alerts.ts).
 - [COMPLETED] Mapping preset management UI (Frontend/src/popup/components/MappingView/PresetManagerModal.tsx).
 - [COMPLETED] 12-column fixed-format parsers and documentation for Bill, Cheque, and Vendor Credit.
-- [IN PROGRESS] Sentry/telemetry alerting configuration.
+- [NOT STARTED] Sentry/telemetry alerting configuration.
 - [NOT STARTED] Automated retry queue for failed sync jobs.
