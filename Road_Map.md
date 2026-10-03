@@ -65,9 +65,12 @@ This roadmap documents the implementation progress of Qyra, an automated POS-to-
 - Store listing submitted for Google review.
 
 ### Phase 9: Post-Launch Monitoring & Auto-Retry Enhancements
-**Status: NOT STARTED**
-**Description**: Implement automated telemetry alerts and enhanced background retry queues for transient POS/QuickBooks sync failures.
+**Status: IN PROGRESS (80% COMPLETE)**
+**Description**: Automated telemetry alerts, failure notification cron, and enhanced background retry queues for transient POS/QuickBooks sync failures.
 **Dependencies**: Phase 8.
 **Completion Criteria**:
-- Sentry/telemetry alerting configured.
-- Automated retry queue for failed sync jobs.
+- [COMPLETED] Basic sync failure alerting via daily cron (Backend/src/cron/sync-failure-alerts.ts).
+- [COMPLETED] Mapping preset management UI (Frontend/src/popup/components/MappingView/PresetManagerModal.tsx).
+- [COMPLETED] 12-column fixed-format parsers and documentation for Bill, Cheque, and Vendor Credit.
+- [IN PROGRESS] Sentry/telemetry alerting configuration.
+- [NOT STARTED] Automated retry queue for failed sync jobs.
