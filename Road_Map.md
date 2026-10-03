@@ -62,3 +62,11 @@ Qyra is an enterprise-grade automated accounting integration platform that bridg
 - **Expected Output:** Production monitoring dashboard, automated alerts for sync exceptions.
 - **Dependencies:** Phase 6 (extension live in production).
 - **Completion Criteria:** All production runtime errors captured with proactive alerting to engineering leads.
+
+### Phase 8: Marketing Landing-Page Static Deployment (Nginx)
+- **Status:** PARTIALLY COMPLETED
+- **Description:** Build and deploy a high-conversion static Next.js marketing website to Nginx on `/var/www/qyra/web` to support Qyra's production launch.
+- **Implementation:** Next.js 16 with static export (`output: "export"`), unified `intro-sequence.tsx` combining reference cinematic scenes with robust UX features (sessionStorage, Escape skip, safety timer), and responsive Tailwind CSS components.
+- **Expected Output:** `landing-page/out/` directory containing static HTML/CSS/JS assets, Nginx-ready for deployment to `/var/www/qyra/web`.
+- **Dependencies:** None (independent project supporting the Phase 6 launch timeline).
+- **Completion Criteria:** Static export builds successfully, intro sequence functional, changes committed to landing-page submodule, and assets deployed to production Nginx server.
