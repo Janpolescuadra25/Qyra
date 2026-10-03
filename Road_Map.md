@@ -5,6 +5,7 @@ Qyra is an enterprise-grade automated accounting integration platform that bridg
 
 > **Note on Completed Work (Phases 1-5, Phase 8):**
 > Phases 1 through 5 (Core Extension Build, POS Extraction, QuickBooks Integration, Frontend UI, and Chrome Web Store Packaging) are **100% COMPLETED and VERIFIED** (see Frontend/README.md). Phase 8 (Marketing Landing-Page Static Deployment) is also **100% COMPLETED and VERIFIED** (deployed to https://qyra.space, see docs/phase8/DEPLOYMENT_LOG.md and landing-page/README.md).
+> - *Additional post-launch maintenance (2026-10-03):* Fixed intro-sequence state race condition by adding queueMicrotask guard to sessionStorage shortcut logic, ensuring the component safely skips the intro only after React state is fully initialized. Rebuilt and redeployed the landing page to production to resolve the issue.
 
 ---
 
