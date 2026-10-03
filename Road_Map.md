@@ -3,8 +3,8 @@
 ## OVERVIEW
 Qyra is an enterprise-grade automated accounting integration platform that bridges point-of-sale (POS) systems (Toast, Salido, Oracle Restaurants) with QuickBooks Online.
 
-> **Note on Completed Work (Phases 1-5):**
-> Phases 1 through 5 (Core Extension Build, POS Extraction, QuickBooks Integration, Frontend UI, and Chrome Web Store Packaging) are **100% COMPLETED and VERIFIED**. Comprehensive architectural documentation and verification records are preserved in Frontend/README.md.
+> **Note on Completed Work (Phases 1-5, Phase 8):**
+> Phases 1 through 5 (Core Extension Build, POS Extraction, QuickBooks Integration, Frontend UI, and Chrome Web Store Packaging) are **100% COMPLETED and VERIFIED** (see Frontend/README.md). Phase 8 (Marketing Landing-Page Static Deployment) is also **100% COMPLETED and VERIFIED** (deployed to https://qyra.space, see docs/phase8/DEPLOYMENT_LOG.md and landing-page/README.md).
 
 ---
 
@@ -26,10 +26,3 @@ Qyra is an enterprise-grade automated accounting integration platform that bridg
 - **Dependencies:** Phase 6 (extension live in production).
 - **Completion Criteria:** All production runtime errors captured with proactive alerting to engineering leads.
 
-### Phase 8: Marketing Landing-Page Static Deployment (Nginx)
-- **Status:** READY FOR DEPLOYMENT
-- **Description:** Build and deploy a high-conversion static Next.js marketing website to Nginx on /var/www/qyra/web to support Qyra's production launch.
-- **Implementation:** Next.js 16 with static export (output: "export"), unified intro-sequence.tsx combining reference cinematic scenes with robust UX features (sessionStorage, Escape skip, safety timer), and responsive Tailwind CSS components.
-- **Expected Output:** landing-page/out/ directory containing static HTML/CSS/JS assets, Nginx-ready for deployment to /var/www/qyra/web.
-- **Dependencies:** None (independent project supporting the Phase 6 launch timeline).
-- **Completion Criteria:** Intro sequence functional, changes committed to landing-page submodule, and static assets deployed to production Nginx server at /var/www/qyra/web.
