@@ -7,6 +7,14 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+const dotenvPath = path.resolve(__dirname, '../.env');
+if (fs.existsSync(dotenvPath)) {
+  require('dotenv').config({ path: dotenvPath });
+}
+
+const backendUrl = process.env.VITE_BACKEND_URL || process.env.BACKEND_URL || 'https://qyra-backend.onrender.com';
+console.log('[Build] Loaded env from', dotenvPath, 'with backendUrl:', backendUrl);
+
 const ROOT = path.join(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
 const isWatch = process.argv.includes('--watch');
@@ -58,7 +66,12 @@ const sharedConfig = {
   sourcemap: false,
   define: {
     'process.env.NODE_ENV': isWatch ? '"development"' : '"production"',
-    'process.env.BACKEND_URL': JSON.stringify(process.env.BACKEND_URL ?? 'https://qyra-backend.onrender.com'),
+    'process.env.BACKEND_URL': JSON.stringify(backendUrl),
+    'process.env.VITE_BACKEND_URL': JSON.stringify(backendUrl),
+    'import.meta.env.VITE_BACKEND_URL': JSON.stringify(backendUrl),
+    'import.meta.env.PROD': JSON.stringify(!isWatch),
+    'import.meta.env.DEV': JSON.stringify(isWatch),
+    'import.meta.env.MODE': JSON.stringify(isWatch ? 'development' : 'production'),
   },
 };
 
