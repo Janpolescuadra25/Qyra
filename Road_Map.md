@@ -12,10 +12,10 @@ Qyra is an enterprise-grade automated accounting integration platform that bridg
 ## ACTIVE & PENDING PHASES
 
 ### Phase 6: Chrome Web Store Final Submission
-- **Status:** IN_PROGRESS (submitted to Chrome Web Store Developer Dashboard)
-- **Description:** Capturing store showcase screenshots and submitting the extension package to the Google Chrome Web Store Developer Dashboard for review.
-- **Implementation:** Capture 4 required listing screenshots (1280x800 px) per docs/chrome-web-store/SCREENSHOTS_SPEC.md, upload Frontend/qyra-extension.zip, enter metadata from docs/chrome-web-store/launch_checklist.md, and submit for review.
-- **Expected Output:** 4 screenshot PNGs in docs/chrome-web-store/, extension submitted for Google review.
+- **Status:** SUBMITTED - AWAITING GOOGLE REVIEW (all engineering tasks complete, pending Google publication)
+- **Description:** Extension package, showcase screenshots, metadata, and permission justifications submitted to Google for store review.
+- **Implementation:** Engineering submission tasks 100% complete (see docs/chrome-web-store/SUBMISSION_LOG.md). Extension package (Frontend/qyra-extension.zip) and 4 showcase screenshots submitted. Awaiting Google review and publication.
+- **Expected Output:** Extension approved and published on the Chrome Web Store.
 - **Dependencies:** Phase 5 (extension package and listing metadata complete).
 - **Completion Criteria:** Extension published and live on the Chrome Web Store.
 
