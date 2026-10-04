@@ -21,3 +21,6 @@ Backend/backend-jest-summary.json
 Backend/backend-test-results.json
 Backend/backend-tests.txt
 Frontend/frontend-test-results.json
+
+docs/Astra/
+prompt/
