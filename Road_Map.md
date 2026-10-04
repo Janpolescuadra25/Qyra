@@ -45,6 +45,6 @@ Qyra is an enterprise-grade automated accounting integration platform that bridg
 - **Status:** 100% COMPLETED and VERIFIED (2026-10-03)
 - **Reference:** See landing-page/README.md and docs/phase8/DEPLOYMENT_LOG.md.
 - **Scope Completed:**
-  - Next.js 16 static export deployed to Hetzner VPS vortex (2.28.120.85) at /var/www/qyra/web/.
+  - Next.js 16 static export deployed to Hetzner VPS vortex (2.28.120.85) at landing-page/out/ → Backend/public/.
   - Live production domain: https://qyra.space (HTTP 200 verified).
   - Post-launch maintenance: Resolved intro-sequence state race condition with queueMicroTask guard; updated Nginx CSP script-src to include 'unsafe-inline' for Next.js inline hydration.
