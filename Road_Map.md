@@ -15,14 +15,6 @@ Qyra is an enterprise-grade automated accounting integration platform that bridg
 - **Dependencies:** Phase 5 (extension package and listing metadata complete).
 - **Completion Criteria:** Extension published and live on the Chrome Web Store.
 
-### Phase 7: Post-Launch Monitoring & Telemetry
-- **Status:** ACTIVE - IN PROGRESS
-- **Description:** Production monitoring, automated alerting, and transient sync retry handling on live infrastructure.
-- **Implementation:** Deployment of telemetry and error tracking on Hetzner VPS (vortex), Sentry/telemetry alerting, automated background retry queues for transient sync failures (see docs/phase7/SPECIFICATION.md).
-- **Expected Output:** Production monitoring dashboard, automated alerts for sync exceptions.
-- **Dependencies:** Phase 6 (extension live in production).
-- **Completion Criteria:** All production runtime errors captured with proactive alerting to engineering leads.
-
 ---
 
 ## ARCHIVED COMPLETED PHASES
@@ -37,10 +29,22 @@ Qyra is an enterprise-grade automated accounting integration platform that bridg
   - Phase 4: Frontend UI (Configuration, sync controls, connection status).
   - Phase 5: Chrome Web Store Packaging (Automated build pipeline, asset generation, zip bundle).
 
+### Phase 7: Post-Launch Monitoring & Telemetry
+- **Status:** 100% COMPLETED and VERIFIED (2026-10-04)
+- **Reference:** See docs/phase7/README.md and docs/phase7/IMPLEMENTATION_LOG.md.
+- **Scope Completed:**
+  - Backend Sentry Node SDK integration with centralized error handler correlation (requestId, statusCode, path).
+  - Helmet CSP updated to whitelist https://*.sentry.io in connectSrc.
+  - Background retry queue (Backend/src/cron/retry-queue.ts) enhanced with Sentry exception tracking while preserving exponential backoff and QuickBooks sync retry logic.
+  - Frontend root React ErrorBoundary (Frontend/src/popup/components/ErrorBoundary.tsx) wrapping AppContent with component stack trace capture.
+  - ErrorCard.tsx updated to accept and display sentryEventId for customer support escalation.
+  - Global error and unhandledrejection listeners added to Frontend background service worker.
+  - Frontend extension bundle rebuilt and qyra-extension.zip repackaged.
+
 ### Phase 8: Marketing Landing-Page Static Deployment
 - **Status:** 100% COMPLETED and VERIFIED (2026-10-03)
 - **Reference:** See landing-page/README.md and docs/phase8/DEPLOYMENT_LOG.md.
 - **Scope Completed:**
   - Next.js 16 static export deployed to Hetzner VPS vortex (2.28.120.85) at /var/www/qyra/web/.
   - Live production domain: https://qyra.space (HTTP 200 verified).
-  - Post-launch maintenance: Resolved intro-sequence state race condition with queueMicrotask guard; updated Nginx CSP script-src to include 'unsafe-inline' for Next.js inline hydration.
+  - Post-launch maintenance: Resolved intro-sequence state race condition with queueMicroTask guard; updated Nginx CSP script-src to include 'unsafe-inline' for Next.js inline hydration.
