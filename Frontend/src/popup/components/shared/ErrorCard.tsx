@@ -5,6 +5,7 @@ interface Props {
   onRetry?: () => void;
   onDismiss?: () => void;
   variant?: 'error' | 'warning' | 'info';
+  sentryEventId?: string;
 }
 
 const VARIANTS = {
@@ -22,12 +23,15 @@ const VARIANTS = {
   },
 };
 
-export default function ErrorCard({ message, onRetry, onDismiss, variant = 'error' }: Props) {
+export default function ErrorCard({ message, onRetry, onDismiss, variant = 'error', sentryEventId }: Props) {
   const style = VARIANTS[variant] ?? VARIANTS.error;
 
   return (
     <div className={`rounded-lg p-4 space-y-3 ${style.container}`}>
       <p className="text-sm">{message}</p>
+      {sentryEventId && (
+        <p className="text-xs font-mono break-all opacity-80">Incident ID: {sentryEventId}</p>
+      )}
       {(onRetry || onDismiss) && (
         <div className="flex flex-wrap gap-2">
           {onRetry && (

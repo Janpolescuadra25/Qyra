@@ -95,6 +95,7 @@ app.use(
           'https://api.qyra.space',
           'https://www.qyra.space',
           'https://2.28.120.85',
+          'https://*.sentry.io',
           'https://appcenter.intuit.com',
           'https://oauth.platform.intuit.com',
           'https://sandbox-quickbooks.api.intuit.com',

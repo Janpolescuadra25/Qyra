@@ -1,5 +1,5 @@
 import { Prisma, SyncStatus, SyncType } from '@prisma/client';
-import { logger } from '../lib/logger';
+import { Sentry, logger } from '../lib/logger';
 import { calculateExponentialBackoff } from '../lib/dedup';
 import { prisma } from '../lib/prisma';
 import { qbService } from '../services/qb.service';
@@ -167,6 +167,16 @@ export async function processRetryQueue(): Promise<number> {
             errorType: willRetryAgain ? 'TRANSIENT' : 'FATAL',
           },
         });
+
+        if (process.env.SENTRY_DSN) {
+          Sentry.withScope((scope) => {
+            scope.setTag('syncType', String(logEntry.syncType));
+            scope.setTag('syncLogId', logEntry.id);
+            scope.setExtra('retryCount', nextAttempt);
+            scope.setExtra('scanRecordId', logEntry.scanRecordId ?? 'none');
+            Sentry.captureException(err);
+          });
+        }
 
         if (logEntry.scanRecordId && !willRetryAgain) {
           await prisma.scanRecord.update({

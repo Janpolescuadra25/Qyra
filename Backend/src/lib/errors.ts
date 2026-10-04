@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction, RequestHandler, ErrorRequestHandler } from 'express';
+import * as Sentry from '@sentry/node';
 import { ZodError } from 'zod';
 import { logger } from './logger';
 
@@ -74,6 +75,16 @@ export function createErrorHandler(): ErrorRequestHandler {
       },
       error.message || 'Unhandled error'
     );
+
+    if (process.env.SENTRY_DSN) {
+      Sentry.withScope((scope) => {
+        scope.setTag('requestId', String((req as any)?.id ?? 'unknown'));
+        scope.setTag('statusCode', String(status));
+        scope.setExtra('path', req.originalUrl || req.path || 'unknown');
+        scope.setExtra('method', req.method || 'unknown');
+        Sentry.captureException(err);
+      });
+    }
 
     res.status(status).json(payload);
   };

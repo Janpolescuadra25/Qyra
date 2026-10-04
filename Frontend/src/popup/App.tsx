@@ -1,4 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import * as Sentry from '@sentry/browser';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAuth } from './hooks/useAuth';
 import { useQuickBooks } from './hooks/useQuickBooks';
 import { useLocations } from './hooks/useLocations';
@@ -47,10 +49,22 @@ const ROLE_META: Record<string, { icon: string; color: string }> = {
   VIEWER: { icon: '👁️', color: 'bg-gray-100 text-gray-600 border-gray-300' },
 };
 
+const viteSentryDsn = process.env.VITE_SENTRY_DSN || '';
+
+if (viteSentryDsn) {
+  Sentry.init({
+    dsn: viteSentryDsn,
+    environment: process.env.NODE_ENV ?? 'development',
+    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
+  });
+}
+
 export default function App() {
   return (
     <ScanProvider>
-      <AppContent />
+      <ErrorBoundary>
+        <AppContent />
+      </ErrorBoundary>
     </ScanProvider>
   );
 }

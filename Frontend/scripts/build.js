@@ -68,10 +68,8 @@ const sharedConfig = {
     'process.env.NODE_ENV': isWatch ? '"development"' : '"production"',
     'process.env.BACKEND_URL': JSON.stringify(backendUrl),
     'process.env.VITE_BACKEND_URL': JSON.stringify(backendUrl),
-    'import.meta.env.VITE_BACKEND_URL': JSON.stringify(backendUrl),
-    'import.meta.env.PROD': JSON.stringify(!isWatch),
-    'import.meta.env.DEV': JSON.stringify(isWatch),
-    'import.meta.env.MODE': JSON.stringify(isWatch ? 'development' : 'production'),
+    'process.env.VITE_SENTRY_DSN': JSON.stringify(process.env.VITE_SENTRY_DSN || ''),
+    'process.env.SENTRY_DSN': JSON.stringify(process.env.VITE_SENTRY_DSN || ''),
   },
 };
 

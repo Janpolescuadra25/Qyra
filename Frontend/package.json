@@ -11,6 +11,8 @@
     "package": "node scripts/build.js && node scripts/package.js"
   },
   "dependencies": {
+    "@sentry/browser": "^11.4.0",
+    "dotenv": "^18.0.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^3.10.1"

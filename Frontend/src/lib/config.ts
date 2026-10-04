@@ -1,3 +1,2 @@
 export const BACKEND_URL: string =
-  (import.meta as any).env?.VITE_BACKEND_URL ??
-  ((import.meta as any).env?.PROD ? 'https://api.qyra.space' : 'http://localhost:3000');
+  process.env.VITE_BACKEND_URL || process.env.BACKEND_URL || 'https://api.qyra.space';

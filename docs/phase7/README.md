@@ -1,32 +1,38 @@
-# Phase 7: Post-Launch Monitoring & Telemetry Implementation
+# PHASE 7: POST-LAUNCH MONITORING & TELEMETRY
+## Status: IN PROGRESS | Target Completion: 2026-10-04
+## Last Verified: 2026-10-04
 
-## 1. Overview
-This directory tracks the implementation of Phase 7 (Post-Launch Monitoring & Telemetry) for the Qyra ecosystem across the Chrome Extension, Express Backend, and Hetzner VPS production host (`vortex: 2.28.120.85`).
+### Core Objective
+Implement Sentry-powered error tracking and automated retry queues for failed background jobs to ensure production stability across the backend, extension, and deployment host.
 
-- **Technical Blueprint**: See `docs/phase7/SPECIFICATION.md`
-- **Status**: ⏳ **IN PREPARATION / READY FOR IMPLEMENTATION**
+### Architecture Overview
+- Backend: Sentry Node SDK + Pino logging integration + centralized error capture + existing retry queue correlation
+- Frontend: Sentry Browser SDK + React ErrorBoundary + service worker error listeners
+- Infrastructure: Hetzner VPS with `SENTRY_DSN` deployed and extension manifests whitelisted for Sentry traffic
 
----
+### Files Created / Modified
+#### New Files
+- `Frontend/src/popup/components/ErrorBoundary.tsx` — React popup error boundary
+- `docs/phase7/IMPLEMENTATION_LOG.md` — implementation and verification log
 
-## 2. Workstream Implementation Matrix
+#### Modified Files
+- `Backend/src/lib/logger.ts` — guarded Sentry initialization and Pino integration
+- `Backend/src/lib/errors.ts` — centralized request-correlation capture for exceptions
+- `Backend/src/cron/retry-queue.ts` — Sentry capture for retry execution failures while preserving retry behavior
+- `Backend/src/index.ts` — Helmet `connect-src` whitelist for `https://*.sentry.io`
+- `Backend/.env.example` — added `SENTRY_DSN`
+- `Frontend/src/popup/App.tsx` — Sentry init and ErrorBoundary wrapping
+- `Frontend/src/popup/Popup.tsx` — boundary mounting at root render
+- `Frontend/src/background/service-worker.ts` — global `error` and `unhandledrejection` capture
+- `Frontend/src/popup/components/shared/ErrorCard.tsx` — displays `sentryEventId` when available
+- `Frontend/scripts/build.js` — exposes `VITE_SENTRY_DSN` to bundled code
+- `Frontend/manifest.json` — allows Sentry connect access in extension pages
+- `Frontend/.env.example` — added `VITE_SENTRY_DSN`
+- `Road_Map.md` — marks Phase 7 as active
 
-| Workstream | Scope & Deliverables | Status | Key Files |
-|---|---|---|---|
-| **Workstream 1: Backend Telemetry & Retry Queue** | Install `@sentry/node` & `p-retry`; hook Sentry into `Backend/src/lib/logger.ts`; capture errors in `Backend/src/lib/errors.ts`; update CSP; author `Backend/src/cron/retry-queue.ts` | READY | `Backend/src/lib/logger.ts`, `Backend/src/lib/errors.ts`, `Backend/src/cron/retry-queue.ts`, `Backend/src/index.ts` |
-| **Workstream 2: Frontend Telemetry** | Install `@sentry/browser`; initialize Sentry in `Frontend/src/popup/index.tsx`; create `Frontend/src/popup/components/ErrorBoundary.tsx`; attach unhandled listeners in `Frontend/src/background/service-worker.ts`; extend `ErrorCard.tsx` | READY | `Frontend/src/popup/index.tsx`, `Frontend/src/popup/components/ErrorBoundary.tsx`, `Frontend/src/background/service-worker.ts`, `Frontend/src/popup/components/shared/ErrorCard.tsx` |
-| **Workstream 3: Verification & Readiness** | Test error dispatch with request ID correlation; verify ErrorBoundary recovery; audit zero-PII transmission | READY | Staging test scripts, Sentry dashboard validation |
-
----
-
-## 3. Environment Variables
-- **Backend**: `SENTRY_DSN` (configured in root `.env`)
-- **Frontend**: `VITE_SENTRY_DSN` (configured in frontend build environment)
-
----
-
-## 4. Completion & Verification Criteria
-- [ ] Backend uncaught errors logged to Pino and captured in Sentry.
-- [ ] `Backend/src/cron/retry-queue.ts` authored with exponential backoff via `p-retry`.
-- [ ] Frontend render errors caught by React Error Boundary with user recovery options.
-- [ ] Zero telemetry interference with Chrome Web Store Manifest V3 compliance or Content Security Policy.
-- [ ] Hydra audit confirms 100% verification on disk.
+### Verification Criteria
+1. Backend exceptions are logged to Pino and captured to Sentry when `SENTRY_DSN` is configured.
+2. Existing QuickBooks sync retry queue still processes failures with exponential backoff and safe tracking.
+3. Frontend render errors are recovered through the popup ErrorBoundary and captured to Sentry.
+4. Browser extension CSP and host permissions permit Sentry telemetry without violating Manifest V3 rules.
+5. The extension bundle rebuilds successfully and the release archive is refreshed.

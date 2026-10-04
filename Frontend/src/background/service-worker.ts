@@ -1,9 +1,34 @@
+import * as Sentry from '@sentry/browser';
+
 // Background service worker — Manifest V3 (floating window)
 
 const WINDOW_WIDTH = 950;
 const WINDOW_HEIGHT = 750;
+const sentryDsn = process.env.VITE_SENTRY_DSN || '';
+
+if (sentryDsn) {
+  Sentry.init({
+    dsn: sentryDsn,
+    environment: process.env.NODE_ENV ?? 'production',
+    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
+  });
+}
 
 if (process.env.NODE_ENV !== 'production') console.log('[Qyra BG] Service worker loaded');
+
+self.addEventListener('error', (event: ErrorEvent) => {
+  console.error('[ServiceWorker Error]:', event.error ?? event.message);
+  if (sentryDsn) {
+    Sentry.captureException(event.error ?? new Error(event.message));
+  }
+});
+
+self.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+  console.error('[ServiceWorker Unhandled Rejection]:', event.reason);
+  if (sentryDsn) {
+    Sentry.captureException(event.reason instanceof Error ? event.reason : new Error(String(event.reason)));
+  }
+});
 
 // ── Floating window ───────────────────────────────────────────────────────────
 chrome.action.onClicked.addListener(async () => {
