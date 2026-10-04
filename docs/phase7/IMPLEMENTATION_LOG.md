@@ -14,4 +14,5 @@
 - 2026-10-04: Created the React popup error boundary and wired it into the extension app shell.
 - 2026-10-04: Added global unhandled error listeners in the service worker for browser-level capture.
 - 2026-10-04: Updated the extension manifest and build config to allow Sentry network access and expose `VITE_SENTRY_DSN` during bundling.
+- 2026-10-04: Added fail-closed Sentry `beforeSend` hooks to scrub authorization headers, tokens, URL params, customer identity, and sensitive transaction payloads in backend and extension telemetry.
 - 2026-10-04: Rebuilt the extension bundle and refreshed the release archive.

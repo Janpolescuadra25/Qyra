@@ -56,6 +56,47 @@ if (viteSentryDsn) {
     dsn: viteSentryDsn,
     environment: process.env.NODE_ENV ?? 'development',
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
+    beforeSend(event) {
+      try {
+        if (event.request?.headers) {
+          const requestHeaders = event.request.headers as Record<string, string>;
+          ['authorization', 'cookie', 'set-cookie', 'x-api-key', 'x-auth-token', 'token'].forEach((headerKey) => {
+            delete requestHeaders[headerKey];
+            delete requestHeaders[headerKey.toLowerCase()];
+          });
+        }
+
+        if (event.request?.url) {
+          try {
+            const requestUrl = new URL(event.request.url);
+            ['code', 'token', 'access_token', 'state', 'refresh_token', 'jwt', 'auth', 'session'].forEach((param) => {
+              requestUrl.searchParams.delete(param);
+            });
+            event.request.url = requestUrl.toString();
+          } catch {
+            // ignore malformed URLs
+          }
+        }
+
+        if (event.user) {
+          delete event.user.email;
+          delete event.user.ip_address;
+        }
+
+        if (event.extra) {
+          const extra = event.extra as Record<string, unknown>;
+          ['token', 'accessToken', 'refreshToken', 'authorization', 'apiKey', 'jwt', 'password'].forEach((key) => {
+            if (Object.prototype.hasOwnProperty.call(extra, key)) {
+              extra[key] = '[REDACTED]';
+            }
+          });
+        }
+      } catch {
+        // fail closed: never send unsafe browser telemetry
+      }
+
+      return event;
+    },
   });
 }
 

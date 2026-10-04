@@ -11,6 +11,7 @@ Frontend/tsccheck*.txt
 Frontend/qyra-extension.zip
 jest-output.json
 
+# IDE configuration
 .vscode/
 backend-jest-summary.json
 backend-test-results.json
