@@ -1,4 +1,4 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import Stripe from 'stripe';
 import { WebhookDeliveryStatus } from '@prisma/client';
 import { stripe, isStripeConfigured, type PlanKey, getScanPack, getPlanLimits, PLANS } from '../lib/stripe';
@@ -43,11 +43,12 @@ async function logWebhookDelivery(params: {
   }
 }
 
-type WebhookEvent = {
+interface WebhookEvent {
   id: string;
   type: string;
   data: { object: Record<string, unknown> };
-};
+  livemode?: boolean;
+}
 
 type CheckoutSessionPayload = {
   id: string;
@@ -114,6 +115,29 @@ router.post(
         webhookStatusCode = 400;
         webhookErrorMessage = err instanceof Error ? err.message : 'Invalid webhook signature';
         throw new AppError('Invalid webhook signature', 400);
+      }
+
+      // Fail-closed Stripe mode safety guard (AST-02 / Wave 1)
+      const stripeKey = process.env.STRIPE_SECRET_KEY;
+      if (!stripeKey) {
+        logger.error('STRIPE_SECRET_KEY is not configured');
+        throw new AppError('STRIPE_SECRET_KEY is not configured', 500);
+      }
+      const isLiveKey = stripeKey.startsWith('sk_live_');
+      const isTestKey = stripeKey.startsWith('sk_test_');
+      if (!isLiveKey && !isTestKey) {
+        logger.error('STRIPE_SECRET_KEY format is invalid');
+        throw new AppError('STRIPE_SECRET_KEY format is invalid', 500);
+      }
+      if (event.livemode !== undefined) {
+        if (event.livemode && !isLiveKey) {
+          logger.error({ livemode: event.livemode, type: event.type }, 'Stripe mode mismatch: Live event received with test key');
+          throw new AppError('Stripe mode mismatch: Live event rejected in test mode', 400);
+        }
+        if (!event.livemode && isLiveKey) {
+          logger.error({ livemode: event.livemode, type: event.type }, 'Stripe mode mismatch: Test event received with live key');
+          throw new AppError('Stripe mode mismatch: Test event rejected in live mode', 400);
+        }
       }
 
       const existing = await prisma.stripeEvent.findUnique({

@@ -1,4 +1,4 @@
-import 'dotenv/config';
+﻿import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import cors from 'cors';
@@ -45,7 +45,7 @@ import { requestLogger } from './middleware/request-logger';
 import { logger } from './lib/logger';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3005;
 const log = logger.child({ module: 'Index' });
 
 // Trust the first proxy hop so req.ip reflects the real client IP (needed for
