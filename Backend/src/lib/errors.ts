@@ -71,7 +71,7 @@ export function createErrorHandler(): ErrorRequestHandler {
         err,
         requestId: (req as any)?.id,
         statusCode: status,
-        path: req?.originalUrl,
+        path: (req?.originalUrl || req?.path || '').split('?')[0],
       },
       error.message || 'Unhandled error'
     );

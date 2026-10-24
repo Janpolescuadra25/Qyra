@@ -71,7 +71,8 @@ if (process.env.SENTRY_DSN) {
           });
         }
       } catch {
-        // fail closed: do not send unsafe telemetry
+        // AST-28: Strictly fail closed: drop event if sanitization throws
+        return null;
       }
 
       return event;

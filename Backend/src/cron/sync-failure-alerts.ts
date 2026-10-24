@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { sendSyncFailureAlert } from '../lib/email';
 import { logger } from '../lib/logger';
+import { prisma as defaultPrisma } from '../lib/prisma';
 
 const log = logger.child({ module: 'SyncFailureAlerts' });
 
@@ -8,10 +9,33 @@ const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const COOLDOWN_MS = 24 * 60 * 60 * 1000;
 const MS_PER_DAY = 86_400_000;
 
-export function startSyncFailureAlertCron(prisma: PrismaClient): void {
-  checkSyncFailures(prisma);
-  const interval = setInterval(() => checkSyncFailures(prisma), CHECK_INTERVAL_MS);
-  interval.unref();
+let syncFailureAlertInterval: ReturnType<typeof setInterval> | null = null;
+
+export function startSyncFailureAlertCron(prismaClient: PrismaClient = defaultPrisma): void {
+  if (syncFailureAlertInterval) {
+    return;
+  }
+
+  void checkAndAlertSyncFailures(prismaClient);
+  syncFailureAlertInterval = setInterval(() => {
+    void checkAndAlertSyncFailures(prismaClient).catch((error) => {
+      log.error({ err: error }, 'Sync failure alert cron iteration failed');
+    });
+  }, CHECK_INTERVAL_MS);
+  syncFailureAlertInterval.unref();
+}
+
+export function stopSyncFailureAlertCron(): void {
+  if (!syncFailureAlertInterval) {
+    return;
+  }
+
+  clearInterval(syncFailureAlertInterval);
+  syncFailureAlertInterval = null;
+}
+
+export async function checkAndAlertSyncFailures(prismaClient: PrismaClient = defaultPrisma): Promise<void> {
+  await checkSyncFailures(prismaClient);
 }
 
 async function checkSyncFailures(prisma: PrismaClient): Promise<void> {

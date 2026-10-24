@@ -166,6 +166,18 @@ router.post(
     if (!isStripeConfigured || !stripe) {
       throw new AppError('Stripe is not configured. Contact support.', 503);
     }
+
+    // AST-08 Security Gate: Enforce billing authority
+    // Only root account owners or explicit ADMIN roles have billing access
+    const isOwner = !req.user!.adminId;
+    const isAdmin = req.user!.role === 'ADMIN';
+    if (!isOwner && !isAdmin) {
+      throw new AppError(
+        'Only account owners and administrators have billing authority to access the customer portal',
+        403
+      );
+    }
+
     const teamId = req.user!.adminId ?? req.user!.userId;
     const team = await prisma.user.findUnique({ where: { id: teamId } });
     if (!team) throw new AppError('Team not found', 404);
