@@ -2,7 +2,28 @@
 
 ## ACTIVE PHASES
 
-None. All planned engineering phases (Phases 1 through 9) are 100% completed, verified, and deployed to production.
+### Phase 10: Wave 1 Production VPS Deployment & Health Verification
+- **Status:** IN PROGRESS (Target: 2026-10-24)
+- **Target Server:** Hetzner Cloud VPS `vortex` (`2.28.120.85`), Ubuntu, Nginx reverse proxy
+- **Service Configuration:** `qyra-backend` running on port 3005 via PM2 (`PORT=3005`, `NODE_ENV=production`)
+- **Multi-Repo VPS Safety Invariant (CRITICAL):**
+  - Strictly isolate operations to `/var/www/qyra/Backend`.
+  - Never stop, restart, kill, or modify PM2 processes or socket listeners for sibling applications:
+    * `jp-frontend` (port 3000)
+    * `jp-backend` (port 3001)
+    * `hayp-frontend` (port 3003)
+- **Deployment Scope:**
+  1. Fast-forward pull of `origin/main` on `vortex` to commit `7c832362e9d70317f83cfa07fc4892801b7f516e` (includes P0 port 3005 fallback, Stripe livemode safety guard, and landing-page documentation).
+  2. Production `.env` schema validation in `/var/www/qyra/Backend/.env` (verifying `PORT=3005`, `NODE_ENV=production`, `APP_URL=https://qyra.space`).
+  3. Clean restart of `qyra-backend` process under PM2.
+  4. End-to-end post-deployment verification:
+     - API health check: `https://api.qyra.space/api/health` returning HTTP 200.
+     - Static landing page: `https://qyra.space` serving static assets via Nginx / Express static.
+     - Stripe webhook endpoint: signature and mode enforcement check.
+- **Completion Criteria:**
+  - Verified commit hash on VPS matches local baseline SHA `7c832362e9d70317f83cfa07fc4892801b7f516e`.
+  - HTTP 200 verified on `api.qyra.space` and `qyra.space`.
+  - Sibling application ports (3000, 3001, 3003) confirmed healthy and unaffected.
 
 ## ARCHIVED COMPLETED PHASES
 
