@@ -1,31 +1,35 @@
-# Qyra Project Roadmap
+﻿# Qyra Project Roadmap
 
 ## ACTIVE PHASES
 
-### Phase 10: Wave 1 Production VPS Deployment & Health Verification
-- **Status:** IN PROGRESS (Target: 2026-10-24)
-- **Target Server:** Hetzner Cloud VPS `vortex` (`2.28.120.85`), Ubuntu, Nginx reverse proxy
-- **Service Configuration:** `qyra-backend` running on port 3005 via PM2 (`PORT=3005`, `NODE_ENV=production`)
-- **Multi-Repo VPS Safety Invariant (CRITICAL):**
-  - Strictly isolate operations to `/var/www/qyra/Backend`.
-  - Never stop, restart, kill, or modify PM2 processes or socket listeners for sibling applications:
-    * `jp-frontend` (port 3000)
-    * `jp-backend` (port 3001)
-    * `hayp-frontend` (port 3003)
-- **Deployment Scope:**
-  1. Fast-forward pull of `origin/main` on `vortex` to commit `7c832362e9d70317f83cfa07fc4892801b7f516e` (includes P0 port 3005 fallback, Stripe livemode safety guard, and landing-page documentation).
-  2. Production `.env` schema validation in `/var/www/qyra/Backend/.env` (verifying `PORT=3005`, `NODE_ENV=production`, `APP_URL=https://qyra.space`).
-  3. Clean restart of `qyra-backend` process under PM2.
-  4. End-to-end post-deployment verification:
-     - API health check: `https://api.qyra.space/api/health` returning HTTP 200.
-     - Static landing page: `https://qyra.space` serving static assets via Nginx / Express static.
-     - Stripe webhook endpoint: signature and mode enforcement check.
-- **Completion Criteria:**
-  - Verified commit hash on VPS matches local baseline SHA `7c832362e9d70317f83cfa07fc4892801b7f516e`.
-  - HTTP 200 verified on `api.qyra.space` and `qyra.space`.
-  - Sibling application ports (3000, 3001, 3003) confirmed healthy and unaffected.
+### Phase 11: Stripe Production Hardening & Webhook Monitoring
+- **Status:** ACTIVE / IN PROGRESS
+- **Reference Baseline:** Commit `c6f9775`
+- **Primary Objectives:**
+  * Production hardening of Stripe webhook lifecycle handling (`Backend/src/routes/webhooks.ts`).
+  * Add dedicated billing status endpoint (`GET /api/billing/status`) for client synchronization.
+  * Verify and harden `invoice.paid` handling ensuring all payment success and subscription renewal scenarios are covered.
+  * Implement webhook dead-letter tracking / failure alerting for subscription state consistency.
+  * End-to-end Stripe signature validation and test webhook replay verification.
+- **Prerequisites Verified:**
+  * Stripe SDK configured with testmode price IDs in `Backend/src/lib/stripe.ts`.
+  * Raw body parsing enabled in `Backend/src/index.ts` for `/api/webhooks`, with Stripe-specific handler at `/api/webhooks/stripe`.
+  * Subscription management and checkout sessions implemented in `Backend/src/routes/checkout.ts`.
 
 ## ARCHIVED COMPLETED PHASES
+
+### Phase 10: Wave 1 Production VPS Deployment & Health Verification
+- **Status:** 100% COMPLETED and VERIFIED (2026-10-24)
+- **Reference Commit:** `c6f9775` (`c6f97752fcbf9e8268a188aaea01ecdd7c58d888`)
+- **Documentation:** `docs/phase10/README.md`
+- **Scope & Deliverables Completed:**
+  * Self-hosted production deployment to Hetzner Cloud VPS `vortex` (`2.28.120.85`).
+  * Backend API service `qyra-backend` running on PM2 port `3005`.
+  * Nginx reverse proxy routing `https://api.qyra.space` -> `127.0.0.1:3005` and `https://qyra.space` -> `/var/www/qyra/web`.
+  * Multi-repo coexistence invariants fully preserved: zero interference with `hayp-frontend` (port 3003) or `jp_escuadra` (ports 3000, 3001).
+  * Production health verification confirmed with HTTP 200 OK across public HTTPS endpoints.
+
+---
 
 ### Phases 1-5: Chrome Extension Core
 - **Status:** 100% COMPLETED and VERIFIED.
