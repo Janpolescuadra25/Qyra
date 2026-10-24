@@ -26,6 +26,7 @@ import valueMappingRoutes from './routes/value-mappings';
 import exportRoutes from './routes/exports';
 import emailVerificationRoutes from './routes/email-verification';
 import checkoutRoutes from './routes/checkout';
+import billingRoutes from './routes/billing';
 import webhookRoutes from './routes/webhooks';
 import presetsRoutes, { seedDefaultPresets } from './routes/presets';
 import { authenticate } from './middleware/auth.middleware';
@@ -193,6 +194,7 @@ app.use('/api/presets', authenticate, presetsRoutes);
 app.use('/api/password-reset', passwordResetRoutes);
 app.use('/api/email-verification', emailVerificationRoutes);
 app.use('/api/checkout', checkoutRoutes);
+app.use('/api/billing', billingRoutes);
 
 app.get('/favicon.ico', (_req, res) => res.status(204).end());
 

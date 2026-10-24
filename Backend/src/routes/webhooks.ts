@@ -75,6 +75,13 @@ type SubscriptionPayload = {
 
 type InvoicePayload = {
   subscription?: string | { id: string };
+  lines?: {
+    data?: Array<{
+      period?: {
+        end?: number;
+      };
+    }>;
+  };
 };
 
 router.post(
@@ -363,8 +370,14 @@ router.post(
           const subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
           if (!subscriptionId) break;
 
-          const subscription = (await stripe.subscriptions.retrieve(subscriptionId)) as SubscriptionPayload;
-          const periodEnd = new Date((subscription.current_period_end ?? 0) * 1000);
+          let periodEnd: Date;
+          const linePeriodEnd = invoice.lines?.data?.[0]?.period?.end;
+          if (linePeriodEnd && typeof linePeriodEnd === 'number') {
+            periodEnd = new Date(linePeriodEnd * 1000);
+          } else {
+            const subscription = (await stripe.subscriptions.retrieve(subscriptionId)) as SubscriptionPayload;
+            periodEnd = new Date((subscription.current_period_end ?? 0) * 1000);
+          }
 
           await prisma.user.updateMany({
             where: { stripeSubscriptionId: subscriptionId },
