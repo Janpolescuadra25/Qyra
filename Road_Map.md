@@ -3,18 +3,21 @@
 ## ACTIVE PHASES
 
 ### Phase 11: Stripe Production Hardening & Webhook Monitoring
-- **Status:** ACTIVE / IN PROGRESS
-- **Reference Baseline:** Commit `c6f9775`
-- **Primary Objectives:**
-  * Production hardening of Stripe webhook lifecycle handling (`Backend/src/routes/webhooks.ts`).
-  * Add dedicated billing status endpoint (`GET /api/billing/status`) for client synchronization.
-  * Verify and harden `invoice.paid` handling ensuring all payment success and subscription renewal scenarios are covered.
-  * Implement webhook dead-letter tracking / failure alerting for subscription state consistency.
-  * End-to-end Stripe signature validation and test webhook replay verification.
+- **Status:** ACTIVE / IN PROGRESS (Wave 1 Completed)
+- **Reference Baseline:** Commit `2cfea4f` (`2cfea4f10628ee496ab7c58dd8c09c02eef70de8`)
+- **Documentation:** `docs/phase11/README.md`
+- **Wave 1 Deliverables (COMPLETED - 2026-10-25):**
+  * [x] Production hardening of Stripe webhook lifecycle handling (`Backend/src/routes/webhooks.ts`).
+  * [x] Add dedicated billing status endpoint (`GET /api/billing/status`) for client synchronization (`Backend/src/routes/billing.ts`).
+  * [x] Verify and harden `invoice.paid` handling with optimized line item period extraction and safe fallback.
+- **Wave 2 Deliverables (ACTIVE / IN PROGRESS):**
+  * [ ] Implement webhook dead-letter tracking / failure alerting for subscription state consistency.
+  * [ ] End-to-end Stripe signature validation and test webhook replay verification.
 - **Prerequisites Verified:**
   * Stripe SDK configured with testmode price IDs in `Backend/src/lib/stripe.ts`.
   * Raw body parsing enabled in `Backend/src/index.ts` for `/api/webhooks`, with Stripe-specific handler at `/api/webhooks/stripe`.
   * Subscription management and checkout sessions implemented in `Backend/src/routes/checkout.ts`.
+  * Billing router mounted at `/api/billing` in `Backend/src/index.ts`.
 
 ## ARCHIVED COMPLETED PHASES
 
