@@ -1,9 +1,23 @@
-# Qyra Project Roadmap
+# Qyra Production Roadmap
+
+---
 
 ## ACTIVE PHASES
+### Phase 12: Customer Self-Service Portal & Multi-Region Expansion
+- **Status:** PLANNING (NOT STARTED)
+- **Reference Baseline:** Commit `f8eb961` (`f8eb9610f551bd657733a352cead5112d0e7ad8a`)
+- **Documentation:** Pending definition in `docs/phase12/`
+- **Scope & Objectives:**
+  * Self-service customer subscription management portal (payment method updates, plan transitions, cancellation flow)
+  * Additional payment methods integration (Apple Pay, Google Pay, PayPal)
+  * Advanced subscription metrics & MRR churn telemetry
+  * Multi-region database replication & cross-browser extension rollout
 
+---
+
+## ARCHIVED COMPLETED PHASES
 ### Phase 11: Stripe Production Hardening & Webhook Monitoring
-- **Status:** COMPLETED / VERIFIED (Wave 1 & Wave 2 Completed)
+- **Status:** 100% COMPLETED / VERIFIED (2026-10-25)
 - **Reference Baseline:** Commit `2cfea4f` (`2cfea4f10628ee496ab7c58dd8c09c02eef70de8`)
 - **Documentation:** `docs/phase11/README.md`
 - **Wave 1 Deliverables (COMPLETED - 2026-10-25):**
@@ -18,8 +32,6 @@
   * Raw body parsing enabled in `Backend/src/index.ts` for `/api/webhooks`, with Stripe-specific handler at `/api/webhooks/stripe`.
   * Subscription management and checkout sessions implemented in `Backend/src/routes/checkout.ts`.
   * Billing router mounted at `/api/billing` in `Backend/src/index.ts`.
-
-## ARCHIVED COMPLETED PHASES
 
 ### Phase 10: Wave 1 Production VPS Deployment & Health Verification
 - **Status:** 100% COMPLETED and VERIFIED (2026-10-24)
