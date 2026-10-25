@@ -4,9 +4,9 @@
 
 ## ACTIVE PHASES
 ### Phase 12: Customer Self-Service Portal & Multi-Region Expansion
-- **Status:** PLANNING (NOT STARTED)
+- **Status:** PLANNING (IN PROGRESS)
 - **Reference Baseline:** `d30ef5da6037143d784f56e875fb2bfcc6da1d3d` (Post-Phase 11 Archive & Phase 12 Init)
-- **Documentation:** Pending definition in `docs/phase12/`
+- **Documentation:** `docs/phase12/README.md`
 - **Scope & Objectives:**
   * Self-service customer subscription management portal (payment method updates, plan transitions, cancellation flow)
   * Additional payment methods integration (Apple Pay, Google Pay, PayPal)
