@@ -31,9 +31,11 @@ Prior to Phase 12 implementation, the following foundational components are veri
   - Enhance `POST /api/checkout/create-portal-session` to accept an optional `returnUrl` parameter.
   - Enforce strict origin validation against whitelisted domains (`FRONTEND_URL`, `EXTENSION_URL`, `https://qyra.space`) to prevent open-redirect vulnerabilities.
   - Fall back safely to `${process.env.FRONTEND_URL}/settings` when omitted or invalid.
-- **Deliverable 12.2 — Direct Subscription Cancellation & Pause API:**
-  - Implement `POST /api/billing/cancel-subscription` supporting end-of-period cancellation via `stripe.subscriptions.update(id, { cancel_at_period_end: true })`.
-  - Implement `POST /api/billing/reactivate-subscription` to revoke pending cancellations prior to period end.
+- [x] **Deliverable 12.2 — Self-Service Subscription Cancellation & Reactivation Endpoints (COMPLETED - 2026-10-25):**
+  - `POST /api/billing/cancel-subscription` schedules end-of-period cancellation via `stripe.subscriptions.update(id, { cancel_at_period_end: true })` and persists the `cancelAtPeriodEnd` flag to the user record.
+  - `POST /api/billing/reactivate-subscription` reverses pending cancellations by sending `cancel_at_period_end: false` and restoring automatic renewal before the current billing period ends.
+  - Both endpoints enforce authenticated owner/admin authorization, confirm a valid Stripe subscription exists, and reject unconfigured Stripe environments with a `503`.
+  - Idempotent cancellation requests return a successful 200 with a lifecycle message instead of re-triggering the Stripe subscription update.
 - **Deliverable 12.3 — Tier Upgrade & Downgrade Proration API:**
   - Implement `POST /api/billing/change-plan` to handle prorated plan changes across monthly and annual intervals.
 
