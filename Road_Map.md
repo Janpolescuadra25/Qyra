@@ -1,18 +1,18 @@
-﻿# Qyra Project Roadmap
+# Qyra Project Roadmap
 
 ## ACTIVE PHASES
 
 ### Phase 11: Stripe Production Hardening & Webhook Monitoring
-- **Status:** ACTIVE / IN PROGRESS (Wave 1 Completed)
+- **Status:** COMPLETED / VERIFIED (Wave 1 & Wave 2 Completed)
 - **Reference Baseline:** Commit `2cfea4f` (`2cfea4f10628ee496ab7c58dd8c09c02eef70de8`)
 - **Documentation:** `docs/phase11/README.md`
 - **Wave 1 Deliverables (COMPLETED - 2026-10-25):**
   * [x] Production hardening of Stripe webhook lifecycle handling (`Backend/src/routes/webhooks.ts`).
   * [x] Add dedicated billing status endpoint (`GET /api/billing/status`) for client synchronization (`Backend/src/routes/billing.ts`).
   * [x] Verify and harden `invoice.paid` handling with optimized line item period extraction and safe fallback.
-- **Wave 2 Deliverables (ACTIVE / IN PROGRESS):**
-  * [ ] Implement webhook dead-letter tracking / failure alerting for subscription state consistency.
-  * [ ] End-to-end Stripe signature validation and test webhook replay verification.
+- **Wave 2 Deliverables (COMPLETED / VERIFIED):**
+  * [x] Implement webhook dead-letter tracking / failure alerting for subscription state consistency (2026-10-25).
+  * [x] End-to-end Stripe signature validation and test webhook replay verification (2026-10-25).
 - **Prerequisites Verified:**
   * Stripe SDK configured with testmode price IDs in `Backend/src/lib/stripe.ts`.
   * Raw body parsing enabled in `Backend/src/index.ts` for `/api/webhooks`, with Stripe-specific handler at `/api/webhooks/stripe`.

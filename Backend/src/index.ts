@@ -37,6 +37,7 @@ import { resetOwnerIfRequested } from './lib/owner-reset';
 import { startTimeBombCron } from './cron/timebomb';
 import { startTrialWarningCron } from './cron/trial-warnings';
 import { startSyncFailureAlertCron } from './cron/sync-failure-alerts';
+import { startWebhookFailureAlertCron } from './cron/webhook-failure-alerts';
 import { startQuotaAlertCron } from './cron/quota-alerts';
 import { startScanCleanupCron } from './cron/scan-cleanup';
 import { startAutoRetryCron } from './cron/retry-queue';
@@ -248,6 +249,7 @@ if (!isTestEnvironment) {
     startTimeBombCron(prisma);
     startTrialWarningCron(prisma);
     startSyncFailureAlertCron(prisma);
+    startWebhookFailureAlertCron(prisma);
     startQuotaAlertCron(prisma);
     startScanCleanupCron(prisma);
     startAutoRetryCron();

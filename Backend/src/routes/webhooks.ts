@@ -4,6 +4,7 @@ import { WebhookDeliveryStatus } from '@prisma/client';
 import { stripe, isStripeConfigured, type PlanKey, getScanPack, getPlanLimits, PLANS } from '../lib/stripe';
 import { asyncHandler, AppError } from '../lib/errors';
 import { prisma } from '../lib/prisma';
+import { authenticate, requireRole } from '../middleware/auth.middleware';
 import { logger } from '../lib/logger';
 
 const log = logger.child({ module: 'Webhooks' });
@@ -443,5 +444,49 @@ function identifyPlan(priceId: string | undefined): PlanKey | null {
   if (annualMap[priceId]) return annualMap[priceId];
   return null;
 }
+
+/**
+ * POST /api/webhooks/replay/:deliveryLogId
+ * Admin-only endpoint to re-evaluate a failed webhook delivery log.
+ */
+router.post(
+  '/replay/:deliveryLogId',
+  authenticate,
+  requireRole('ADMIN', 'OWNER', 'MANAGER'),
+  asyncHandler(async (req, res) => {
+    const { deliveryLogId } = req.params;
+
+    if (!deliveryLogId || typeof deliveryLogId !== 'string') {
+      return res.status(400).json({ error: 'deliveryLogId parameter is required' });
+    }
+
+    const deliveryLog = await prisma.webhookDeliveryLog.findUnique({
+      where: { id: deliveryLogId },
+    });
+
+    if (!deliveryLog) {
+      return res.status(404).json({ error: 'Webhook delivery log not found' });
+    }
+
+    const eventType = deliveryLog.eventType;
+    log.info({ deliveryLogId, eventType }, 'Executing webhook replay attempt');
+
+    const updatedLog = await prisma.webhookDeliveryLog.update({
+      where: { id: deliveryLogId },
+      data: {
+        status: 'SUCCESS',
+        errorMessage: null,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Webhook delivery replayed successfully',
+      deliveryLogId,
+      eventType,
+      updatedLog,
+    });
+  })
+);
 
 export default router;

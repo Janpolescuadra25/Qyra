@@ -44,6 +44,10 @@ jest.mock('../src/lib/prisma', () => {
   const mockUserFindMany = jest.fn().mockResolvedValue([]);
   const mockStripeEventFindUnique = jest.fn().mockResolvedValue(null);
   const mockStripeEventCreate = jest.fn().mockResolvedValue({});
+  const mockWebhookDeliveryLogCreate = jest.fn().mockResolvedValue({ id: 'mock-delivery-log-id' });
+  const mockWebhookDeliveryLogFindMany = jest.fn().mockResolvedValue([]);
+  const mockWebhookDeliveryLogFindUnique = jest.fn().mockResolvedValue(null);
+  const mockWebhookDeliveryLogUpdate = jest.fn().mockResolvedValue({});
 
   return {
     prisma: {
@@ -55,6 +59,12 @@ jest.mock('../src/lib/prisma', () => {
       stripeEvent: {
         findUnique: mockStripeEventFindUnique,
         create: mockStripeEventCreate,
+      },
+      webhookDeliveryLog: {
+        create: mockWebhookDeliveryLogCreate,
+        findMany: mockWebhookDeliveryLogFindMany,
+        findUnique: mockWebhookDeliveryLogFindUnique,
+        update: mockWebhookDeliveryLogUpdate,
       },
     },
     __prismaMocks: {
@@ -90,6 +100,12 @@ type MockPrisma = {
   stripeEvent: {
     findUnique: jest.Mock;
     create: jest.Mock;
+  };
+  webhookDeliveryLog: {
+    create: jest.Mock;
+    findMany: jest.Mock;
+    findUnique: jest.Mock;
+    update: jest.Mock;
   };
 };
 
