@@ -1,24 +1,31 @@
-# Qyra Production Roadmap
+﻿# Qyra Production Roadmap
 
 ---
 
 ## ACTIVE PHASES
-### Phase 12: Customer Self-Service Portal & Multi-Region Expansion
-- **Status:** ACTIVE (IN PROGRESS)
-- **Reference Baseline:** `d30ef5da6037143d784f56e875fb2bfcc6da1d3d` (Post-Phase 11 Archive & Phase 12 Init)
-- **Documentation:** `docs/phase12/README.md`
-- **Scope & Objectives:**
-  * [x] Deliverable 12.1 — Dynamic Return URL Whitelist & Origin Validation (COMPLETED - 2026-10-25)
-  * [x] Deliverable 12.2 — Subscription Cancellation & Reactivation Endpoints (COMPLETED - 2026-10-25)
-  * [x] Deliverable 12.3 — Tier Upgrade & Downgrade Proration API (COMPLETED - 2026-10-26)
-  * Self-service customer subscription management portal (payment method updates, plan transitions, cancellation flow)
-  * Additional payment methods integration (Apple Pay, Google Pay, PayPal)
-  * Advanced subscription metrics & MRR churn telemetry
-  * Multi-region database replication & cross-browser extension rollout
+### Phase 12: Customer Self-Service Portal & Multi-Region Expansion (ACTIVE - WAVES 2 & 3 IN PROGRESS)
 
----
+#### Wave 1 Deliverables (COMPLETED & VERIFIED IN CODE)
+- [x] **Deliverable 12.1: Dynamic Return URL Allowlist & Validation** (Completed: 2026-10-25)
+  - Safe return URL validation utility `resolveSafeReturnUrl` in `Backend/src/routes/checkout.ts`.
+  - Comprehensive unit test suite in `Backend/tests/checkout-portal-return-url.test.ts` (7/7 passed).
+- [x] **Deliverable 12.2: Subscription Cancellation & Reactivation Endpoints** (Completed: 2026-10-25)
+  - Self-service endpoints `POST /cancel-subscription` and `POST /reactivate-subscription` in `Backend/src/routes/billing.ts`.
+  - Comprehensive unit test suite in `Backend/tests/billing-subscription.test.ts` (8/8 passed).
+- [x] **Deliverable 12.3: Tier Upgrade & Downgrade Proration API** (Completed: 2026-10-26, Commit: `1b0fa13`)
+  - Proration preview `GET /preview-proration` and tier modification `POST /change-plan` in `Backend/src/routes/billing.ts`.
+  - Comprehensive unit test suite in `Backend/tests/billing-proration.test.ts` (13/13 passed).
 
-## ARCHIVED COMPLETED PHASES
+#### Active Tasks (Waves 2 & 3)
+- [ ] **Deliverable 12.4: Additional Payment Methods Integration (Apple Pay, Google Pay, PayPal)**
+  - Expand Stripe payment sheet and checkout sessions to support Apple Pay, Google Pay, and localized payment methods.
+- [ ] **Deliverable 12.5: Self-Service Customer Management UI Portal**
+  - Dedicated billing portal frontend components for subscription status, tier switching, and payment history.
+- [ ] **Deliverable 12.6: Advanced Subscription Metrics & MRR Churn Telemetry**
+  - Telemetry service for tracking Monthly Recurring Revenue (MRR), net upgrades, contractions, and cancellation reasons.
+- [ ] **Deliverable 12.7: Multi-Region Database Replication & Cross-Browser Extension Rollout**
+  - Multi-region read replica configuration and manifest v3 cross-browser synchronization for browser extensions.
+
 ### Phase 11: Stripe Production Hardening & Webhook Monitoring
 - **Status:** 100% COMPLETED / VERIFIED (2026-10-25)
 - **Reference Baseline:** Commit `2cfea4f` (`2cfea4f10628ee496ab7c58dd8c09c02eef70de8`)
