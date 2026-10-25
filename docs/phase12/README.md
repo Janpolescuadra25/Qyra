@@ -4,7 +4,7 @@
 Phase 12 expands Qyra's subscription infrastructure by delivering customer self-service billing capabilities and multi-region payment adaptability. Building upon the Stripe subscription architecture hardened in Phases 10 and 11, this phase operationalizes customer autonomy for subscription modifications, payment method updates, invoice history retrieval, and billing cancellations while maintaining strict authorization controls and transactional consistency.
 
 - **Reference Baseline:** `d30ef5da6037143d784f56e875fb2bfcc6da1d3d` (Post-Phase 11 Archive & Phase 12 Init)
-- **Status:** PLANNING (IN PROGRESS)
+- **Status:** ACTIVE (IN PROGRESS)
 
 ---
 
@@ -27,7 +27,7 @@ Prior to Phase 12 implementation, the following foundational components are veri
 ## 3. Scope & Deliverable Breakdown
 
 ### Wave 1: Customer Portal Hardening & Dynamic Routing
-- **Deliverable 12.1 — Dynamic Return URL Whitelist:**
+- [x] **Deliverable 12.1 — Dynamic Return URL Whitelist & Origin Validation (COMPLETED - 2026-10-25):**
   - Enhance `POST /api/checkout/create-portal-session` to accept an optional `returnUrl` parameter.
   - Enforce strict origin validation against whitelisted domains (`FRONTEND_URL`, `EXTENSION_URL`, `https://qyra.space`) to prevent open-redirect vulnerabilities.
   - Fall back safely to `${process.env.FRONTEND_URL}/settings` when omitted or invalid.
