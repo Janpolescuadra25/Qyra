@@ -10,6 +10,7 @@
 - **Scope & Objectives:**
   * [x] Deliverable 12.1 — Dynamic Return URL Whitelist & Origin Validation (COMPLETED - 2026-10-25)
   * [x] Deliverable 12.2 — Subscription Cancellation & Reactivation Endpoints (COMPLETED - 2026-10-25)
+  * [x] Deliverable 12.3 — Tier Upgrade & Downgrade Proration API (COMPLETED - 2026-10-26)
   * Self-service customer subscription management portal (payment method updates, plan transitions, cancellation flow)
   * Additional payment methods integration (Apple Pay, Google Pay, PayPal)
   * Advanced subscription metrics & MRR churn telemetry

@@ -36,8 +36,61 @@ Prior to Phase 12 implementation, the following foundational components are veri
   - `POST /api/billing/reactivate-subscription` reverses pending cancellations by sending `cancel_at_period_end: false` and restoring automatic renewal before the current billing period ends.
   - Both endpoints enforce authenticated owner/admin authorization, confirm a valid Stripe subscription exists, and reject unconfigured Stripe environments with a `503`.
   - Idempotent cancellation requests return a successful 200 with a lifecycle message instead of re-triggering the Stripe subscription update.
-- **Deliverable 12.3 — Tier Upgrade & Downgrade Proration API:**
-  - Implement `POST /api/billing/change-plan` to handle prorated plan changes across monthly and annual intervals.
+- [x] **Deliverable 12.3 — Tier Upgrade & Downgrade Proration API (COMPLETED - 2026-10-26):**
+  - `GET /api/billing/preview-proration` previews the upcoming invoice impact of paid-tier and billing-interval changes.
+  - `POST /api/billing/change-plan` applies an immediate Stripe subscription-item price change with prorations and synchronizes the canonical local billing fields.
+
+#### Deliverable 12.3 API Contract
+
+Both routes require authentication and owner or team-admin billing authority. Accounts must have both a Stripe customer ID and an active Stripe subscription ID. Direct transitions to `free` are rejected; use `POST /api/billing/cancel-subscription` for end-of-period cancellation.
+
+**Preview proration**
+
+- Route: `GET /api/billing/preview-proration`
+- Query: `plan` is required; `interval` is optional and defaults to the current interval.
+- Paid plan values: `starter`, `professional`, `premium`, `enterprise`.
+- Interval values: canonical `month` or `year`; the aliases `monthly`, `annual`, and `yearly` are accepted and normalized.
+- Stripe operation: `invoices.createPreview` with `subscription_details.proration_behavior: "create_prorations"`.
+- The response includes `prorationDate`. Clients should send that value in the subsequent change request when the charged proration must match the preview calculation exactly.
+
+```http
+GET /api/billing/preview-proration?plan=professional&interval=annual
+Authorization: Bearer <token>
+```
+
+```json
+{
+  "status": "success",
+  "data": {
+    "currentPlan": "starter",
+    "currentInterval": "month",
+    "targetPlan": "professional",
+    "targetInterval": "year",
+    "prorationDate": 1793012400,
+    "amountDue": 1500,
+    "subtotal": 1500,
+    "total": 1500,
+    "currency": "usd",
+    "nextPaymentAttempt": "2026-11-26T00:00:00.000Z",
+    "lines": []
+  }
+}
+```
+
+**Change plan**
+
+- Route: `POST /api/billing/change-plan`
+- Body: `plan` is required; `interval` and the preview response's `prorationDate` are optional.
+- Stripe operation: `subscriptions.update` with `proration_behavior: "create_prorations"` and the active subscription item ID.
+- After Stripe accepts the update, one Prisma update synchronizes `currentPlan`, `planInterval`, `currentPeriodEnd`, and `cancelAtPeriodEnd: false`. Signed Stripe webhooks remain the final reconciliation authority if a later local persistence failure creates temporary divergence.
+
+```json
+{
+  "plan": "professional",
+  "interval": "year",
+  "prorationDate": 1793012400
+}
+```
 
 ### Wave 2: Multi-Region & Alternative Payment Methods
 - **Deliverable 12.4 — Alternative Payment Methods & Tax Localisation:**
