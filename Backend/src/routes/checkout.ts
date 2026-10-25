@@ -31,6 +31,59 @@ const checkoutLimiter = rateLimit({
 
 const router = Router();
 
+/**
+ * Validates a candidate return URL against an allowlist of trusted origins.
+ * Allowed origins:
+ * - process.env.FRONTEND_URL (origin)
+ * - https://qyra.space and https://www.qyra.space
+ * - chrome-extension://bfhobnahngcmhaeklihifgfbgdepibii (Chrome Web Store published extension ID)
+ * Falls back safely to `${process.env.FRONTEND_URL}/settings` when omitted, invalid, or untrusted.
+ */
+export function resolveSafeReturnUrl(candidateUrl?: unknown): string {
+  const defaultReturnUrl = `${process.env.FRONTEND_URL || 'https://qyra.space'}/settings`;
+  if (!candidateUrl || typeof candidateUrl !== 'string') {
+    return defaultReturnUrl;
+  }
+
+  try {
+    const parsed = new URL(candidateUrl);
+
+    // Support verified Chrome Extension origin (published Web Store ID)
+    if (parsed.protocol === 'chrome-extension:') {
+      const publishedExtensionId = 'bfhobnahngcmhaeklihifgfbgdepibii';
+      if (parsed.hostname === publishedExtensionId) {
+        return candidateUrl;
+      }
+      return defaultReturnUrl;
+    }
+
+    // Restrict web protocols to HTTP / HTTPS only
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return defaultReturnUrl;
+    }
+
+    // Build trusted origin set
+    const allowedOrigins = new Set<string>();
+    if (process.env.FRONTEND_URL) {
+      try {
+        allowedOrigins.add(new URL(process.env.FRONTEND_URL).origin);
+      } catch {
+        // ignore malformed env var
+      }
+    }
+    allowedOrigins.add('https://qyra.space');
+    allowedOrigins.add('https://www.qyra.space');
+
+    if (allowedOrigins.has(parsed.origin)) {
+      return candidateUrl;
+    }
+
+    return defaultReturnUrl;
+  } catch {
+    return defaultReturnUrl;
+  }
+}
+
 router.post(
   '/create-session',
   authenticate,
@@ -200,9 +253,11 @@ router.post(
       throw new AppError('Frontend URL is not configured', 500);
     }
 
+    const safeReturnUrl = resolveSafeReturnUrl(req.body?.returnUrl);
+
     const session = await stripe.billingPortal.sessions.create({
       customer: stripeCustomerId,
-      return_url: `${process.env.FRONTEND_URL}/settings`,
+      return_url: safeReturnUrl,
     });
 
     res.json({ url: session.url ?? '' });
