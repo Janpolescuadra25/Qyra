@@ -5,7 +5,7 @@
 ## ACTIVE PHASES
 ### Phase 12: Customer Self-Service Portal & Multi-Region Expansion
 - **Status:** PLANNING (NOT STARTED)
-- **Reference Baseline:** Commit `f8eb961` (`f8eb9610f551bd657733a352cead5112d0e7ad8a`)
+- **Reference Baseline:** `d30ef5da6037143d784f56e875fb2bfcc6da1d3d` (Post-Phase 11 Archive & Phase 12 Init)
 - **Documentation:** Pending definition in `docs/phase12/`
 - **Scope & Objectives:**
   * Self-service customer subscription management portal (payment method updates, plan transitions, cancellation flow)
