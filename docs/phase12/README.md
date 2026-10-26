@@ -93,9 +93,12 @@ Authorization: Bearer <token>
 ```
 
 ### Wave 2: Multi-Region & Alternative Payment Methods
-- **Deliverable 12.4 — Alternative Payment Methods & Tax Localisation:**
-  - Enable Apple Pay, Google Pay, and SEPA/PayPal support in Stripe Checkout sessions.
-  - Configure automatic tax calculation and currency conversion based on customer country, billing address, and IP geolocation.
+- [x] **Deliverable 12.4 — Additional Payment Methods Integration (COMPLETED - 2026-10-27):**
+  - Subscription and scan-pack Checkout sessions explicitly enable `payment_method_types: ['card', 'paypal']`.
+  - Apple Pay and Google Pay are card wallets in Stripe Checkout, not standalone Checkout `payment_method_types`; Stripe displays them automatically when the customer and account are eligible.
+  - Added four tests covering the payment-method contract and Stripe failure handling in both checkout flows.
+- **Tax localisation (remaining scope):**
+  - Configure automatic tax calculation and validate currency behavior based on customer country and billing address.
 - **Deliverable 12.5 — Customer Portal Configuration Validation:**
   - Scripted validation of Stripe Customer Portal settings (payment method updates, cancellation reason collection, billing address updates).
 
@@ -122,13 +125,21 @@ Authorization: Bearer <token>
 
 ## Post-Implementation Quality Gates & Verification Status
 
-### Phase 12 Wave 1 Test Suite Execution Matrix
+### Phase 12 Combined Test Suite Execution Matrix (Waves 1 & 2)
 | Deliverable | Test File | Test Cases | Execution Status | Notes |
 |---|---|---|---|---|
 | **12.1** Dynamic Return URL Validation | `Backend/tests/checkout-portal-return-url.test.ts` | 7 | 7 / 7 PASSED | Validates trusted domain allowlisting & fallback |
 | **12.2** Subscription Cancellation & Reactivation | `Backend/tests/billing-subscription.test.ts` | 8 | 8 / 8 PASSED | Validates period-end cancellation & immediate reactivation |
 | **12.3** Tier Upgrade/Downgrade Proration API | `Backend/tests/billing-proration.test.ts` | 13 | 13 / 13 PASSED | Validates invoice preview, interval transitions, DB sync |
-| **Total Wave 1 Unit Tests** | — | **28** | **28 / 28 PASSED** | Zero regressions across billing domain |
+| **12.4** Additional Payment Methods | `Backend/tests/checkout-payment-methods.test.ts` | 4 | 4 / 4 PASSED | Validates card-wallet and PayPal configuration for subscription and scan-pack Checkout |
+| **Total Phase 12 Unit Tests** | — | **32** | **32 / 32 PASSED** | Zero regressions across billing and Checkout domains |
+
+### Payment Methods Pre-Deployment Configuration
+
+- Enable card and PayPal independently in both Stripe test mode and live mode. Confirm PayPal is eligible for Qyra's account country, settlement currency, and recurring subscription products.
+- Apple Pay and Google Pay are delivered through the `card` Checkout method. They only appear on supported devices and browsers when the customer has an eligible wallet configured.
+- Hosted Stripe Checkout handles wallet presentation. If Qyra later adopts Embedded Checkout, Elements, or a custom Checkout domain, register and validate every production payment-method domain in Stripe before launch.
+- Run real Stripe test-mode sessions for monthly subscriptions, annual subscriptions, and one-time scan packs. Unit tests validate the request contract but do not prove dashboard activation or wallet eligibility.
 
 ### Build & Compilation Gate
 - `npm run build` in `Backend/`: Clean (0 errors, 0 warnings).

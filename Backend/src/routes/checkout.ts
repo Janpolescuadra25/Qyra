@@ -137,6 +137,9 @@ router.post(
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
+      // Apple Pay and Google Pay are card wallets in Stripe Checkout and appear
+      // automatically for eligible customers; PayPal is a separate method type.
+      payment_method_types: ['card', 'paypal'],
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${process.env.FRONTEND_URL}/billing-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL}/billing-cancel`,
@@ -197,7 +200,8 @@ router.post(
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'payment',
-      payment_method_types: ['card'],
+      // Apple Pay and Google Pay are enabled through the card method in hosted Checkout.
+      payment_method_types: ['card', 'paypal'],
       line_items: [{ price: pack.stripePriceId, quantity: 1 }],
       success_url: `${process.env.FRONTEND_URL}/billing-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL}/billing-cancel`,

@@ -17,8 +17,9 @@
   - Comprehensive unit test suite in `Backend/tests/billing-proration.test.ts` (13/13 passed).
 
 #### Active Tasks (Waves 2 & 3)
-- [ ] **Deliverable 12.4: Additional Payment Methods Integration (Apple Pay, Google Pay, PayPal)**
-  - Expand Stripe payment sheet and checkout sessions to support Apple Pay, Google Pay, and localized payment methods.
+- [x] **Deliverable 12.4: Additional Payment Methods Integration (Apple Pay, Google Pay, PayPal)** (Completed: 2026-10-27)
+  - Enabled `card` plus `paypal` for subscription and scan-pack Checkout sessions. Stripe presents Apple Pay and Google Pay as card wallets when the customer, device, browser, currency, and account configuration are eligible.
+  - Added `Backend/tests/checkout-payment-methods.test.ts` with 4/4 passing integration-contract tests.
 - [ ] **Deliverable 12.5: Self-Service Customer Management UI Portal**
   - Dedicated billing portal frontend components for subscription status, tier switching, and payment history.
 - [ ] **Deliverable 12.6: Advanced Subscription Metrics & MRR Churn Telemetry**
