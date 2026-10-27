@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { api, type UserInfo, type ScanPack, type ScanPackPurchase } from '../lib/api';
+import { api, type BillingInterval, type BillingPlanKey, type BillingStatusResponse, type UserInfo, type ScanPack, type ScanPackPurchase } from '../lib/api';
 import { useQuickBooks } from '../hooks/useQuickBooks';
 import PricingView from './PricingView';
 import ToggleRow from './ToggleRow';
+import { SubscriptionStatusCard } from './billing/SubscriptionStatusCard';
+import { PlanChangeModal } from './billing/PlanChangeModal';
+import { CancelSubscriptionModal } from './billing/CancelSubscriptionModal';
+import { PaymentHistoryCard } from './billing/PaymentHistoryCard';
 
 interface Props {
   jwt: string;
@@ -16,7 +20,13 @@ export default function SettingsView({ jwt, user, onLogout }: Props) {
   const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
   const [showPricing, setShowPricing] = useState(false);
   const [billingError, setBillingError] = useState<string | null>(null);
-  const [billingLoading, setBillingLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [billingStatus, setBillingStatus] = useState<BillingStatusResponse | null>(null);
+  const [billingStatusLoading, setBillingStatusLoading] = useState(false);
+  const [showPlanChange, setShowPlanChange] = useState(false);
+  const [showCancelSubscription, setShowCancelSubscription] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
   const [scanUsage, setScanUsage] = useState<{
     scansUsed: number;
     maxScans: number;
@@ -58,7 +68,7 @@ export default function SettingsView({ jwt, user, onLogout }: Props) {
   };
 
   const handleOpenBillingPortal = async () => {
-    setBillingLoading(true);
+    setPortalLoading(true);
     setBillingError(null);
     try {
       const response = await api.createPortalSession(jwt);
@@ -66,7 +76,55 @@ export default function SettingsView({ jwt, user, onLogout }: Props) {
     } catch (err) {
       setBillingError(err instanceof Error ? err.message : 'Failed to open billing portal.');
     } finally {
-      setBillingLoading(false);
+      setPortalLoading(false);
+    }
+  };
+
+  const refreshBillingStatus = async () => {
+    if (!jwt || user.subscriptionSource !== 'stripe') return;
+    setBillingStatusLoading(true);
+    try {
+      setBillingStatus(await api.getBillingStatus(jwt));
+    } catch (err) {
+      setBillingError(err instanceof Error ? err.message : 'Failed to load subscription status.');
+    } finally {
+      setBillingStatusLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void refreshBillingStatus();
+  }, [jwt, user.subscriptionSource]);
+
+  const handlePlanChange = async (plan: BillingPlanKey, interval: BillingInterval, prorationDate?: number) => {
+    await api.changePlan(jwt, plan, interval, prorationDate);
+    await refreshBillingStatus();
+  };
+
+  const handleCancelSubscription = async () => {
+    setCancelling(true);
+    setBillingError(null);
+    try {
+      await api.cancelSubscription(jwt);
+      setShowCancelSubscription(false);
+      await refreshBillingStatus();
+    } catch (err) {
+      setBillingError(err instanceof Error ? err.message : 'Failed to schedule cancellation.');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleReactivateSubscription = async () => {
+    setReactivating(true);
+    setBillingError(null);
+    try {
+      await api.reactivateSubscription(jwt);
+      await refreshBillingStatus();
+    } catch (err) {
+      setBillingError(err instanceof Error ? err.message : 'Failed to reactivate subscription.');
+    } finally {
+      setReactivating(false);
     }
   };
 
@@ -145,6 +203,18 @@ export default function SettingsView({ jwt, user, onLogout }: Props) {
   if (user.subscriptionSource === 'stripe' && user.paymentIssue) {
     billingNotes.push('Payment failed. Please update your payment method in Stripe to avoid service interruption.');
   }
+
+  const displayBillingStatus: BillingStatusResponse = billingStatus ?? {
+    success: true,
+    tier: user.currentPlan ?? 'free',
+    status: user.subscriptionSource === 'stripe' ? 'active' : user.status,
+    current_period_end: user.currentPeriodEnd ?? null,
+    cancel_at_period_end: Boolean(user.cancelAtPeriodEnd),
+    payment_issue: Boolean(user.paymentIssue),
+    plan_interval: user.planInterval ?? null,
+    pool_scans: user.poolScans ?? 0,
+    bonus_scans: user.bonusScans ?? 0,
+  };
 
   return (
     <div className="p-3 space-y-4">
@@ -295,67 +365,47 @@ export default function SettingsView({ jwt, user, onLogout }: Props) {
       {/* Billing section */}
       <div>
         <div className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">Billing</div>
-        <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-3">
-          <div className="text-sm text-gray-900">{billingStatusText}</div>
-          {user.subscriptionSource === 'stripe' && user.currentPeriodEnd ? (
-            <div className="text-gray-600 text-xs">Renewal: {new Date(user.currentPeriodEnd).toLocaleDateString()}</div>
-          ) : null}
-          {billingNotes.length > 0 && (
-            <div className="space-y-1 text-xs">
-              {billingNotes.map((note) => (
-                <div key={note} className={`rounded-lg px-3 py-2 ${user.paymentIssue ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-gray-900'}`}>
-                  {note}
-                </div>
-              ))}
-            </div>
-          )}
-          {billingError && <div className="text-red-600 text-xs">{billingError}</div>}
-          <div className="grid gap-2 sm:grid-cols-2">
-            {user.subscriptionSource === 'owner' ? null : user.subscriptionSource === 'stripe' ? (
-              <>
-                <button
-                  type="button"
-                  onClick={handleOpenBillingPortal}
-                  disabled={billingLoading}
-                  className="w-full rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white py-2 text-xs font-semibold"
-                >
-                  {billingLoading ? 'Opening portal…' : 'Manage Billing'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowPricing(true)}
-                  className="w-full rounded-lg bg-[#F5F5F7] hover:bg-gray-50 text-gray-700 py-2 text-xs font-semibold"
-                >
-                  Upgrade Plan
-                </button>
-              </>
-            ) : user.subscriptionSource === 'partner' ? (
-              <button
-                type="button"
-                onClick={() => { window.location.href = 'mailto:support@qyra.space?subject=Qyra Billing Inquiry'; }}
-                className="w-full rounded-lg border border-gray-200 bg-[#F5F5F7] text-gray-600 py-2 text-xs font-semibold hover:bg-gray-50"
-              >
-                Contact owner for billing
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowPricing(true)}
-                className="w-full rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white py-2 text-xs font-semibold"
-              >
-                Choose a plan
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => { window.location.href = 'mailto:support@qyra.space?subject=Qyra Billing Help'; }}
-              className="w-full rounded-lg border border-gray-200 bg-[#F5F5F7] text-gray-600 py-2 text-xs font-semibold hover:bg-gray-50"
-            >
-              Billing help
-            </button>
+        {user.subscriptionSource === 'stripe' ? (
+          <SubscriptionStatusCard
+            status={displayBillingStatus}
+            loading={billingStatusLoading}
+            onOpenChangePlan={() => setShowPlanChange(true)}
+            onOpenCancel={() => setShowCancelSubscription(true)}
+            onReactivate={() => void handleReactivateSubscription()}
+            onOpenStripePortal={() => void handleOpenBillingPortal()}
+            reactivating={reactivating}
+          />
+        ) : (
+          <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-3">
+            <div className="text-sm text-gray-900">{billingStatusText}</div>
+            {billingNotes.map((note) => <div key={note} className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-gray-900">{note}</div>)}
+            {user.subscriptionSource === 'partner' ? (
+              <button type="button" onClick={() => { window.location.href = 'mailto:support@qyra.space?subject=Qyra Billing Inquiry'; }} className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 text-xs font-semibold text-gray-600">Contact owner for billing</button>
+            ) : user.subscriptionSource !== 'owner' ? (
+              <button type="button" onClick={() => setShowPricing(true)} className="w-full rounded-lg bg-emerald-700 py-2 text-xs font-semibold text-white">Choose a plan</button>
+            ) : null}
           </div>
-        </div>
+        )}
+        {portalLoading && <div className="mt-2 text-xs text-gray-500">Opening Stripe portal…</div>}
+        {billingError && <div role="alert" className="mt-2 text-xs text-red-600">{billingError}</div>}
       </div>
+
+      <PlanChangeModal
+        isOpen={showPlanChange}
+        onClose={() => setShowPlanChange(false)}
+        currentTier={displayBillingStatus.tier ?? 'free'}
+        currentInterval={displayBillingStatus.plan_interval ?? 'month'}
+        onConfirmChange={handlePlanChange}
+        jwt={jwt}
+      />
+
+      <CancelSubscriptionModal
+        isOpen={showCancelSubscription}
+        onClose={() => setShowCancelSubscription(false)}
+        onConfirmCancel={() => void handleCancelSubscription()}
+        currentPeriodEnd={displayBillingStatus.current_period_end}
+        loading={cancelling}
+      />
 
       {showPricing && (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
@@ -389,32 +439,11 @@ export default function SettingsView({ jwt, user, onLogout }: Props) {
 
       <div>
         <div className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">Purchase History</div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          {purchasesLoading ? (
-            <div className="text-sm text-gray-400">Loading purchase history…</div>
-          ) : purchases.length === 0 ? (
-            <div className="text-sm text-gray-400 text-center">No purchases yet</div>
-          ) : (
-            <div className="space-y-3">
-              {purchases.map((purchase) => (
-                <div key={purchase.id} className="rounded-2xl border border-gray-100 bg-[#F8FAFC] p-3">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">{purchase.scans} Scans</div>
-                      <div className="text-xs text-gray-500">{new Date(purchase.createdAt).toLocaleDateString()}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-semibold text-gray-900">${purchase.pricePaid.toFixed(2)}</div>
-                      <div className={`text-xs font-semibold ${purchase.status === 'refunded' ? 'text-red-600' : 'text-emerald-600'}`}>
-                        {purchase.status === 'refunded' ? 'Refunded' : 'Active'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <PaymentHistoryCard
+          purchases={purchases}
+          loading={purchasesLoading}
+          onManageBilling={subscriptionSource === 'stripe' ? () => void handleOpenBillingPortal() : undefined}
+        />
       </div>
 
       {/* Account section */}

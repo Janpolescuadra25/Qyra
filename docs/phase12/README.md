@@ -103,9 +103,13 @@ Authorization: Bearer <token>
   - Scripted validation of Stripe Customer Portal settings (payment method updates, cancellation reason collection, billing address updates).
 
 ### Wave 3: Frontend Integration & End-to-End Verification
-- **Deliverable 12.6 — Frontend Settings Portal Integration:**
-  - Connect settings portal action button to `POST /api/checkout/create-portal-session`.
-  - Reflect real-time subscription lifecycle updates (`cancelAtPeriodEnd`, renewal dates) in user dashboard.
+- [x] **Deliverable 12.5 — Self-Service Customer Management UI Portal (COMPLETED - 2026-10-27):**
+  - Added `SubscriptionStatusCard`, `PlanChangeModal`, `CancelSubscriptionModal`, and `PaymentHistoryCard` as focused components under `Frontend/src/popup/components/billing/`.
+  - Extended the frontend API client for billing status, proration preview, plan changes, cancellation, and reactivation using the canonical backend request and response contracts.
+  - Integrated live status refresh, exact-preview `prorationDate` reuse, cancellation/reactivation feedback, Stripe portal access, and scan-pack purchase history into `SettingsView`.
+  - Plan options use the production plan keys (`starter`, `professional`, `premium`, `enterprise`) and canonical intervals (`month`, `year`).
+- **Deliverable 12.6 — Frontend Settings Portal End-to-End Verification:**
+  - Verify the integrated customer portal against real Stripe test-mode customers, prices, invoices, wallet eligibility, and signed webhook updates.
 - **Deliverable 12.7 — Localized Tax & Customer Portal UX Verification:**
   - Validate regional pricing, tax logic, and localized billing UX across supported markets.
   - Verify end-to-end Stripe testmode behavior for plan upgrades, cancellation flows, and webhook synchronization.
@@ -132,7 +136,8 @@ Authorization: Bearer <token>
 | **12.2** Subscription Cancellation & Reactivation | `Backend/tests/billing-subscription.test.ts` | 8 | 8 / 8 PASSED | Validates period-end cancellation & immediate reactivation |
 | **12.3** Tier Upgrade/Downgrade Proration API | `Backend/tests/billing-proration.test.ts` | 13 | 13 / 13 PASSED | Validates invoice preview, interval transitions, DB sync |
 | **12.4** Additional Payment Methods | `Backend/tests/checkout-payment-methods.test.ts` | 4 | 4 / 4 PASSED | Validates card-wallet and PayPal configuration for subscription and scan-pack Checkout |
-| **Total Phase 12 Unit Tests** | — | **32** | **32 / 32 PASSED** | Zero regressions across billing and Checkout domains |
+| **12.5** Billing Portal Frontend | `Frontend/src/popup/components/billing/__tests__/BillingPortal.test.tsx` | 6 | 6 / 6 PASSED | Validates status, cancellation/reactivation actions, callbacks, and payment-history states |
+| **Backend Phase 12 Unit Tests** | — | **32** | **32 / 32 PASSED** | Zero regressions across billing and Checkout domains |
 
 ### Payment Methods Pre-Deployment Configuration
 

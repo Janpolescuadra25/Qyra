@@ -190,6 +190,65 @@ export interface ScanPackPurchase {
   createdAt: string;
 }
 
+export type BillingPlanKey = 'starter' | 'professional' | 'premium' | 'enterprise';
+export type BillingInterval = 'month' | 'year';
+
+export interface BillingStatusResponse {
+  success: boolean;
+  tier: string | null;
+  status: string;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  payment_issue: boolean;
+  plan_interval: string | null;
+  pool_scans: number;
+  bonus_scans: number;
+}
+
+export interface ProrationLine {
+  id: string;
+  description: string | null;
+  amount: number;
+  proration: boolean;
+  period: { start: string; end: string };
+}
+
+export interface PreviewProrationResponse {
+  status: 'success';
+  data: {
+    currentPlan: string | null;
+    currentInterval: BillingInterval;
+    targetPlan: BillingPlanKey;
+    targetInterval: BillingInterval;
+    prorationDate: number;
+    amountDue: number;
+    subtotal: number;
+    total: number;
+    currency: string;
+    nextPaymentAttempt: string | null;
+    lines: ProrationLine[];
+  };
+}
+
+export interface ChangePlanResponse {
+  status: 'success';
+  message: string;
+  data: {
+    plan: string | null;
+    interval: string | null;
+    currentPeriodEnd: string | null;
+    cancelAtPeriodEnd: boolean;
+    stripeSubscriptionStatus: string;
+  };
+}
+
+export interface SubscriptionLifecycleResponse {
+  success: boolean;
+  message: string;
+  cancelAtPeriodEnd: boolean;
+  currentPeriodEnd: string | null;
+}
+
 export interface UserInfo {
   id: string;
   email: string;
@@ -291,6 +350,31 @@ export const api = {
 
   createPortalSession: (jwt: string) =>
     post<{ url: string }>('/api/checkout/create-portal-session', {}, jwt),
+
+  getBillingStatus: (jwt: string) =>
+    get<BillingStatusResponse>('/api/billing/status', jwt),
+
+  previewProration: (jwt: string, plan: BillingPlanKey, interval: BillingInterval) => {
+    const params = new URLSearchParams({ plan, interval });
+    return get<PreviewProrationResponse>(`/api/billing/preview-proration?${params.toString()}`, jwt);
+  },
+
+  changePlan: (
+    jwt: string,
+    plan: BillingPlanKey,
+    interval: BillingInterval,
+    prorationDate?: number,
+  ) => post<ChangePlanResponse>(
+    '/api/billing/change-plan',
+    { plan, interval, ...(prorationDate === undefined ? {} : { prorationDate }) },
+    jwt,
+  ),
+
+  cancelSubscription: (jwt: string) =>
+    post<SubscriptionLifecycleResponse>('/api/billing/cancel-subscription', {}, jwt),
+
+  reactivateSubscription: (jwt: string) =>
+    post<SubscriptionLifecycleResponse>('/api/billing/reactivate-subscription', {}, jwt),
 
   getScanUsage: (jwt: string) =>
     get<{
