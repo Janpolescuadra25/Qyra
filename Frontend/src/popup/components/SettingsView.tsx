@@ -101,11 +101,11 @@ export default function SettingsView({ jwt, user, onLogout }: Props) {
     await refreshBillingStatus();
   };
 
-  const handleCancelSubscription = async () => {
+  const handleCancelSubscription = async (data?: { reason: string; feedback?: string }) => {
     setCancelling(true);
     setBillingError(null);
     try {
-      await api.cancelSubscription(jwt);
+      await api.cancelSubscription(jwt, data);
       setShowCancelSubscription(false);
       await refreshBillingStatus();
     } catch (err) {
@@ -402,7 +402,7 @@ export default function SettingsView({ jwt, user, onLogout }: Props) {
       <CancelSubscriptionModal
         isOpen={showCancelSubscription}
         onClose={() => setShowCancelSubscription(false)}
-        onConfirmCancel={() => void handleCancelSubscription()}
+        onConfirmCancel={(data) => void handleCancelSubscription(data)}
         currentPeriodEnd={displayBillingStatus.current_period_end}
         loading={cancelling}
       />

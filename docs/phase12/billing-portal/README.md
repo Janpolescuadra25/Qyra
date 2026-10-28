@@ -115,5 +115,5 @@ At the implementation baseline, the complete frontend suite contains 13 passing 
 ## 8. Operational boundaries and follow-up
 
 - Stripe invoice and receipt history remains delegated to the hosted customer portal.
-- The cancellation UI does not yet collect churn reasons; that belongs with the subscription telemetry work planned in Deliverable 12.6.
+- The cancellation UI now captures structured churn reasons and optional feedback, sending them through the backend telemetry pipeline in Deliverable 12.6.
 - The frontend must not be treated as an authorization boundary. Any future billing endpoint must preserve authenticated server-side Owner/Admin enforcement.

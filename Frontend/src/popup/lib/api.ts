@@ -370,8 +370,8 @@ export const api = {
     jwt,
   ),
 
-  cancelSubscription: (jwt: string) =>
-    post<SubscriptionLifecycleResponse>('/api/billing/cancel-subscription', {}, jwt),
+  cancelSubscription: (jwt: string, data: { reason?: string; feedback?: string } = {}) =>
+    post<SubscriptionLifecycleResponse>('/api/billing/cancel-subscription', data, jwt),
 
   reactivateSubscription: (jwt: string) =>
     post<SubscriptionLifecycleResponse>('/api/billing/reactivate-subscription', {}, jwt),

@@ -3,6 +3,7 @@ import { asyncHandler, AppError } from '../lib/errors';
 import { prisma } from '../lib/prisma';
 import { stripe, isStripeConfigured, PLANS, type PlanKey } from '../lib/stripe';
 import { authenticate, type AuthRequest } from '../middleware/auth.middleware';
+import { CANCELLATION_REASONS, computePlanMRR, recordSubscriptionEvent } from '../services/subscriptionMetrics';
 
 const router = Router();
 
@@ -143,9 +144,22 @@ router.post(
       });
     }
 
+    const billingSnapshot = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { currentPlan: true, planInterval: true },
+    });
+
     await stripe.subscriptions.update(user.stripeSubscriptionId, {
       cancel_at_period_end: true,
     });
+
+    const rawReason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+    const reason = CANCELLATION_REASONS.includes(rawReason as typeof CANCELLATION_REASONS[number])
+      ? rawReason
+      : 'other';
+    const feedback = typeof req.body?.feedback === 'string'
+      ? req.body.feedback.trim().slice(0, 500) || null
+      : null;
 
     const updatedUser = await prisma.user.update({
       where: { id: targetUserId },
@@ -154,6 +168,22 @@ router.post(
         cancelAtPeriodEnd: true,
         currentPeriodEnd: true,
       },
+    });
+    await prisma.user.update({
+      where: { id: targetUserId },
+      data: { cancellationReason: reason, cancellationFeedback: feedback },
+    });
+
+    await recordSubscriptionEvent({
+      userId: user.id,
+      eventType: 'CANCEL',
+      fromPlan: billingSnapshot?.currentPlan,
+      toPlan: billingSnapshot?.currentPlan,
+      fromInterval: billingSnapshot?.planInterval,
+      toInterval: billingSnapshot?.planInterval,
+      mrrDelta: -computePlanMRR(billingSnapshot?.currentPlan, billingSnapshot?.planInterval),
+      reason,
+      feedback,
     });
 
     return res.json({
@@ -199,6 +229,11 @@ router.post(
       throw new AppError('Subscription is not currently scheduled for cancellation', 400);
     }
 
+    const billingSnapshot = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { currentPlan: true, planInterval: true },
+    });
+
     await stripe.subscriptions.update(user.stripeSubscriptionId, {
       cancel_at_period_end: false,
     });
@@ -210,6 +245,20 @@ router.post(
         cancelAtPeriodEnd: true,
         currentPeriodEnd: true,
       },
+    });
+    await prisma.user.update({
+      where: { id: targetUserId },
+      data: { cancellationReason: null, cancellationFeedback: null },
+    });
+
+    await recordSubscriptionEvent({
+      userId: user.id,
+      eventType: 'REACTIVATE',
+      fromPlan: billingSnapshot?.currentPlan,
+      toPlan: billingSnapshot?.currentPlan,
+      fromInterval: billingSnapshot?.planInterval,
+      toInterval: billingSnapshot?.planInterval,
+      mrrDelta: computePlanMRR(billingSnapshot?.currentPlan, billingSnapshot?.planInterval),
     });
 
     return res.json({
@@ -442,6 +491,24 @@ router.post(
         currentPeriodEnd: true,
         cancelAtPeriodEnd: true,
       },
+    });
+
+    const oldMrr = computePlanMRR(user.currentPlan, currentInterval);
+    const newMrr = computePlanMRR(targetPlan, targetInterval);
+    const mrrDelta = newMrr - oldMrr;
+    const eventType = mrrDelta > 0
+      ? 'UPGRADE'
+      : mrrDelta < 0
+        ? 'DOWNGRADE'
+        : 'INTERVAL_CHANGE';
+    await recordSubscriptionEvent({
+      userId: user.id,
+      eventType,
+      fromPlan: user.currentPlan,
+      toPlan: targetPlan,
+      fromInterval: currentInterval,
+      toInterval: targetInterval,
+      mrrDelta,
     });
 
     return res.json({

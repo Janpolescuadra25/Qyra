@@ -6,6 +6,7 @@ import { asyncHandler, AppError } from '../lib/errors';
 import { prisma } from '../lib/prisma';
 import { authenticate, requireRole } from '../middleware/auth.middleware';
 import { logger } from '../lib/logger';
+import { computePlanMRR, recordSubscriptionEvent } from '../services/subscriptionMetrics';
 
 const log = logger.child({ module: 'Webhooks' });
 const router = Router();
@@ -263,7 +264,15 @@ router.post(
 
           const currentTeams = await prisma.user.findMany({
             where: { stripeSubscriptionId: subscription.id },
-            select: { id: true, poolScans: true, poolLocations: true, poolTemplates: true },
+            select: {
+              id: true,
+              currentPlan: true,
+              planInterval: true,
+              cancelAtPeriodEnd: true,
+              poolScans: true,
+              poolLocations: true,
+              poolTemplates: true,
+            },
           });
 
           await prisma.user.updateMany({
@@ -272,6 +281,33 @@ router.post(
           });
 
           for (const team of currentTeams) {
+            const nextCancellationState = Boolean(subscription.cancel_at_period_end);
+            if (team.cancelAtPeriodEnd !== nextCancellationState) {
+              await recordSubscriptionEvent({
+                userId: team.id,
+                eventType: nextCancellationState ? 'CANCEL' : 'REACTIVATE',
+                fromPlan: team.currentPlan,
+                toPlan: planKey ?? team.currentPlan,
+                fromInterval: team.planInterval,
+                toInterval: planInterval,
+                mrrDelta: nextCancellationState
+                  ? -computePlanMRR(team.currentPlan, team.planInterval)
+                  : computePlanMRR(planKey ?? team.currentPlan, planInterval),
+                reason: nextCancellationState ? 'stripe_subscription_updated' : null,
+              });
+            } else if (planKey && (team.currentPlan !== planKey || team.planInterval !== planInterval)) {
+              const oldMrr = computePlanMRR(team.currentPlan, team.planInterval);
+              const newMrr = computePlanMRR(planKey, planInterval);
+              await recordSubscriptionEvent({
+                userId: team.id,
+                eventType: newMrr > oldMrr ? 'UPGRADE' : newMrr < oldMrr ? 'DOWNGRADE' : 'INTERVAL_CHANGE',
+                fromPlan: team.currentPlan,
+                toPlan: planKey,
+                fromInterval: team.planInterval,
+                toInterval: planInterval,
+                mrrDelta: newMrr - oldMrr,
+              });
+            }
             if (updateData.poolScans != null) {
               const newScans = updateData.poolScans as number;
               const currentScans = team.poolScans ?? 0;
@@ -310,7 +346,7 @@ router.post(
           const subscription = event.data.object as SubscriptionPayload;
           const affectedUsers = await prisma.user.findMany({
             where: { stripeSubscriptionId: subscription.id },
-            select: { id: true },
+            select: { id: true, currentPlan: true, planInterval: true },
           });
           const affectedIds = affectedUsers.map(u => u.id);
           const freeLimits = getPlanLimits('free');
@@ -349,6 +385,18 @@ router.post(
                 allocatedLocations: null,
                 allocatedTemplates: null,
               },
+            });
+          }
+          for (const affectedUser of affectedUsers) {
+            await recordSubscriptionEvent({
+              userId: affectedUser.id,
+              eventType: 'CHURN',
+              fromPlan: affectedUser.currentPlan,
+              toPlan: 'free',
+              fromInterval: affectedUser.planInterval,
+              toInterval: null,
+              mrrDelta: -computePlanMRR(affectedUser.currentPlan, affectedUser.planInterval),
+              reason: 'stripe_subscription_deleted',
             });
           }
           break;

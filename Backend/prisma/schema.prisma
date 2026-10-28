@@ -39,6 +39,8 @@ model User {
   stripeSubscriptionId    String?
   subscriptionSource      String?
   cancelAtPeriodEnd       Boolean                  @default(false)
+  cancellationReason     String?
+  cancellationFeedback   String?
   maxLocations            Int?
   paymentIssue            Boolean                  @default(false)
   maxScans                Int?
@@ -92,6 +94,7 @@ model User {
   transferredFrom         User?                    @relation("TransferredFrom", fields: [transferredFromId], references: [id])
   transferredTo           User[]                   @relation("TransferredFrom")
   scanPackPurchases       ScanPackPurchase[]
+  subscriptionEvents      SubscriptionEvent[]      @relation("UserSubscriptionEvents")
 
   @@index([blockedById])
   @@index([approvedById])
@@ -101,6 +104,26 @@ model User {
   @@index([managedById])
   @@index([adminId, role])
   @@map("users")
+}
+
+model SubscriptionEvent {
+  id           String   @id @default(uuid())
+  userId       String
+  eventType    String
+  fromPlan     String?
+  toPlan       String?
+  fromInterval String?
+  toInterval   String?
+  mrrDelta     Float    @default(0)
+  reason       String?
+  feedback     String?
+  createdAt    DateTime @default(now())
+  user         User     @relation("UserSubscriptionEvents", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("subscription_events")
 }
 
 model AdminRequest {

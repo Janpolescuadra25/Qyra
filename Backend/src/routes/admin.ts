@@ -18,6 +18,7 @@ import { createInviteLink } from '../utils/invite.utils';
 import { enforceEffectiveRole, UserForAccess, EffectiveAccess, getEffectiveAccess } from '../middleware/effective-role';
 import { ALL_FEATURES, ALL_ACTIONS, getPermissionDefaults } from '../middleware/permissions';
 import { mergePermissions } from '../lib/permission-utils';
+import { getChurnMetrics, getSubscriptionMetrics } from '../services/subscriptionMetrics';
 
 const router = Router();
 
@@ -65,6 +66,17 @@ function buildUserForAccess(user: {
 // All admin routes require authentication + at least OWNER, ADMIN, or MANAGER role
 router.use(authenticate, requireRole('OWNER', 'ADMIN', 'MANAGER'));
 router.use(enforceEffectiveRole);  // defense-in-depth: blocks TIME_BOMBED/BLOCKED/PENDING_APPROVAL writes
+
+router.get('/metrics/subscriptions', requireRole('OWNER', 'ADMIN'), asyncHandler(async (_req: AuthRequest, res: Response) => {
+  const metrics = await getSubscriptionMetrics();
+  return res.json({ success: true, metrics });
+}));
+
+router.get('/metrics/churn', requireRole('OWNER', 'ADMIN'), asyncHandler(async (req: AuthRequest, res: Response) => {
+  const parsedDays = typeof req.query.days === 'string' ? Number(req.query.days) : 30;
+  const churn = await getChurnMetrics(parsedDays);
+  return res.json({ success: true, churn });
+}));
 
 // ── GET /api/admin/team  (ADMIN only) ─────────────────────────────────────────
 router.get('/team', requireRole('ADMIN', 'MANAGER'), asyncHandler(async(req: AuthRequest, res: Response) => {

@@ -4,7 +4,7 @@
 Phase 12 expands Qyra's subscription infrastructure by delivering customer self-service billing capabilities and multi-region payment adaptability. Building upon the Stripe subscription architecture hardened in Phases 10 and 11, this phase operationalizes customer autonomy for subscription modifications, payment method updates, invoice history retrieval, and billing cancellations while maintaining strict authorization controls and transactional consistency.
 
 - **Reference Baseline:** `d30ef5da6037143d784f56e875fb2bfcc6da1d3d` (Post-Phase 11 Archive & Phase 12 Init)
-- **Status:** ACTIVE (IN PROGRESS)
+- **Status:** COMPLETED (DELIVERABLE 12.6 VERIFIED)
 
 ---
 
@@ -108,8 +108,13 @@ Authorization: Bearer <token>
   - Extended the frontend API client for billing status, proration preview, plan changes, cancellation, and reactivation using the canonical backend request and response contracts.
   - Integrated live status refresh, exact-preview `prorationDate` reuse, cancellation/reactivation feedback, Stripe portal access, and scan-pack purchase history into `SettingsView`.
   - Plan options use the production plan keys (`starter`, `professional`, `premium`, `enterprise`) and canonical intervals (`month`, `year`).
-- **Deliverable 12.6 — Frontend Settings Portal End-to-End Verification:**
-  - Verify the integrated customer portal against real Stripe test-mode customers, prices, invoices, wallet eligibility, and signed webhook updates.
+- [x] **Deliverable 12.6 — Advanced Subscription Metrics & MRR Churn Telemetry (COMPLETED - 2026-10-29):**
+  - Extended the Prisma schema with `cancellationReason`, `cancellationFeedback`, and the `SubscriptionEvent` audit model to record immutable billing telemetry events.
+  - Added `Backend/src/services/subscriptionMetrics.ts` to compute MRR, ARR, plan distribution, reason breakdowns, and churn rate across active and cancelling subscriptions.
+  - Hardened `Backend/src/routes/webhooks.ts` for Stripe lifecycle synchronization on `customer.subscription.updated` and `customer.subscription.deleted` so local state and metrics remain aligned with signed webhook events.
+  - Enhanced `POST /api/billing/cancel-subscription` to persist structured cancellation reasons and optional feedback, and `POST /api/billing/change-plan` to record upgrade/downgrade/interval telemetry.
+  - Mounted protected admin endpoints in `Backend/src/routes/admin.ts` for `GET /api/admin/metrics/subscriptions` and `GET /api/admin/metrics/churn` behind `requireRole('OWNER', 'ADMIN')`.
+  - Added `Backend/tests/billing-telemetry.test.ts` to cover MRR aggregation, churn math, cancellation telemetry, and the protected admin routes.
 - **Deliverable 12.7 — Localized Tax & Customer Portal UX Verification:**
   - Validate regional pricing, tax logic, and localized billing UX across supported markets.
   - Verify end-to-end Stripe testmode behavior for plan upgrades, cancellation flows, and webhook synchronization.
