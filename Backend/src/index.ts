@@ -175,6 +175,10 @@ app.use(globalLimiter);
 app.use(apiLimiter);
 
 // ── Routes ──────────────────────────────────────────────────────────────────
+// Regional routing middleware & health check endpoint
+app.use(regionDetectionMiddleware);
+app.use('/api/health', healthRouter);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/templates', templateRoutes);

@@ -33,7 +33,7 @@ Phases 1 through 11 have been fully implemented, verified across test suites, co
 | **12.4** | Multi-Payment Methods (Apple Pay, Google Pay, PayPal) | **COMPLETED** | `docs/phase12/billing-portal/README.md` |
 | **12.5** | Self-Service Billing Portal UI & Payment Method Management | **COMPLETED** | `docs/phase12/billing-portal/README.md` |
 | **12.6** | Advanced Subscription Metrics & MRR Churn Telemetry | **COMPLETED** (2026-10-29) | `docs/phase12/12.6-subscription-metrics/README.md` |
-| **12.7** | Multi-Region Database Replication & Cross-Browser Extension Rollout | **PENDING** | Next Active Deliverable |
+| **12.7** | Multi-Region Database Replication & Cross-Browser Extension Rollout | **IN PROGRESS** | Part 1 (Database Replication Core): IMPLEMENTED | Part 2 (Cross-Browser Extension): PENDING |
 
 ---
 
