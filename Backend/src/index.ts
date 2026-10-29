@@ -1,4 +1,6 @@
 ﻿import 'dotenv/config';
+import { regionDetectionMiddleware } from './middleware/regionDetection';
+import { healthRouter } from './routes/health';
 import express from 'express';
 import path from 'path';
 import cors from 'cors';

@@ -1,15 +1,19 @@
-import { PrismaClient } from '@prisma/client';
+﻿import { PrismaClient } from '@prisma/client';
+import { DatabaseReplicationManager } from './databaseReplication';
 
-// Singleton pattern — prevents multiple PrismaClient instances in dev hot-reload
-// and avoids exhausting the DB connection pool in production.
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+const primaryPrisma = new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+});
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
-  });
+export const dbReplicationManager = new DatabaseReplicationManager(primaryPrisma);
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-}
+// 100% backward-compatible direct export: existing code, migrations, and transactions continue using primary
+export const prisma = primaryPrisma;
+
+// Dedicated multi-region routing helpers
+export const getReadClient = (region?: string): PrismaClient => dbReplicationManager.getReadClient(region);
+export const getWriteClient = (): PrismaClient => dbReplicationManager.getWriteClient();
+export const executeRead = <T>(op: (client: PrismaClient) => Promise<T>, region?: string): Promise<T> =>
+  dbReplicationManager.executeRead(op, region);
+
+export default prisma;
