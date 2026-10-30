@@ -35,6 +35,8 @@ Phases 1 through 11 have been fully implemented, verified across test suites, co
 | **12.6** | Advanced Subscription Metrics & MRR Churn Telemetry | **COMPLETED** (2026-10-29) | `docs/phase12/12.6-subscription-metrics/README.md` |
 | **12.7** | Multi-Region Database Replication & Cross-Browser Extension Rollout | **COMPLETED** (2026-10-30) | `docs/phase12/12.7-multi-region-replication/README.md`, `docs/phase12/12.7-cross-browser-extension/README.md` |
 
+**Localized tax integration:** Stripe Automatic Tax and Tax ID Collection are implemented for subscription and scan-pack Checkout sessions. Production sign-off remains contingent on Stripe tax registrations, product tax-code configuration, and test-mode regional verification; code integration alone does not verify live tax calculation.
+
 ---
 
 ## Next Steps

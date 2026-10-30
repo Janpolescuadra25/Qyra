@@ -116,7 +116,10 @@ Authorization: Bearer <token>
   - Mounted protected admin endpoints in `Backend/src/routes/admin.ts` for `GET /api/admin/metrics/subscriptions` and `GET /api/admin/metrics/churn` behind `requireRole('OWNER', 'ADMIN')`.
   - Added `Backend/tests/billing-telemetry.test.ts` to cover MRR aggregation, churn math, cancellation telemetry, and the protected admin routes.
 - **Deliverable 12.7 — Localized Tax & Customer Portal UX Verification:**
-  - Validate regional pricing, tax logic, and localized billing UX across supported markets.
+  - Subscription and scan-pack Checkout sessions enable Stripe Automatic Tax with `automatic_tax: { enabled: true }`.
+  - Both Checkout flows enable B2B tax-number capture with `tax_id_collection: { enabled: true }` for applicable VAT/GST workflows.
+  - Stripe Automatic Tax calculations require the account's tax registrations, product tax codes, customer locations, and test/live-mode settings to be configured independently in the Stripe Dashboard.
+  - Code integration is complete; regional pricing, calculated-tax outcomes, and localized billing UX still require Stripe test-mode and supported-market verification before production sign-off.
   - Verify end-to-end Stripe testmode behavior for plan upgrades, cancellation flows, and webhook synchronization.
 
 ---

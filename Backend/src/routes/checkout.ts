@@ -141,6 +141,8 @@ router.post(
       // automatically for eligible customers; PayPal is a separate method type.
       payment_method_types: ['card', 'paypal'],
       line_items: [{ price: priceId, quantity: 1 }],
+      automatic_tax: { enabled: true },
+      tax_id_collection: { enabled: true },
       success_url: `${process.env.FRONTEND_URL}/billing-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL}/billing-cancel`,
       metadata: {
@@ -203,6 +205,8 @@ router.post(
       // Apple Pay and Google Pay are enabled through the card method in hosted Checkout.
       payment_method_types: ['card', 'paypal'],
       line_items: [{ price: pack.stripePriceId, quantity: 1 }],
+      automatic_tax: { enabled: true },
+      tax_id_collection: { enabled: true },
       success_url: `${process.env.FRONTEND_URL}/billing-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL}/billing-cancel`,
       metadata: {
