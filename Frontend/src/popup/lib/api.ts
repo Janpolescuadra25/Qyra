@@ -1,3 +1,4 @@
+import { browser } from '../../lib/browser';
 import type { Location, LocationAttachment, Mapping, ScanMode, Template, Rule, RuleFormData, ScanData, ScanRecord, ScanEntry, Product, ProductFormData, ProductMapping, ProductMappingFormData, PayeeMapping, PayeeMappingFormData, ValueMapping, ValueMappingFormData, QBStatus, ScanHealth, AuditLogEntry, OwnerAuditLogEntry, ExportTemplate, ImportResult, InviteLink, TeamMember, BatchSyncItem, BatchSyncResult, BatchSyncSummary, RetryBatchResult, RetryBatchSummary, ExcelParseResult, ExcelDataParseResult, OutstandingBill, VendorCreditItem, BillPaymentLineItem, QBTerm, MappingSuggestion, ProductMappingSuggestion, DuplicateCheckResult, MappingPreset } from '../../types';
 import type { QBAccount, QBClass, QBEmployee, QBVendor, QBCustomer, QBTaxCode } from '../types/qb';
 import type { QbVendor } from '../../types';
@@ -44,10 +45,10 @@ async function parseResponse<T>(res: Response, path: string): Promise<T> {
 
   // 401 auto-logout — JWT expired mid-session
   if (res.status === 401 && path !== '/api/auth/login') {
-    chrome.storage.local.get(['jwt'], (result) => {
+    browser.storage.local.get(['jwt'], (result) => {
       if (result.jwt) {
-        chrome.storage.local.remove(['jwt'], () => {
-          chrome.runtime.reload();
+        browser.storage.local.remove(['jwt'], () => {
+          browser.runtime.reload();
         });
       }
     });

@@ -1,3 +1,4 @@
+import { browser } from '../../lib/browser';
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 import type { UserInfo } from '../lib/api';
@@ -14,7 +15,7 @@ export function useAuth() {
       try {
         const result = await Promise.race([
           new Promise<{ jwt?: string }>((resolve) => {
-            chrome.storage.local.get(['jwt'], (items) => resolve(items as { jwt?: string }));
+            browser.storage.local.get(['jwt'], (items) => resolve(items as { jwt?: string }));
           }),
           new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error('Storage timeout')), 5000)
@@ -26,7 +27,7 @@ export function useAuth() {
             const session = await api.getSession(result.jwt);
             setUser(session.user);
           } catch {
-            await chrome.storage.local.remove('jwt');
+            await browser.storage.local.remove('jwt');
             setJwt(null);
           }
         }
@@ -51,13 +52,13 @@ export function useAuth() {
   const login = useCallback(async (userData: UserInfo, token: string) => {
     setJwt(token);
     setUser(userData);
-    await chrome.storage.local.set({ jwt: token });
+    await browser.storage.local.set({ jwt: token });
   }, []);
 
   const logout = useCallback(async () => {
     setJwt(null);
     setUser(null);
-    await chrome.storage.local.remove('jwt');
+    await browser.storage.local.remove('jwt');
   }, []);
 
   return { jwt, user, loading, login, logout, refreshUser };

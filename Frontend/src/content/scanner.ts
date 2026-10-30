@@ -1,3 +1,4 @@
+import { browser } from '../lib/browser';
 // Content script — runs on *://*.toasttab.com/* pages
 // Real DOM scraper for Toast POS Sales Summary page
 // Sections 1–17 extracted via data-testid selectors
@@ -365,7 +366,7 @@ if ((globalThis as unknown as Record<string, boolean>).__toastScannerLoaded) {
   if (process.env.NODE_ENV !== 'production') console.log('[Toast Scanner] Already loaded, skipping duplicate registration');
 } else {
   (globalThis as unknown as Record<string, boolean>).__toastScannerLoaded = true;
-  chrome.runtime.onMessage.addListener((message: { type: string }, _sender, sendResponse) => {
+  browser.runtime.onMessage.addListener((message: { type: string }, _sender, sendResponse) => {
     if (message.type === 'REQUEST_SCAN') {
       const url = window.location.href;
       const isSalesSummary = /\/restaurants\/admin\/reports\/sales\/sales-summary/.test(url);

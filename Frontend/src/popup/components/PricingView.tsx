@@ -1,3 +1,4 @@
+import { browser } from '../../lib/browser';
 import React, { useEffect, useState } from 'react';
 import { api, type Plan, type UserInfo } from '../lib/api';
 
@@ -42,7 +43,7 @@ export default function PricingView({ jwt, user, onManageBilling, onClose }: Pro
     setSubmittingPlan(planId);
     try {
       const result = await api.createCheckoutSession(jwt, planId, billingInterval);
-      chrome.tabs.create({ url: result.url });
+      browser.tabs.create({ url: result.url });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Checkout failed');
     } finally {

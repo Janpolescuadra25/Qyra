@@ -1,3 +1,4 @@
+import { browser } from '../../lib/browser';
 import React, { useState, useEffect } from 'react';
 import { api, ApiError } from '../lib/api';
 import { useLocations } from '../hooks/useLocations';
@@ -1132,7 +1133,7 @@ export default function SyncView({ jwt, selectedLocationId, onLocationChange, on
                                 <button
                                   onClick={() => {
                                     api.getQBAuthUrl(jwt)
-                                      .then(({ authUrl }) => chrome.tabs.create({ url: authUrl }))
+                                      .then(({ authUrl }) => browser.tabs.create({ url: authUrl }))
                                       .catch(() => showToast('Failed to start QuickBooks reconnection', 'error'));
                                   }}
                                   className="text-xs text-orange-400 hover:text-orange-600 border border-orange-200 hover:border-orange-600 px-2 py-0.5 rounded transition-colors"

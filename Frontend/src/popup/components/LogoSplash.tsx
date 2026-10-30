@@ -1,3 +1,4 @@
+import { browser } from '../../lib/browser';
 import React, { useEffect } from 'react';
 
 interface LogoSplashProps {
@@ -7,7 +8,7 @@ interface LogoSplashProps {
 export function LogoSplash({ onComplete }: LogoSplashProps) {
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      chrome.storage.local.set({ hasSeenLogoAnimation: true }, () => {
+      browser.storage.local.set({ hasSeenLogoAnimation: true }, () => {
         onComplete();
       });
     }, 2500);

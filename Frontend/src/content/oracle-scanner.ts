@@ -1,3 +1,4 @@
+import { browser } from '../lib/browser';
 // Content script — runs on *://*.oraclerestaurants.com/* pages
 // DOM scraper for Oracle Simphony "Daily Operations" report
 // URL pattern: *.oraclerestaurants.com/portal/*
@@ -236,7 +237,7 @@ if ((globalThis as unknown as Record<string, boolean>).__oracleScannerLoaded) {
   if (process.env.NODE_ENV !== 'production') console.log('[Oracle Scanner] Already loaded, skipping duplicate registration');
 } else {
   (globalThis as unknown as Record<string, boolean>).__oracleScannerLoaded = true;
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type !== 'REQUEST_SCAN') return false;
     if (process.env.NODE_ENV !== 'production') console.log('[Oracle Scanner] REQUEST_SCAN received');
     (async () => {

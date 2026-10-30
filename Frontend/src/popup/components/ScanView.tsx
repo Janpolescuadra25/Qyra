@@ -1,3 +1,4 @@
+import { browser } from '../../lib/browser';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { ScanData, ScanEntry, ScanSource, Template, ExcelDataParseResult, ExcelParseResult, TabId } from '../../types';
 import { api, type ScanPack, type UserInfo, ApiError } from '../lib/api';
@@ -72,7 +73,7 @@ const POS_URLS: Record<string, { pattern: RegExp; name: string }> = {
 };
 
 async function findPOSTab(): Promise<{ tab: chrome.tabs.Tab; posType: string; posName: string } | null> {
-  const allTabs = await chrome.tabs.query({});
+  const allTabs = await browser.tabs.query({});
   for (const [posType, { pattern, name }] of Object.entries(POS_URLS)) {
     const tab = allTabs.find((t) => t.url && pattern.test(t.url));
     if (tab) return { tab, posType, posName: name };
@@ -298,11 +299,11 @@ export default function ScanView({
 
   // Load cached scan data and detect POS tab on mount
   useEffect(() => {
-    chrome.storage.local.get(['lastScanData'], (result) => {
+    browser.storage.local.get(['lastScanData'], (result) => {
       const cached = result['lastScanData'] as ScanData | undefined;
       if (cached) {
         if ('Food Sales' in cached || 'Beverage Sales' in cached) {
-          chrome.storage.local.remove(['lastScanData']);
+          browser.storage.local.remove(['lastScanData']);
           return;
         }
         if (!scanData) onScanData(cached);
@@ -389,7 +390,7 @@ export default function ScanView({
     setScanPurchaseError(null);
     try {
       const result = await api.createScanPackSession(jwt, scanPackId);
-      chrome.tabs.create({ url: result.url });
+      browser.tabs.create({ url: result.url });
       setScanPackModalOpen(false);
     } catch (err) {
       if (err instanceof ApiError && err.payload?.error) {
@@ -475,11 +476,11 @@ export default function ScanView({
         resolve(null);
       }, 30000);
 
-      chrome.tabs.sendMessage(tabId, { type: 'REQUEST_SCAN' }, (resp) => {
+      browser.tabs.sendMessage(tabId, { type: 'REQUEST_SCAN' }, (resp) => {
         clearTimeout(timeout);
-        if (chrome.runtime.lastError) {
+        if (browser.runtime.lastError) {
           if (process.env.NODE_ENV !== 'production') {
-            console.warn('[Qyra Popup] sendMessage error:', chrome.runtime.lastError.message);
+            console.warn('[Qyra Popup] sendMessage error:', browser.runtime.lastError.message);
           }
           resolve(null);
         } else {
@@ -501,7 +502,7 @@ export default function ScanView({
 
   const loadAllTabs = async () => {
     try {
-      const tabs = await chrome.tabs.query({});
+      const tabs = await browser.tabs.query({});
       setAllTabs(tabs);
       return tabs;
     } catch (err) {
@@ -532,7 +533,7 @@ export default function ScanView({
             ? 'content/oracle-scanner.js'
             : 'content/scanner.js';
         try {
-          await chrome.scripting.executeScript({
+          await browser.scripting.executeScript({
             target: { tabId: tab.id! },
             files: [scriptFile],
           });
@@ -554,7 +555,7 @@ export default function ScanView({
         setScanEntries([entry]);
         setActiveScanEntryId(entry.id);
         onScanData(response.data);
-        chrome.storage.local.set({ lastScanData: response.data });
+        browser.storage.local.set({ lastScanData: response.data });
         if (locationId) {
           try {
             const scanRecord = await api.saveScan(
@@ -603,13 +604,13 @@ export default function ScanView({
     setIsScanLimit(false);
     setScanning(true);
     try {
-      await chrome.windows.update(tab.windowId, { focused: true });
+      await browser.windows.update(tab.windowId, { focused: true });
       if (tab.id) {
-        await chrome.tabs.update(tab.id, { active: true });
+        await browser.tabs.update(tab.id, { active: true });
       }
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const screenshot = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
+      const screenshot = await browser.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
       const blob = await (await fetch(screenshot)).blob();
       const file = new File([blob], 'pos-tab.png', { type: blob.type || 'image/png' });
       setCapturedScreenshot(file);
@@ -750,7 +751,7 @@ export default function ScanView({
 
   const handleClear = () => {
     onClearScanData();
-    chrome.storage.local.remove(['lastScanData']);
+    browser.storage.local.remove(['lastScanData']);
     setScanEntries([]);
     setActiveScanEntryId(null);
     setPendingAttachment(null);
@@ -826,7 +827,7 @@ export default function ScanView({
           if (process.env.NODE_ENV !== 'production') {
           }
           try {
-            await chrome.scripting.executeScript({
+            await browser.scripting.executeScript({
               target: { tabId: tab.id },
               files: [scriptFile],
             });
@@ -850,7 +851,7 @@ export default function ScanView({
           setScanEntries([entry]);
           setActiveScanEntryId(entry.id);
           onScanData(response.data);
-          chrome.storage.local.set({ lastScanData: response.data });
+          browser.storage.local.set({ lastScanData: response.data });
           if (locationId) {
             try {
               const scanRecord = await api.saveScan(

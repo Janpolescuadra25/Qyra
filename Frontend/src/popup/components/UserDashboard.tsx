@@ -1,3 +1,4 @@
+import { browser } from '../../lib/browser';
 import React, { useState, useEffect, useCallback } from 'react';
 import { api, type OwnerUserUsage } from '../lib/api';
 import { hasPerm } from '../lib/permissions';
@@ -64,7 +65,7 @@ export function UserDashboard({ jwt, user }: UserDashboardProps) {
   const handleReconnect = useCallback(async () => {
     try {
       const { authUrl } = await api.getQBAuthUrl(jwt);
-      chrome.runtime.sendMessage({ type: 'OPEN_QB_AUTH', payload: { authUrl } });
+      browser.runtime.sendMessage({ type: 'OPEN_QB_AUTH', payload: { authUrl } });
     } catch {
       // silent
     }

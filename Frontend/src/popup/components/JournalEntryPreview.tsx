@@ -1,3 +1,4 @@
+import { browser } from '../../lib/browser';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { api, ApiError } from '../lib/api';
 import { useLocations } from '../hooks/useLocations';
@@ -159,7 +160,7 @@ export default function JournalEntryPreview({ jwt, scanData, scanEntries, active
   const previewTipKey = 'tip_dismissed_preview';
 
   useEffect(() => {
-    chrome.storage.local.get(previewTipKey, (result) => {
+    browser.storage.local.get(previewTipKey, (result) => {
       if (result[previewTipKey]) setPreviewTipVisible(false);
     });
   }, [previewTipKey]);
@@ -874,7 +875,7 @@ export default function JournalEntryPreview({ jwt, scanData, scanEntries, active
         <div className="mb-3 flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-600">
           <span className="mt-0.5 shrink-0">ℹ️</span>
           <p className="flex-1">After scanning a report and creating a mapping, your data appears here pre-filled. You can also enter data manually.</p>
-          <button onClick={() => { chrome.storage.local.set({ [previewTipKey]: true }); setPreviewTipVisible(false); }} className="shrink-0 text-emerald-400 hover:text-emerald-200">✕</button>
+          <button onClick={() => { browser.storage.local.set({ [previewTipKey]: true }); setPreviewTipVisible(false); }} className="shrink-0 text-emerald-400 hover:text-emerald-200">✕</button>
         </div>
       )}
       {/* QB Status */}

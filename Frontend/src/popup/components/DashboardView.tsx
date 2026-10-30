@@ -1,3 +1,4 @@
+import { browser } from '../../lib/browser';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Bar, BarChart, Cell, Legend, Pie, PieChart, XAxis, YAxis } from 'recharts';
 import { api, type RecentScan } from '../lib/api';
@@ -192,7 +193,7 @@ export default function DashboardView({ jwt, onboardingState, onNavigate, onHasS
   const handleReconnect = useCallback(async () => {
     try {
       const { authUrl } = await api.getQBAuthUrl(jwt);
-      chrome.runtime.sendMessage({ type: 'OPEN_QB_AUTH', payload: { authUrl } });
+      browser.runtime.sendMessage({ type: 'OPEN_QB_AUTH', payload: { authUrl } });
     } catch (err) {
       showToast('Failed to reconnect QuickBooks. Please try again.', 'error');
     }

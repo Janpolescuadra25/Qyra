@@ -1,3 +1,4 @@
+import { browser } from '../../lib/browser';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ScanData, ScanEntry, ScanQueueStatus, ScanSource, Template } from '../../types';
 
@@ -53,7 +54,7 @@ const defaultScanState: PersistedScanState = {
   batchProgress: 0,
 };
 
-const isStorageAvailable = () => typeof chrome !== 'undefined' && !!chrome.storage?.local;
+const isStorageAvailable = () => typeof chrome !== 'undefined' && !!browser.storage?.local;
 
 const isValidScanMode = (value: unknown): value is ScanSource => value === 'pos' || value === 'excel' || value === 'image';
 
@@ -61,7 +62,7 @@ async function readPersistedScanState(): Promise<PersistedScanState | null> {
   if (!isStorageAvailable()) return null;
 
   return new Promise((resolve) => {
-    chrome.storage.local.get([STORAGE_KEY], (result) => {
+    browser.storage.local.get([STORAGE_KEY], (result) => {
       const persisted = result[STORAGE_KEY];
       if (!persisted || typeof persisted !== 'object') {
         resolve(null);
@@ -184,11 +185,11 @@ export function ScanProvider({ children }: { children: React.ReactNode }) {
     );
 
     if (!hasAnySessionData) {
-      chrome.storage.local.remove([STORAGE_KEY]);
+      browser.storage.local.remove([STORAGE_KEY]);
       return;
     }
 
-    chrome.storage.local.set({ [STORAGE_KEY]: persistPayload });
+    browser.storage.local.set({ [STORAGE_KEY]: persistPayload });
   }, [activeScanEntryId, batchProgress, isBatchProcessing, isRestoring, persistPayload, scanData, scanEntries.length, scanMode, scanRecordId, selectedLocationId, selectedTemplateForScan]);
 
   const clearScanSession = useCallback(() => {
@@ -203,7 +204,7 @@ export function ScanProvider({ children }: { children: React.ReactNode }) {
     setBatchProgress(0);
 
     if (isStorageAvailable()) {
-      chrome.storage.local.remove([STORAGE_KEY]);
+      browser.storage.local.remove([STORAGE_KEY]);
     }
   }, []);
 

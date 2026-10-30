@@ -1,3 +1,4 @@
+import { browser } from '../../lib/browser';
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 import type { QBStatus } from '../../types';
@@ -32,7 +33,7 @@ export function useQuickBooks(jwt: string | null) {
     try {
       const { authUrl } = await api.getQBAuthUrl(jwt);
       // Ask background to open the auth URL in a new tab
-      chrome.runtime.sendMessage({ type: 'OPEN_QB_AUTH', payload: { authUrl } });
+      browser.runtime.sendMessage({ type: 'OPEN_QB_AUTH', payload: { authUrl } });
     } catch (err) {
       if (process.env.NODE_ENV !== 'production') console.error('[QB] Failed to get auth URL:', err);
     }
@@ -50,9 +51,9 @@ export function useQuickBooks(jwt: string | null) {
       }
     };
 
-    chrome.runtime.onMessage.addListener(listener);
+    browser.runtime.onMessage.addListener(listener);
     return () => {
-      chrome.runtime.onMessage.removeListener(listener);
+      browser.runtime.onMessage.removeListener(listener);
     };
   }, [checkStatus]);
 

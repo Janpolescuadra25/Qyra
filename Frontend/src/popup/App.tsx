@@ -1,3 +1,4 @@
+import { browser } from '../lib/browser';
 import React, { useState, useCallback, useEffect } from 'react';
 import * as Sentry from '@sentry/browser';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -176,7 +177,7 @@ function AppContent() {
   }, [resendCooldown]);
 
   useEffect(() => {
-    chrome.storage.local.get('hasSeenLogoAnimation', (result) => {
+    browser.storage.local.get('hasSeenLogoAnimation', (result) => {
       if (result.hasSeenLogoAnimation) {
         setShowLogoSplash(false);
       } else {

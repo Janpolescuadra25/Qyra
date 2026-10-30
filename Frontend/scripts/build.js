@@ -1,131 +1,112 @@
-/**
- * Qyra Extension — Build Script
- * Uses esbuild for JS/TS/TSX bundling + tailwindcss CLI for CSS
- */
+/** Qyra multi-browser extension build pipeline. */
 const esbuild = require('esbuild');
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const dotenvPath = path.resolve(__dirname, '../.env');
-if (fs.existsSync(dotenvPath)) {
-  require('dotenv').config({ path: dotenvPath });
-}
-
-const backendUrl = process.env.VITE_BACKEND_URL || process.env.BACKEND_URL || 'https://qyra-backend.onrender.com';
-console.log('[Build] Loaded env from', dotenvPath, 'with backendUrl:', backendUrl);
-
 const ROOT = path.join(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
+const dotenvPath = path.join(ROOT, '.env');
+if (fs.existsSync(dotenvPath)) require('dotenv').config({ path: dotenvPath });
+
+const browserArg = process.argv.find((arg) => arg.startsWith('--browser='));
+const requestedBrowser = browserArg?.split('=')[1]?.toLowerCase() || 'chrome';
+const supportedBrowsers = ['chrome', 'firefox', 'edge', 'safari'];
+const targets = requestedBrowser === 'all' ? supportedBrowsers : [requestedBrowser];
+if (targets.some((target) => !supportedBrowsers.includes(target))) {
+  console.error(`[Build] Unsupported browser: ${requestedBrowser}`);
+  process.exit(1);
+}
+
 const isWatch = process.argv.includes('--watch');
+const backendUrl = process.env.VITE_BACKEND_URL || process.env.BACKEND_URL || 'https://qyra-backend.onrender.com';
+const targetMap = { chrome: 'chrome120', edge: 'edge120', firefox: 'firefox109', safari: 'safari16' };
 
-// ── Setup dist directory structure ─────────────────────────────────────────
-for (const dir of ['popup', 'content', 'background', 'public/icons']) {
-  fs.mkdirSync(path.join(DIST, dir), { recursive: true });
+function resetDirectory(directory) {
+  fs.rmSync(directory, { recursive: true, force: true });
+  for (const child of ['popup', 'content', 'background', 'public/icons']) fs.mkdirSync(path.join(directory, child), { recursive: true });
 }
 
-// ── Copy static files ──────────────────────────────────────────────────────
-fs.copyFileSync(path.join(ROOT, 'manifest.json'), path.join(DIST, 'manifest.json'));
-fs.copyFileSync(path.join(ROOT, 'src', 'popup', 'index.html'), path.join(DIST, 'popup', 'index.html'));
-if (!isWatch) {
-  const manifestPath = path.join(DIST, 'manifest.json');
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
-
-  manifest.host_permissions = manifest.host_permissions.filter(
-    (p) => !p.includes('localhost')
-  );
-
-  const csp = manifest.content_security_policy.extension_pages;
-  const directives = csp.split(';').map((d) => d.trim());
-  const connectIdx = directives.findIndex((d) => d.startsWith('connect-src'));
-  if (connectIdx !== -1) {
-    const sources = directives[connectIdx].split(/\s+/).slice(1);
-    const filtered = sources.filter((s) => !s.includes('localhost'));
-    filtered.push('https://quickbooks.api.intuit.com');
-    directives[connectIdx] = 'connect-src ' + filtered.join(' ');
+function createManifest(browserName) {
+  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
+  manifest.host_permissions = (manifest.host_permissions || []).filter((permission) => !permission.includes('localhost'));
+  const csp = manifest.content_security_policy?.extension_pages;
+  if (csp) {
+    const directives = csp.split(';').map((directive) => directive.trim()).filter(Boolean);
+    const connectIndex = directives.findIndex((directive) => directive.startsWith('connect-src'));
+    if (connectIndex >= 0) {
+      const sources = directives[connectIndex].split(/\s+/).slice(1).filter((source) => !source.includes('localhost'));
+      if (!sources.includes('https://quickbooks.api.intuit.com')) sources.push('https://quickbooks.api.intuit.com');
+      directives[connectIndex] = `connect-src ${sources.join(' ')}`;
+    }
+    manifest.content_security_policy.extension_pages = `${directives.join('; ')};`;
   }
-  manifest.content_security_policy.extension_pages = directives.join('; ');
-
-  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
-}
-console.log('[Build] Copied manifest.json and popup/index.html');
-
-// ── Copy icons ─────────────────────────────────────────────────────────────
-const iconsDir = path.join(ROOT, 'public', 'icons');
-if (fs.existsSync(iconsDir)) {
-  for (const f of fs.readdirSync(iconsDir)) {
-    fs.copyFileSync(path.join(iconsDir, f), path.join(DIST, 'public', 'icons', f));
+  if (browserName === 'firefox') {
+    manifest.browser_specific_settings = { gecko: { id: 'qyra-extension@qyra.space', strict_min_version: '109.0' } };
+    manifest.background = { scripts: ['background/service-worker.js'] };
+  } else {
+    delete manifest.browser_specific_settings;
   }
-  console.log('[Build] Copied icons');
+  if (browserName === 'safari') {
+    manifest.content_security_policy = { extension_pages: "script-src 'self'; object-src 'self'; connect-src 'self' https://qyra.space https://api.qyra.space https://*.qyra.space https://*.sentry.io https://appcenter.intuit.com https://oauth.platform.intuit.com https://sandbox-quickbooks.api.intuit.com https://quickbooks.api.intuit.com https://developer.intuit.com;" };
+  }
+  return manifest;
 }
 
-const sharedConfig = {
-  bundle: true,
-  platform: 'browser',
-  target: 'chrome120',
-  sourcemap: false,
-  define: {
-    'process.env.NODE_ENV': isWatch ? '"development"' : '"production"',
-    'process.env.BACKEND_URL': JSON.stringify(backendUrl),
-    'process.env.VITE_BACKEND_URL': JSON.stringify(backendUrl),
-    'process.env.VITE_SENTRY_DSN': JSON.stringify(process.env.VITE_SENTRY_DSN || ''),
-    'process.env.SENTRY_DSN': JSON.stringify(process.env.VITE_SENTRY_DSN || ''),
-  },
-};
-
-async function build() {
-  // ── Popup (React app) ────────────────────────────────────────────────────
-  await esbuild.build({
-    ...sharedConfig,
-    entryPoints: [path.join(ROOT, 'src', 'popup', 'Popup.tsx')],
-    outfile: path.join(DIST, 'popup', 'popup.js'),
-    jsx: 'automatic',
-    jsxImportSource: 'react',
-  });
-  console.log('[Build] popup/popup.js');
-
-  // ── Content script ───────────────────────────────────────────────────────
-  await esbuild.build({
-    ...sharedConfig,
-    entryPoints: [path.join(ROOT, 'src', 'content', 'scanner.ts')],
-    outfile: path.join(DIST, 'content', 'scanner.js'),
-  });
-  console.log('[Build] content/scanner.js');
-
-  // ── SALIDO content script ───────────────────────────────────────────────────
-  await esbuild.build({
-    ...sharedConfig,
-    entryPoints: [path.join(ROOT, 'src', 'content', 'salido-scanner.ts')],
-    outfile: path.join(DIST, 'content', 'salido-scanner.js'),
-  });
-  console.log('[Build] content/salido-scanner.js');
-  // ── Oracle content script ───────────────────────────────────────────────────
-  await esbuild.build({
-    ...sharedConfig,
-    entryPoints: [path.join(ROOT, 'src', 'content', 'oracle-scanner.ts')],
-    outfile: path.join(DIST, 'content', 'oracle-scanner.js'),
-  });
-  console.log('[Build] content/oracle-scanner.js');
-  // ── Background service worker ────────────────────────────────────────────
-  await esbuild.build({
-    ...sharedConfig,
-    entryPoints: [path.join(ROOT, 'src', 'background', 'service-worker.ts')],
-    outfile: path.join(DIST, 'background', 'service-worker.js'),
-    format: 'esm',
-  });
-  console.log('[Build] background/service-worker.js');
-
-  // ── Tailwind CSS ─────────────────────────────────────────────────────────
-  execSync(
-    `npx tailwindcss -i "${path.join(ROOT, 'src', 'popup', 'popup.css')}" -o "${path.join(DIST, 'popup', 'popup.css')}" --minify`,
-    { stdio: 'inherit', cwd: ROOT }
-  );
-  console.log('[Build] popup/popup.css (Tailwind)');
-
-  console.log('\n✅  Build complete! Load dist/ as unpacked extension in chrome://extensions\n');
+function copyStaticFiles(outdir, browserName) {
+  fs.writeFileSync(path.join(outdir, 'manifest.json'), `${JSON.stringify(createManifest(browserName), null, 2)}\n`);
+  fs.copyFileSync(path.join(ROOT, 'src/popup/index.html'), path.join(outdir, 'popup/index.html'));
+  const iconsDir = path.join(ROOT, 'public/icons');
+  if (fs.existsSync(iconsDir)) {
+    for (const file of fs.readdirSync(iconsDir)) fs.copyFileSync(path.join(iconsDir, file), path.join(outdir, 'public/icons', file));
+  }
 }
 
-build().catch((err) => {
-  console.error('[Build] Error:', err.message);
+async function buildTarget(browserName) {
+  const outdir = path.join(DIST, browserName);
+  resetDirectory(outdir);
+  copyStaticFiles(outdir, browserName);
+  const shared = {
+    bundle: true,
+    platform: 'browser',
+    target: targetMap[browserName],
+    sourcemap: isWatch,
+    inject: [path.join(ROOT, 'src/lib/setupPolyfill.ts')],
+    define: {
+      'process.env.NODE_ENV': JSON.stringify(isWatch ? 'development' : 'production'),
+      'process.env.TARGET_BROWSER': JSON.stringify(browserName),
+      'process.env.BACKEND_URL': JSON.stringify(backendUrl),
+      'process.env.VITE_BACKEND_URL': JSON.stringify(backendUrl),
+      'process.env.VITE_SENTRY_DSN': JSON.stringify(process.env.VITE_SENTRY_DSN || ''),
+      'process.env.SENTRY_DSN': JSON.stringify(process.env.VITE_SENTRY_DSN || ''),
+    },
+  };
+  const builds = [
+    ['src/popup/Popup.tsx', 'popup/popup.js', { jsx: 'automatic', jsxImportSource: 'react' }],
+    ['src/content/scanner.ts', 'content/scanner.js', {}],
+    ['src/content/salido-scanner.ts', 'content/salido-scanner.js', {}],
+    ['src/content/oracle-scanner.ts', 'content/oracle-scanner.js', {}],
+    ['src/background/service-worker.ts', 'background/service-worker.js', { format: browserName === 'firefox' ? 'iife' : 'esm' }],
+  ];
+  for (const [entry, output, overrides] of builds) {
+    await esbuild.build({ ...shared, entryPoints: [path.join(ROOT, entry)], outfile: path.join(outdir, output), ...overrides });
+  }
+  execFileSync(process.platform === 'win32' ? 'npx.cmd' : 'npx', ['tailwindcss', '-i', path.join(ROOT, 'src/popup/popup.css'), '-o', path.join(outdir, 'popup/popup.css'), '--minify'], { stdio: 'inherit', cwd: ROOT, shell: process.platform === 'win32' });
+  console.log(`[Build] ${browserName} -> dist/${browserName}`);
+  if (browserName === 'chrome') {
+    for (const legacyPath of ['popup', 'content', 'background', 'public', 'manifest.json']) {
+      fs.rmSync(path.join(DIST, legacyPath), { recursive: true, force: true });
+      fs.cpSync(path.join(outdir, legacyPath), path.join(DIST, legacyPath), { recursive: true });
+    }
+    console.log('[Build] Legacy Chrome output synchronized to dist/');
+  }
+}
+
+(async () => {
+  fs.mkdirSync(DIST, { recursive: true });
+  for (const browserName of targets) await buildTarget(browserName);
+  console.log(`[Build] Completed: ${targets.join(', ')}`);
+})().catch((error) => {
+  console.error('[Build] Failed:', error);
   process.exit(1);
 });

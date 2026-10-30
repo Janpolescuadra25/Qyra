@@ -1,3 +1,4 @@
+import { browser } from '../lib/browser';
 import * as Sentry from '@sentry/browser';
 
 // Background service worker — Manifest V3 (floating window)
@@ -72,41 +73,41 @@ self.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
 });
 
 // ── Floating window ───────────────────────────────────────────────────────────
-chrome.action.onClicked.addListener(async () => {
+browser.action.onClicked.addListener(async () => {
   if (process.env.NODE_ENV !== 'production') console.log('[Qyra BG] Extension icon clicked — opening floating window');
-  const storage = await chrome.storage.session.get(['qyraWindowId', 'solyraWindowId', 'autobooksWindowId', 'nestWindowId']) as { qyraWindowId?: number; solyraWindowId?: number; autobooksWindowId?: number; nestWindowId?: number };
+  const storage = await browser.storage.session.get(['qyraWindowId', 'solyraWindowId', 'autobooksWindowId', 'nestWindowId']) as { qyraWindowId?: number; solyraWindowId?: number; autobooksWindowId?: number; nestWindowId?: number };
   let qyraWindowId = storage.qyraWindowId;
   if (qyraWindowId === undefined && storage.solyraWindowId !== undefined) {
     qyraWindowId = storage.solyraWindowId;
-    await chrome.storage.session.set({ qyraWindowId });
-    await chrome.storage.session.remove('solyraWindowId');
+    await browser.storage.session.set({ qyraWindowId });
+    await browser.storage.session.remove('solyraWindowId');
   }
   if (qyraWindowId === undefined && storage.autobooksWindowId !== undefined) {
     qyraWindowId = storage.autobooksWindowId;
-    await chrome.storage.session.set({ qyraWindowId });
-    await chrome.storage.session.remove('autobooksWindowId');
+    await browser.storage.session.set({ qyraWindowId });
+    await browser.storage.session.remove('autobooksWindowId');
   }
   if (qyraWindowId === undefined && storage.nestWindowId !== undefined) {
     qyraWindowId = storage.nestWindowId;
-    await chrome.storage.session.set({ qyraWindowId });
-    await chrome.storage.session.remove('nestWindowId');
+    await browser.storage.session.set({ qyraWindowId });
+    await browser.storage.session.remove('nestWindowId');
   }
 
   if (qyraWindowId !== undefined) {
     try {
-      await chrome.windows.get(qyraWindowId);
-      await chrome.windows.update(qyraWindowId, { focused: true });
+      await browser.windows.get(qyraWindowId);
+      await browser.windows.update(qyraWindowId, { focused: true });
       return;
     } catch {
-      await chrome.storage.session.remove('qyraWindowId');
-      await chrome.storage.session.remove('autobooksWindowId');
-      await chrome.storage.session.remove('nestWindowId');
+      await browser.storage.session.remove('qyraWindowId');
+      await browser.storage.session.remove('autobooksWindowId');
+      await browser.storage.session.remove('nestWindowId');
     }
   }
 
-  const popupUrl = chrome.runtime.getURL('popup/index.html');
+  const popupUrl = browser.runtime.getURL('popup/index.html');
   try {
-    const win = await chrome.windows.create({
+    const win = await browser.windows.create({
       url: popupUrl,
       type: 'popup',
       width: WINDOW_WIDTH,
@@ -114,17 +115,17 @@ chrome.action.onClicked.addListener(async () => {
       focused: true,
     });
     if (win?.id !== undefined) {
-      await chrome.storage.session.set({ qyraWindowId: win.id });
+      await browser.storage.session.set({ qyraWindowId: win.id });
     }
   } catch (err) {
     if (process.env.NODE_ENV !== 'production') console.error('[Qyra] Failed to open floating window:', err);
   }
 });
 
-chrome.windows.onRemoved.addListener(async (windowId) => {
-  const { qyraWindowId } = await chrome.storage.session.get('qyraWindowId') as { qyraWindowId?: number };
+browser.windows.onRemoved.addListener(async (windowId) => {
+  const { qyraWindowId } = await browser.storage.session.get('qyraWindowId') as { qyraWindowId?: number };
   if (windowId === qyraWindowId) {
-    await chrome.storage.session.remove('qyraWindowId');
+    await browser.storage.session.remove('qyraWindowId');
   }
 });
 
@@ -166,15 +167,15 @@ const handleQBAuthCallbackUrl = (tabId: number, url: string) => {
     error = 'Failed to parse QuickBooks callback URL.';
   }
 
-  chrome.tabs.remove(tabId).catch(() => {});
+  browser.tabs.remove(tabId).catch(() => {});
   cleanupQBAuth();
-  chrome.runtime.sendMessage({
+  browser.runtime.sendMessage({
     type: 'QB_AUTH_CALLBACK',
     payload: { success, error, realmId },
   });
 };
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (qbAuthTabId === null || tabId !== qbAuthTabId) return;
   const url = changeInfo.url ?? tab.url;
   if (!url) return;
@@ -189,10 +190,10 @@ interface OpenQBAuthMessage {
 
 type ExtMessage = OpenQBAuthMessage;
 
-chrome.runtime.onMessage.addListener((message: ExtMessage, _sender, sendResponse) => {
+browser.runtime.onMessage.addListener((message: ExtMessage, _sender, sendResponse) => {
   if (message.type === 'OPEN_QB_AUTH') {
     const { authUrl } = message.payload;
-    chrome.tabs.create({ url: authUrl }, (tab) => {
+    browser.tabs.create({ url: authUrl }, (tab) => {
       if (tab?.id !== undefined) {
         qbAuthTabId = tab.id;
         if (qbAuthCleanupTimer !== null) {

@@ -1,3 +1,4 @@
+import { browser } from '../lib/browser';
 // Content script — runs on *://*.salido.com/* pages
 // DOM scraper for SALIDO Bridge Accounting Summary page
 // URL pattern: bridge-preview.salido.com/reports/new/accounting-summary
@@ -197,7 +198,7 @@ if ((globalThis as unknown as Record<string, boolean>).__salidoScannerLoaded) {
   if (process.env.NODE_ENV !== 'production') console.log('[SALIDO Scanner] Already loaded, skipping duplicate registration');
 } else {
   (globalThis as unknown as Record<string, boolean>).__salidoScannerLoaded = true;
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type !== 'REQUEST_SCAN') return false;
 
     if (process.env.NODE_ENV !== 'production') console.log('[SALIDO Scanner] REQUEST_SCAN received');

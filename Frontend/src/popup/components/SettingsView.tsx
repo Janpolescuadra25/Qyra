@@ -1,3 +1,4 @@
+import { browser } from '../../lib/browser';
 import React, { useState, useEffect } from 'react';
 import { api, type BillingInterval, type BillingPlanKey, type BillingStatusResponse, type UserInfo, type ScanPack, type ScanPackPurchase } from '../lib/api';
 import { useQuickBooks } from '../hooks/useQuickBooks';
@@ -72,7 +73,7 @@ export default function SettingsView({ jwt, user, onLogout }: Props) {
     setBillingError(null);
     try {
       const response = await api.createPortalSession(jwt);
-      chrome.tabs.create({ url: response.url });
+      browser.tabs.create({ url: response.url });
     } catch (err) {
       setBillingError(err instanceof Error ? err.message : 'Failed to open billing portal.');
     } finally {
@@ -178,7 +179,7 @@ export default function SettingsView({ jwt, user, onLogout }: Props) {
     setPackError(null);
     try {
       const response = await api.createScanPackSession(jwt, pack.id);
-      chrome.tabs.create({ url: response.url });
+      browser.tabs.create({ url: response.url });
     } catch (err) {
       setPackError(err instanceof Error ? err.message : 'Failed to create scan pack checkout session.');
     } finally {
@@ -442,7 +443,7 @@ export default function SettingsView({ jwt, user, onLogout }: Props) {
         <PaymentHistoryCard
           purchases={purchases}
           loading={purchasesLoading}
-          onManageBilling={subscriptionSource === 'stripe' ? () => void handleOpenBillingPortal() : undefined}
+          onManageBilling={user.subscriptionSource === 'stripe' ? () => void handleOpenBillingPortal() : undefined}
         />
       </div>
 

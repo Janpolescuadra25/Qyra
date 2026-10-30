@@ -1,3 +1,4 @@
+import { browser } from '../../lib/browser';
 import React, { useState, useEffect } from 'react';
 import { getStepCTA, STEP_TAB_MAP } from '../lib/onboarding';
 import type { OnboardingState } from '../lib/onboarding';
@@ -13,7 +14,7 @@ export function OnboardingBanner({ state, onNavigate }: Props) {
   const dismissKey = `onboarding_dismissed_${state.step}`;
 
   useEffect(() => {
-    chrome.storage.local.get(dismissKey, (result) => {
+    browser.storage.local.get(dismissKey, (result) => {
       if (result[dismissKey]) {
         setVisible(false);
       }
@@ -36,7 +37,7 @@ export function OnboardingBanner({ state, onNavigate }: Props) {
         <button
           type="button"
           onClick={() => {
-            chrome.storage.local.set({ [dismissKey]: true });
+            browser.storage.local.set({ [dismissKey]: true });
             setVisible(false);
           }}
           className="text-white/60 hover:text-white text-xs"

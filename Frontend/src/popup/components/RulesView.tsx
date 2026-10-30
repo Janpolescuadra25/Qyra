@@ -1,3 +1,4 @@
+import { browser } from '../../lib/browser';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { api } from '../lib/api';
 import { useLocations } from '../hooks/useLocations';
@@ -157,7 +158,7 @@ export default function RulesView({ jwt, selectedLocationId, onLocationChange, s
   const rulesTipKey = 'tip_dismissed_rules';
 
   useEffect(() => {
-    chrome.storage.local.get(rulesTipKey, (result) => {
+    browser.storage.local.get(rulesTipKey, (result) => {
       if (result[rulesTipKey]) setRulesTipVisible(false);
     });
   }, [rulesTipKey]);
@@ -565,7 +566,7 @@ export default function RulesView({ jwt, selectedLocationId, onLocationChange, s
         <div className="mb-3 flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-600">
           <span className="mt-0.5 shrink-0">ℹ️</span>
           <p className="flex-1">Rules transform scanned values before syncing — combine fields, apply formulas, set thresholds. Not required for simple 1:1 mappings.</p>
-          <button onClick={() => { chrome.storage.local.set({ [rulesTipKey]: true }); setRulesTipVisible(false); }} className="shrink-0 text-emerald-400 hover:text-emerald-200">✕</button>
+          <button onClick={() => { browser.storage.local.set({ [rulesTipKey]: true }); setRulesTipVisible(false); }} className="shrink-0 text-emerald-400 hover:text-emerald-200">✕</button>
         </div>
       )}
       {/* New Rule button */}

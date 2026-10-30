@@ -11,7 +11,7 @@ export interface PresetManagerModalProps {
   currentMappings: LocalMapping[];
   onApplyPreset: (preset: MappingPreset) => void;
   hasUnsavedChanges?: boolean;
-  encodeToApi: (mapping: LocalMapping) => Mapping;
+  encodeToApi: (mapping: LocalMapping) => Omit<Mapping, 'id' | 'locationId' | 'createdAt'>;
   initialTab?: 'catalog' | 'save';
 }
 
