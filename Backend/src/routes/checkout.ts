@@ -143,6 +143,7 @@ router.post(
       line_items: [{ price: priceId, quantity: 1 }],
       automatic_tax: { enabled: true },
       tax_id_collection: { enabled: true },
+      billing_address_collection: 'required',
       success_url: `${process.env.FRONTEND_URL}/billing-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL}/billing-cancel`,
       metadata: {
@@ -207,6 +208,7 @@ router.post(
       line_items: [{ price: pack.stripePriceId, quantity: 1 }],
       automatic_tax: { enabled: true },
       tax_id_collection: { enabled: true },
+      billing_address_collection: 'required',
       success_url: `${process.env.FRONTEND_URL}/billing-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL}/billing-cancel`,
       metadata: {
