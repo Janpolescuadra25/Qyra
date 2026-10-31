@@ -28,7 +28,7 @@ Phases 1 through 12 have been implemented, verified against their recorded quali
 
 - [x] **13.0 Documentation Structure Initialization:** COMPLETED (Verified in docs/phase13/README.md; Commit 263a71a0301d621ab4c34e1136e38d16d2e36be0)
 
-- [ ] **13.1 Dependency Vulnerability Remediation:** Remediate critical and high npm vulnerabilities across Frontend and Backend through isolated, tested upgrades.
+- [⏳] **13.1 Dependency Vulnerability Remediation (IN PROGRESS):** Non-breaking critical/high remediation is complete; remaining moderate findings require isolated breaking-change review. Verification: `docs/phase13/13.1-dependency-remediation/README.md`.
 - [ ] **13.2 Stripe Production Tax Verification:** Verify Stripe Dashboard tax registrations, product tax codes, and regional test-mode and live-mode Checkout configuration.
 - [ ] **13.3 Web Extension Store Submission:** Package and submit verified extension builds for Chrome Web Store, Firefox Add-ons, Edge Add-ons, and Safari.
 

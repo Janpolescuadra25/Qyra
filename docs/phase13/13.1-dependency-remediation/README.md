@@ -6,6 +6,10 @@
 
 Critical and high-severity findings were removed without `npm audit fix --force`. Remaining moderate and low findings require isolated breaking-change analysis before final deliverable sign-off.
 
+### Milestone: Non-Breaking Critical/High Remediation — **DONE**
+
+All critical and high-severity npm audit findings recorded at the execution baseline were removed from Backend and Frontend through non-forced remediation. Backend and Frontend quality gates passed, including the four-browser extension build. This milestone was completed in commit `060dce58e71b6080b6ff741008ef547747625d8c`; Deliverable 13.1 remains in progress until the documented moderate and low residual findings receive isolated review.
+
 ## Execution Summary
 
 - **Baseline commit:** `03c54d6f66186b638890dd0a326020091024b0b4`
