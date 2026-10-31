@@ -2,7 +2,7 @@
 
 ## Overview
 This roadmap tracks active implementation deliverables for Qyra.
-Phases 1 through 11 have been fully implemented, verified across test suites, code-audited, and archived.
+Phases 1 through 12 have been implemented, verified against their recorded quality gates, and archived.
 
 ---
 
@@ -18,26 +18,20 @@ Phases 1 through 11 have been fully implemented, verified across test suites, co
 - **Phase 9: Performance Optimization & Memory Management** (COMPLETED)
 - **Phase 10: Security Hardening & Zero-Knowledge Enclave** (COMPLETED)
 - **Phase 11: Enterprise RBAC & Audit Trails** (COMPLETED)
+- **Phase 12: Monetization, Billing & Multi-Region Expansion** — **COMPLETED** (Verified in `docs/phase12/README.md`)
 
 ---
 
-## Phase 12: Monetization, Billing & Multi-Region Expansion (COMPLETED)
+## Active Phase
 
-### Deliverables Status
+### Phase 13: Dependency Security Remediation & Store Submission Hardening
 
-| Deliverable | Description | Status | Verification Reference |
-| :--- | :--- | :--- | :--- |
-| **12.1** | Dynamic Return URL Allowlist & Host Validation | **COMPLETED** | `docs/phase12/README.md` |
-| **12.2** | Self-Service Cancellation & Reactivation API | **COMPLETED** | `docs/phase12/README.md` |
-| **12.3** | Tier Upgrade & Downgrade Proration API | **COMPLETED** | `docs/phase12/README.md` |
-| **12.4** | Multi-Payment Methods (Apple Pay, Google Pay, PayPal) | **COMPLETED** | `docs/phase12/billing-portal/README.md` |
-| **12.5** | Self-Service Billing Portal UI & Payment Method Management | **COMPLETED** | `docs/phase12/billing-portal/README.md` |
-| **12.6** | Advanced Subscription Metrics & MRR Churn Telemetry | **COMPLETED** (2026-10-29) | `docs/phase12/12.6-subscription-metrics/README.md` |
-| **12.7** | Multi-Region Database Replication & Cross-Browser Extension Rollout | **COMPLETED** (2026-10-30) | `docs/phase12/12.7-multi-region-replication/README.md`, `docs/phase12/12.7-cross-browser-extension/README.md` |
-
-**Localized tax integration:** Stripe Automatic Tax and Tax ID Collection are implemented for subscription and scan-pack Checkout sessions. Production sign-off remains contingent on Stripe tax registrations, product tax-code configuration, and test-mode regional verification; code integration alone does not verify live tax calculation.
+- [ ] **13.1 Dependency Vulnerability Remediation:** Remediate critical and high npm vulnerabilities across Frontend and Backend through isolated, tested upgrades.
+- [ ] **13.2 Stripe Production Tax Verification:** Verify Stripe Dashboard tax registrations, product tax codes, and regional test-mode and live-mode Checkout configuration.
+- [ ] **13.3 Web Extension Store Submission:** Package and submit verified extension builds for Chrome Web Store, Firefox Add-ons, Edge Add-ons, and Safari.
 
 ---
 
 ## Next Steps
-Phase 12 is **100% COMPLETED**. Proceed through release validation and browser-store submission for each supported target.
+
+Begin Phase 13 dependency security remediation and production hardening.
