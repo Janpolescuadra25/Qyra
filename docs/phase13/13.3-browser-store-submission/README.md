@@ -1,4 +1,4 @@
-# Deliverable 13.3: Web Extension Store Submission
+# Deliverable 13.3: Browser Extension Store Submission
 
 ## Status
 
