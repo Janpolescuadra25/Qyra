@@ -1,6 +1,6 @@
 # Deliverable 13.3: Browser Extension Store Submission Handbook
 
-## Status: IN PROGRESS (Release Bundles Verified & Store Submission Handbook Completed)
+## Status: DONE (Release Bundles Verified & Store Submission Handbook Completed)
 **Milestone Date:** 2026-10-31  
 **Extension Version:** `1.0.2` (Manifest V3)  
 **Package Directory:** `Frontend/releases/`  
@@ -69,11 +69,17 @@ Every declared permission in `Frontend/manifest.json` satisfies the least-privil
 | `windows` | Opens dedicated, isolated review modals and authentication popups during QuickBooks Online OAuth authorization. | Necessary for secure external authentication windows. |
 
 ### Host Permissions Justification:
-Host permissions are strictly limited to necessary functional endpoints (no `<all_urls>`):
-- `https://*.toasttab.com/*`, `https://*.squareup.com/*`, `https://*.clover.com/*`, `https://*.lightspeedhq.com/*`: POS report extraction targets.
-- `https://qyra.space/*`, `https://api.qyra.space/*`: API backend for auth and synchronization.
-- `https://js.stripe.com/*`: Subscription checkout and tax verification.
-- `https://*.sentry.io/*`: Production telemetry and error tracking.
+
+### POS Report Ingestion Architecture:
+- **Direct Web Portal DOM Extraction**: Toast POS (`toasttab.com`), SALIDO (`salido.com`), and Oracle Simphony (`oraclerestaurants.com`) via declared content scripts and host permissions.
+- **Statement & Report Document Parsing**: Square, Clover, Lightspeed, and custom merchant statements are ingested securely via document/PDF/image upload in the extension popup, requiring no additional third-party host permissions and adhering strictly to the browser stores' least-privilege principle.
+
+| Host Pattern | Purpose |
+|---|---|
+| `*://*.toasttab.com/*`, `*://*.salido.com/*`, `*://*.oraclerestaurants.com/*` | Direct web portal DOM scraping for Toast, SALIDO, and Oracle Simphony |
+| `https://qyra.space/*`, `https://api.qyra.space/*` | API backend for auth, synchronization, and billing |
+| `https://js.stripe.com/*` | Subscription checkout and tax verification |
+| `https://*.sentry.io/*` | Production telemetry and error logging |
 
 ---
 
