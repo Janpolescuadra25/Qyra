@@ -1,4 +1,4 @@
-# Qyra Development Roadmap
+﻿# Qyra Development Roadmap
 
 ## Active Phases (In Progress)
 
@@ -16,12 +16,7 @@
 
 ## Archived Phases (Completed)
 - **Phase 0-12**: Full core application, backend, auth, credit system, AI integration, Stripe checkout, automated testing. All phases 100% completed and archived.
-- **Deliverable 13.0**: Foundation & Initial Setup (Archived)
-- **Deliverable 13.1**: Store Asset Preparation & Multi-Browser Manifest Alignment (Archived)
-- **Deliverable 13.2**: Stripe Tax Compliance, Webhook Idempotency & Financial Resilience (Archived: `18f5ca3`)
-- **Deliverable 13.3**: Chrome Web Store, Edge Add-ons, Firefox AMO Submission Packages & Hash Verification (Archived: `b06164d`)
-- **Deliverable 13.4**: Wave 1 Hardening & Phase 13 Documentation Alignment (Archived: `7e8ab7d`)
-- **Deliverable 13.5**: Studio Attribution Migration to Hayp Studios (Archived: `9e8f234`)
+- **Phase 13**: Browser Store Packaging, Production Attributions & Verification. All deliverables (13.0–13.5) 100% completed and archived (Commits: 18f5ca3, b06164d, 7e8ab7d, 9e8f234, ee2657d, eb6390e).
 
 ---
 
