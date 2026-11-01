@@ -3,14 +3,19 @@
   "name": "Qyra — Financial Automation",
   "version": "1.0.2",
   "description": "Qyra — Scan POS reports, invoices, and bill payments. AI extracts transactions and syncs them to QuickBooks Online automatically.",
-  "permissions": ["activeTab", "storage", "tabs", "scripting", "windows"],
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs",
+    "scripting",
+    "windows"
+  ],
   "host_permissions": [
     "http://localhost:3000/*",
     "https://qyra.space/*",
     "https://api.qyra.space/*",
     "https://*.qyra.space/*",
     "https://*.sentry.io/*",
-    "https://2.28.120.85/*",
     "*://*.toasttab.com/*",
     "*://*.salido.com/*",
     "*://*.oraclerestaurants.com/*"
@@ -29,21 +34,33 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.toasttab.com/*"],
-      "js": ["content/scanner.js"]
+      "matches": [
+        "*://*.toasttab.com/*"
+      ],
+      "js": [
+        "content/scanner.js"
+      ]
     },
     {
-      "matches": ["*://*.salido.com/*"],
-      "js": ["content/salido-scanner.js"],
+      "matches": [
+        "*://*.salido.com/*"
+      ],
+      "js": [
+        "content/salido-scanner.js"
+      ],
       "run_at": "document_idle"
     },
     {
-      "matches": ["*://*.oraclerestaurants.com/*"],
-      "js": ["content/oracle-scanner.js"],
+      "matches": [
+        "*://*.oraclerestaurants.com/*"
+      ],
+      "js": [
+        "content/oracle-scanner.js"
+      ],
       "run_at": "document_idle"
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' data: http://localhost:3000 https://qyra.space https://api.qyra.space https://*.qyra.space https://*.sentry.io https://2.28.120.85 https://appcenter.intuit.com https://oauth.platform.intuit.com https://sandbox-quickbooks.api.intuit.com https://quickbooks.api.intuit.com https://developer.intuit.com"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' data: http://localhost:3000 https://qyra.space https://api.qyra.space https://*.qyra.space https://*.sentry.io https://appcenter.intuit.com https://oauth.platform.intuit.com https://sandbox-quickbooks.api.intuit.com https://quickbooks.api.intuit.com https://developer.intuit.com"
   }
 }
