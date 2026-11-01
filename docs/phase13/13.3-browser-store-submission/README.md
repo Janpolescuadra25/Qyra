@@ -85,10 +85,10 @@ All visual assets must meet official browser store resolution, aspect ratio, and
 - [x] `icon48_qyra.png`: 48x48 px (Extension management page `chrome://extensions`)
 - [x] `icon128_qyra.png`: 128x128 px (Web store listing and installation dialog)
 
-### Store Promotional Assets (to be prepared for dashboard submission):
-- [ ] **Small Promo Tile:** 440x280 px (PNG, no transparency, high-contrast brand mark)
-- [x] **Marquee Banner:** 1400x560 px (PNG, hero background graphic for featured collection) - Established in Frontend/public/store-assets/marquee-banner.png
-- [ ] **Screenshots (5 minimum):** 1280x800 px (PNG):
+### Store Promotional Assets (dashboard-ready and staged in `Frontend/public/store-assets/`):
+- [x] **Small Promo Tile:** 440x280 px (PNG, no transparency, high-contrast brand mark) - Established in `Frontend/public/store-assets/small-promo-tile.png`
+- [x] **Marquee Banner:** 1400x560 px (PNG, hero background graphic for featured collection) - Established in `Frontend/public/store-assets/marquee-banner.png`
+- [x] **Screenshots (5 minimum):** 1280x800 px (PNG) - Established in `Frontend/public/store-assets/screenshot-1.png` through `screenshot-5.png`:
   1. POS report auto-detection on active tab
   2. Transaction table preview and AI line-item classification
   3. QuickBooks Online chart of accounts mapping screen
