@@ -25,4 +25,4 @@ Phases 1 through 12 have been implemented, verified against their recorded quali
 
 ## Next Steps
 
-Finalize Phase 13.1 residual dependency remediation (breaking-change risk assessment) and execute Phase 13.3 browser extension store submissions.
+Execute Phase 13.3 browser extension store submissions (Chrome Web Store, Firefox Add-ons, Edge Add-ons, and Safari).
