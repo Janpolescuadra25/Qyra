@@ -149,3 +149,13 @@ Provide testing guidance in developer console review notes:
 | Microsoft Edge | Pending | Awaiting Submission | 1.0.2 | — | — |
 | Mozilla AMO | Pending | Awaiting Submission | 1.0.2 | — | — |
 | Apple Safari | Pending | Awaiting macOS/Xcode Conversion | 1.0.2 | — | — |
+## 4. Verified Release Artifacts & SHA-256 Checksums (Refreshed 2026-11-01)
+Multi-browser release ZIP packages generated from remediated and branded source (`9e8f234ea6674f0ce5bbbf51b514dc17e495e6aa`):
+
+| Target Browser | Package Path | SHA-256 Checksum | Build Date |
+|---|---|---|---|
+| **Google Chrome** | `Frontend/releases/qyra-extension-chrome.zip` | `060BA80245F2959221354F20D417824427FE81748BCC6B01B04C6D548C1424BE` | 2026-11-01 |
+| **Microsoft Edge** | `Frontend/releases/qyra-extension-edge.zip` | `4E0C819A942B3693FB930E3FF3CB99FE88CB366D5C7ED050EB0737025DA2EC2A` | 2026-11-01 |
+| **Mozilla Firefox** | `Frontend/releases/qyra-extension-firefox.zip` | `C7C77E90E2830A7AB6C592D07E3240A7110C3836A9AAA0B179FDB4B9D1708084` | 2026-11-01 |
+
+

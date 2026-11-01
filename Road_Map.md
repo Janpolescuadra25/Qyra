@@ -33,3 +33,6 @@ Phases 1 through 12 have been implemented, verified against their recorded quali
 1. Execute browser store submissions to Chrome Web Store, Microsoft Edge Add-ons, and Mozilla Firefox AMO.
 2. Record store submission review tracking IDs in `docs/phase13/13.3-browser-store-submission/README.md`.
 3. Conclude Phase 13 upon submission confirmation and archive Deliverable 13.3.
+
+- [x] **13.5 Wave 2 Studio Attribution Migration (COMPLETED 2026-11-01):** Customer-facing studio attribution updated to Hayp Studios (https://haypstudios.com/) across extension popup UI; frontend lint gate added; zero residual legacy branding; milestone commit `9e8f234ea6674f0ce5bbbf51b514dc17e495e6aa`.
+
