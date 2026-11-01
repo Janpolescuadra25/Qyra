@@ -11,6 +11,7 @@
     "build:edge": "node scripts/build.js --browser=edge",
     "build:safari": "node scripts/build.js --browser=safari",
     "build:all": "node scripts/build.js --browser=all",
+    "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "package": "npm run build:chrome && node scripts/package.js",
