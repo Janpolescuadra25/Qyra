@@ -488,13 +488,13 @@ function AppContent() {
             <span className="text-emerald-400 font-bold text-base tracking-tight">🪹 Qyra</span>
             <span className="text-gray-600 text-xs">Financial Automation</span>
             <a
-              href="https://vortexsdo.com"
+              href="https://haypstudios.com/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-600 text-[10px] hover:underline"
-              title="Created by Vortex Studios"
+              title="Made by Hayp Studios"
             >
-              · by Vortex Studios
+              · by Hayp Studios
             </a>
             {user.bonusScans ? (
               <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-100">

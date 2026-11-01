@@ -485,7 +485,7 @@ export default function SettingsView({ jwt, user, onLogout }: Props) {
         {/* Creator card */}
         <div className="from-white to-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
           <div className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Created By</div>
-          <a href="https://vortexsdo.com" target="_blank" rel="noopener noreferrer" className="text-gray-900 text-sm font-medium hover:underline">Vortex Studios</a>
+          <a href="https://haypstudios.com/" target="_blank" rel="noopener noreferrer" className="text-gray-900 text-sm font-medium hover:underline">Hayp Studios</a>
           <div className="text-gray-600 text-xs mt-1 leading-relaxed">
             A studio where ideas don't just stay ideas.
           </div>
