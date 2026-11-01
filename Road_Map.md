@@ -11,7 +11,8 @@ Phases 1 through 12 have been implemented, verified against their recorded quali
 - **Phases 1–12:** Fully implemented, verified against quality gates, and documented in their respective phase directories.
 - **Deliverable 13.0 (Documentation Structure Initialization):** Completed 2026-10-31. Implemented in `docs/phase13/README.md`, milestone commit: `263a71a0301d621ab4c34e1136e38d16d2e36be0`.
 - **Deliverable 13.1 (Dependency Security Remediation):** Completed 2026-10-31. Zero critical/high vulnerabilities achieved; residual 33 moderate/low issues cataloged in `docs/phase13/13.1-dependency-remediation/README.md`. Milestone commit: `683da7e8a2d2fafbf12d36cff088896e852ce2cd`.
-- **Deliverable 13.2 (Stripe Production Tax Verification):** Completed 2026-10-31. Mandatory billing address and automatic tax calculation implemented in `Backend/src/routes/checkout.ts`, automated test suite in `Backend/tests/stripe-tax.test.ts` (3/3 passing, full suite 35/35 suites, 209/209 tests passing), documentation in `docs/phase13/13.2-stripe-tax-verification/README.md`. Milestone commit: `7676b60ee30897ae5bb82734aefd8233f2c593c6`.
+- **Deliverable 13.2 (Stripe Production Tax Verification):** Completed 2026-10-31. Mandatory billing address and automatic tax calculation implemented in `Backend/src/routes/checkout.ts`, automated test suite in `Backend/tests/stripe-tax.test.ts` (3/3 passing, full suite 35/35 suites, 210/210 tests passing), documentation in `docs/phase13/13.2-stripe-tax-verification/README.md`. Milestone commit: `7676b60ee30897ae5bb82734aefd8233f2c593c6`.
+- **Deliverable 13.4 (Wave 1 Core Financial, Webhook & Alert Hardening):** Completed 2026-11-01. Implemented in Backend/src/routes/checkout.ts, webhooks.ts, and sync-failure-alerts.ts; full test suite passes (35/35 suites, 210/210 tests), documentation in docs/phase13/13.4-wave1-hardening/README.md. Milestone commit: 18f5ca35523657b36e9d6c29d1bdc38d9d49191d.
 
 ---
 

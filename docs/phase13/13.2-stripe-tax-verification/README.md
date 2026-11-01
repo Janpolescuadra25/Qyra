@@ -53,3 +53,10 @@ Automated regression tests are implemented in `Backend/tests/stripe-tax.test.ts`
 - [x] `billing_address_collection: 'required'` enforced to guarantee accurate tax jurisdiction assignment.
 - [x] Automated test coverage added and integrated into continuous testing baseline.
 - [x] Stripe Dashboard Tax Registration: Registrations configured in Stripe Dashboard; tax calculations active in both test and live modes.
+---
+
+### Post-Completion Updates (Deliverable 13.4 — 2026-11-01)
+- Added customer_update: { address: 'auto', name: 'auto' } to /create-session and /create-scan-pack-session in Backend/src/routes/checkout.ts to automatically persist customer billing addresses and tax information to Stripe customer records.
+- Added billing authority role verification (isOwner / isAdmin) across checkout creation endpoints.
+- Updated Backend/tests/stripe-tax.test.ts with explicit customer_update assertions; full test suite now passes 35/35 suites and 210/210 tests.
+- Reference commit: 18f5ca35523657b36e9d6c29d1bdc38d9d49191d.
