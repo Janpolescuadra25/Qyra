@@ -62,6 +62,7 @@ describe('Stripe checkout tax enforcement', () => {
   const expectTaxConfiguration = () => {
     expect(stripeCheckoutSessionCreate).toHaveBeenCalledWith(expect.objectContaining({
       automatic_tax: { enabled: true },
+      customer_update: { address: 'auto', name: 'auto' },
       tax_id_collection: { enabled: true },
       billing_address_collection: 'required',
     }));
@@ -83,5 +84,20 @@ describe('Stripe checkout tax enforcement', () => {
     const res = await request(app).post('/api/checkout/create-scan-pack-session').send({ scanPack: 'scan_pack_100' });
     expect(res.status).toBe(200);
     expectTaxConfiguration();
+  });
+
+  it('rejects non-owner and non-admin billing access for subscription checkout', async () => {
+    mockUser = { userId: 'member-user-456', email: 'member@qyra.space', role: 'MANAGER', adminId: 'owner-user-123' };
+    prismaUserFindUnique.mockResolvedValue({
+      id: 'owner-user-123',
+      email: 'owner@qyra.space',
+      role: 'OWNER',
+      stripeCustomerId: 'cus_test123',
+      subscription: null,
+    });
+
+    const res = await request(app).post('/api/checkout/create-session').send({ plan: 'starter', interval: 'month' });
+    expect(res.status).toBe(403);
+    expect(res.body.error).toContain('Only team owners and admins can initiate checkout');
   });
 });

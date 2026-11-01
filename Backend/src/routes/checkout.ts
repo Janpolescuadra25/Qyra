@@ -110,6 +110,12 @@ router.post(
       throw new AppError('Contact your admin to upgrade your plan.', 403);
     }
 
+    const isOwner = !req.user!.adminId;
+    const isAdmin = req.user!.role === 'ADMIN';
+    if (!isOwner && !isAdmin) {
+      throw new AppError('Only team owners and admins can initiate checkout', 403);
+    }
+
     if (team.subscriptionSource === 'stripe' && team.stripeSubscriptionId) {
       throw new AppError('Team already has an active subscription. Use the billing portal to manage or change plans.', 400);
     }
@@ -142,6 +148,10 @@ router.post(
       payment_method_types: ['card', 'paypal'],
       line_items: [{ price: priceId, quantity: 1 }],
       automatic_tax: { enabled: true },
+      customer_update: {
+        address: 'auto',
+        name: 'auto',
+      },
       tax_id_collection: { enabled: true },
       billing_address_collection: 'required',
       success_url: `${process.env.FRONTEND_URL}/billing-success?session_id={CHECKOUT_SESSION_ID}`,
@@ -183,6 +193,12 @@ router.post(
       throw new AppError('Contact your admin to purchase bonus scans.', 403);
     }
 
+    const isOwner = !req.user!.adminId;
+    const isAdmin = req.user!.role === 'ADMIN';
+    if (!isOwner && !isAdmin) {
+      throw new AppError('Only team owners and admins can initiate checkout', 403);
+    }
+
     let customerId = team.stripeCustomerId ?? undefined;
     if (!customerId) {
       const customer = await stripe.customers.create({
@@ -207,6 +223,10 @@ router.post(
       payment_method_types: ['card', 'paypal'],
       line_items: [{ price: pack.stripePriceId, quantity: 1 }],
       automatic_tax: { enabled: true },
+      customer_update: {
+        address: 'auto',
+        name: 'auto',
+      },
       tax_id_collection: { enabled: true },
       billing_address_collection: 'required',
       success_url: `${process.env.FRONTEND_URL}/billing-success?session_id={CHECKOUT_SESSION_ID}`,

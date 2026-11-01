@@ -116,7 +116,8 @@ async function checkSyncFailures(prisma: PrismaClient): Promise<void> {
       return result;
     }
 
-    for (const scan of staleScans) {
+    const safeStaleScans = Array.isArray(staleScans) ? staleScans : [];
+    for (const scan of safeStaleScans) {
       const user = scan.location.user;
       const lead = await resolveTeamLead(user.id, user.adminId);
       if (!lead) continue;
@@ -132,7 +133,8 @@ async function checkSyncFailures(prisma: PrismaClient): Promise<void> {
       teamLeadMap.set(lead.id, entry);
     }
 
-    for (const scan of failedScans) {
+    const safeFailedScans = Array.isArray(failedScans) ? failedScans : [];
+    for (const scan of safeFailedScans) {
       const user = scan.location.user;
       const lead = await resolveTeamLead(user.id, user.adminId);
       if (!lead) continue;

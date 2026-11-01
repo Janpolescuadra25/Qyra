@@ -55,6 +55,7 @@ interface WebhookEvent {
 type CheckoutSessionPayload = {
   id: string;
   amount_total: number | null;
+  payment_status?: string;
   metadata?: Record<string, string>;
   customer?: string | { id: string };
   subscription?: string | { id: string };
@@ -149,12 +150,20 @@ router.post(
         }
       }
 
-      const existing = await prisma.stripeEvent.findUnique({
-        where: { eventId: event.id },
-      });
-      if (existing) {
-        webhookStatus = WebhookDeliveryStatus.IGNORED;
-        return res.json({ received: true });
+      try {
+        await prisma.stripeEvent.create({
+          data: {
+            eventId: event.id,
+            eventType: event.type,
+          },
+        });
+      } catch (createErr: any) {
+        if (createErr.code === 'P2002') {
+          webhookStatus = WebhookDeliveryStatus.IGNORED;
+          logger.info({ eventId: event.id, eventType: event.type }, 'Stripe event already processed (duplicate)');
+          return res.json({ received: true });
+        }
+        throw createErr;
       }
 
       switch (event.type) {
@@ -167,6 +176,11 @@ router.post(
           const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id;
 
           if (scanPack) {
+            if (session.payment_status !== 'paid') {
+              logger.warn({ sessionId: session.id, paymentStatus: session.payment_status }, 'Skipping scan pack fulfillment for unpaid checkout session');
+              break;
+            }
+
             const pack = getScanPack(scanPack);
             if (teamId && pack) {
               await prisma.$transaction([
@@ -237,7 +251,7 @@ router.post(
           const planInterval: 'month' | 'year' = priceInterval === 'year' ? 'year' : 'month';
           const periodEnd = new Date((subscription.current_period_end ?? 0) * 1000);
 
-          const updateData: Record<string, unknown> = {
+          const baseUpdateData: Record<string, unknown> = {
             currentPeriodEnd: periodEnd,
             cancelAtPeriodEnd: subscription.cancel_at_period_end ?? false,
             paymentIssue: false,
@@ -247,19 +261,19 @@ router.post(
 
           if (planKey) {
             const limits = getPlanLimits(planKey);
-            updateData.currentPlan = planKey;
-            updateData.maxUsers = limits.maxUsers;
-            updateData.maxLocations = limits.maxLocations;
-            updateData.maxScans = limits.maxScans;
-            updateData.poolScans = limits.maxScans;
-            updateData.poolLocations = limits.maxLocations;
-            updateData.maxStorageBytes = limits.maxStorageBytes;
-            updateData.poolStorageBytes = limits.maxStorageBytes;
-            updateData.poolTemplates = limits.maxTemplates;
-            updateData.maxMembers = limits.maxUsers > 1 ? limits.maxUsers - 1 : 0;
-            updateData.role = limits.maxUsers > 1 ? 'ADMIN' : 'VIEWER';
-            updateData.scanHistoryDays = limits.scanHistoryDays;
-            updateData.prioritySupport = PLANS[planKey].prioritySupport;
+            baseUpdateData.currentPlan = planKey;
+            baseUpdateData.maxUsers = limits.maxUsers;
+            baseUpdateData.maxLocations = limits.maxLocations;
+            baseUpdateData.maxScans = limits.maxScans;
+            baseUpdateData.poolScans = limits.maxScans;
+            baseUpdateData.poolLocations = limits.maxLocations;
+            baseUpdateData.maxStorageBytes = limits.maxStorageBytes;
+            baseUpdateData.poolStorageBytes = limits.maxStorageBytes;
+            baseUpdateData.poolTemplates = limits.maxTemplates;
+            baseUpdateData.maxMembers = limits.maxUsers > 1 ? limits.maxUsers - 1 : 0;
+            baseUpdateData.role = limits.maxUsers > 1 ? 'ADMIN' : 'VIEWER';
+            baseUpdateData.scanHistoryDays = limits.scanHistoryDays;
+            baseUpdateData.prioritySupport = PLANS[planKey].prioritySupport;
           }
 
           const currentTeams = await prisma.user.findMany({
@@ -277,10 +291,32 @@ router.post(
 
           await prisma.user.updateMany({
             where: { stripeSubscriptionId: subscription.id },
-            data: updateData,
+            data: baseUpdateData,
           });
 
           for (const team of currentTeams) {
+            if (planKey && team.currentPlan !== planKey) {
+              const limits = getPlanLimits(planKey);
+              await prisma.user.update({
+                where: { id: team.id },
+                data: {
+                  currentPlan: planKey,
+                  maxUsers: limits.maxUsers,
+                  maxLocations: limits.maxLocations,
+                  maxScans: limits.maxScans,
+                  poolScans: limits.maxScans,
+                  poolLocations: limits.maxLocations,
+                  maxStorageBytes: limits.maxStorageBytes,
+                  poolStorageBytes: limits.maxStorageBytes,
+                  poolTemplates: limits.maxTemplates,
+                  maxMembers: limits.maxUsers > 1 ? limits.maxUsers - 1 : 0,
+                  role: limits.maxUsers > 1 ? 'ADMIN' : 'VIEWER',
+                  scanHistoryDays: limits.scanHistoryDays,
+                  prioritySupport: PLANS[planKey].prioritySupport,
+                },
+              });
+            }
+
             const nextCancellationState = Boolean(subscription.cancel_at_period_end);
             if (team.cancelAtPeriodEnd !== nextCancellationState) {
               await recordSubscriptionEvent({
@@ -308,8 +344,10 @@ router.post(
                 mrrDelta: newMrr - oldMrr,
               });
             }
-            if (updateData.poolScans != null) {
-              const newScans = updateData.poolScans as number;
+
+            const nextPlanLimits = planKey && team.currentPlan !== planKey ? getPlanLimits(planKey) : null;
+            if (nextPlanLimits) {
+              const newScans = nextPlanLimits.maxScans;
               const currentScans = team.poolScans ?? 0;
               if (newScans < currentScans) {
                 await prisma.user.updateMany({
@@ -317,9 +355,8 @@ router.post(
                   data: { allocatedScans: newScans },
                 });
               }
-            }
-            if (updateData.poolLocations != null) {
-              const newLocs = updateData.poolLocations as number;
+
+              const newLocs = nextPlanLimits.maxLocations;
               const currentLocs = team.poolLocations ?? 0;
               if (newLocs < currentLocs) {
                 await prisma.user.updateMany({
@@ -327,9 +364,8 @@ router.post(
                   data: { allocatedLocations: newLocs },
                 });
               }
-            }
-            if (updateData.poolTemplates != null) {
-              const newTemplates = updateData.poolTemplates as number;
+
+              const newTemplates = nextPlanLimits.maxTemplates;
               const currentTemplates = team.poolTemplates ?? 0;
               if (newTemplates < currentTemplates) {
                 await prisma.user.updateMany({
@@ -445,10 +481,6 @@ router.post(
             log.info({ eventType: event.type }, 'Unhandled Stripe event type');
           }
       }
-
-      await prisma.stripeEvent.create({
-        data: { eventId: event.id, eventType: event.type },
-      }).catch(() => {});
 
       return res.json({ received: true });
     } catch (err) {
