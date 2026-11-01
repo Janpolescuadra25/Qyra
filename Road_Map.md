@@ -19,17 +19,16 @@ Phases 1 through 12 have been implemented, verified against their recorded quali
 
 ### Phase 13: Dependency Security Remediation & Store Submission Hardening
 
-- [⏳] **13.3 Browser Extension Store Submission (IN PROGRESS):** Multi-browser release packages verified in `Frontend/releases/`; comprehensive store submission handbook and checklists completed in `docs/phase13/13.3-browser-store-submission/README.md`.
+- [⏳] **13.3 Browser Extension Store Submission (IN PROGRESS):** Multi-browser release packages verified in `Frontend/releases/`; store promotional assets established in `Frontend/public/store-assets/`; comprehensive store submission handbook and checklists completed in `docs/phase13/13.3-browser-store-submission/README.md`.
   - [x] Extension package integrity audit (Chrome, Edge, Firefox release zips verified).
   - [x] Multi-browser store submission guide and compliance handbook authored.
-  - [ ] Store promotional graphic assets generation (440x280 small promo tile, 1400x560 marquee tile, 1280x800 screenshots).
+  - [x] Store promotional graphic assets generated in `Frontend/public/store-assets/` (440x280 small promo tile, 1400x560 marquee tile, 1280x800 screenshots 1–5).
   - [ ] Submission tracking and developer dashboard uploads (Chrome Web Store, Microsoft Edge Add-ons, Mozilla Firefox AMO).
 
 ---
 
 ## Next Steps
 
-1. Establish `Frontend/public/store-assets/` directory and prepare store promotional graphic assets (440x280 promo tile, 1400x560 marquee banner, and extension screenshots).
-2. Execute browser store submissions to Chrome Web Store, Edge Add-ons, and Mozilla AMO.
-3. Record store submission review tracking IDs in `docs/phase13/13.3-browser-store-submission/README.md`.
-4. Conclude Phase 13 upon submission confirmation and archive Deliverable 13.3.
+1. Execute browser store submissions to Chrome Web Store, Microsoft Edge Add-ons, and Mozilla Firefox AMO.
+2. Record store submission review tracking IDs in `docs/phase13/13.3-browser-store-submission/README.md`.
+3. Conclude Phase 13 upon submission confirmation and archive Deliverable 13.3.

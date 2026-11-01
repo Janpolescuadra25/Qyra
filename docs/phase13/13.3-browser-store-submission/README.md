@@ -1,4 +1,4 @@
-﻿# Deliverable 13.3: Browser Extension Store Submission Handbook
+# Deliverable 13.3: Browser Extension Store Submission Handbook
 
 ## Status: IN PROGRESS (Release Bundles Verified & Store Submission Handbook Completed)
 **Milestone Date:** 2026-10-31  
@@ -87,7 +87,7 @@ All visual assets must meet official browser store resolution, aspect ratio, and
 
 ### Store Promotional Assets (to be prepared for dashboard submission):
 - [ ] **Small Promo Tile:** 440x280 px (PNG, no transparency, high-contrast brand mark)
-- [ ] **Marquee Banner:** 1400x560 px (PNG, hero background graphic for featured collection)
+- [x] **Marquee Banner:** 1400x560 px (PNG, hero background graphic for featured collection) - Established in Frontend/public/store-assets/marquee-banner.png
 - [ ] **Screenshots (5 minimum):** 1280x800 px (PNG):
   1. POS report auto-detection on active tab
   2. Transaction table preview and AI line-item classification
