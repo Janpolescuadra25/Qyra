@@ -1,4 +1,4 @@
-# Phase 13: Dependency Security Remediation & Store Submission Hardening
+﻿# Phase 13: Dependency Security Remediation & Store Submission Hardening
 
 ## Executive Summary
 
