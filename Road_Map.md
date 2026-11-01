@@ -2,16 +2,16 @@
 
 ## Active Phases (In Progress)
 
-### Phase 13: Browser Extension Store Launch & Hardening
-- **Status**: COMPLETE (Code & Packages Verified; Ready for Operator Store Submission)
-- **Target Completion**: 2026-11-02
-- **Deliverables**:
-  - [x] 13.1 — Browser Store Asset Preparation & Icon Standardization (Complete: 2026-10-29)
-  - [x] 13.2 — Stripe Tax & Financial Verification (Complete: 2026-10-31, Commit `18f5ca3`)
-  - [x] 13.3 — Chrome Web Store, Edge Add-ons, Firefox AMO Submission (Complete: 2026-11-01, Commit `b06164d`)
-  - [x] 13.4 — Wave 1 Hardening & Phase 13 Documentation Alignment (Complete: 2026-10-31, Commit `7e8ab7d`)
-  - [x] 13.5 — Studio Attribution Migration to Hayp Studios (Complete: 2026-11-01, Commit `9e8f234`)
-
+### Phase 14: Live Production Validation & Commercial Activation
+- **Status:** IN PROGRESS (Initialization & Pre-Launch Validation)
+- **Primary Goal:** Validate production telemetries, configure live commercial infrastructure, monitor browser store submission lifecycles, and verify end-to-end security hardening.
+- **Deliverables:**
+  - [ ] **14.1 Production Telemetry & Sentry Integration:** Configure environment-aware error tracking and performance monitoring for API backend and client applications without leaking sensitive financial payload data.
+  - [ ] **14.2 Stripe Live Mode Activation & Production Checkout Verification:** Provision live pricing plans, configure production webhook signing secrets on VPS `vortex`, and perform live transaction and subscription lifecycle tests.
+  - [ ] **14.3 QuickBooks Online Production OAuth App Verification:** Finalize production app credentials, verify real-company accounting token exchanges, and validate live journal entry and attachment sync.
+  - [ ] **14.4 Browser Store Submission Tracking & Lifecycle Monitoring:** Track review milestones across Chrome Web Store, Edge Add-ons, and Mozilla Add-ons (AMO); document review feedback and compliance responses.
+  - [ ] **14.5 Production Security, Rate Limiting & CORS Hardening Audit:** Audit API route rate limits, CORS origin isolation, helmet HTTP security headers, and reverse proxy timeouts on production VPS.
+  - [ ] **14.6 Phase 14 Verification, Documentation & Operator Handbook:** Compile operational runbooks, credential checklists, incident response protocols, and production release sign-off.
 ---
 
 ## Archived Phases (Completed)
@@ -26,5 +26,6 @@
 ---
 
 ## Next Steps
-- Human operator (JP) dashboard uploads to Chrome Web Store, Microsoft Edge Add-ons, and Mozilla Firefox AMO using verified packages in `Frontend/releases/`.
-- Execute Phase 14 / Live Production Validation.
+1. Execute Deliverable 14.1: Production Telemetry & Sentry Integration.
+2. Monitor Chrome Web Store, Edge Add-ons, and Firefox AMO developer portals for review status.
+3. Validate production QuickBooks Online OAuth authorization flow in production environment.
