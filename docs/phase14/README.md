@@ -16,7 +16,7 @@ Phase 14 transitions Qyra from pre-launch store packaging into live commercial a
 | Deliverable | Description | Target Component | Status |
 |---|---|---|---|
 | **14.1 Production Telemetry & Sentry Integration** | Client & server error monitoring, performance tracing, sanitization of financial PII | `Frontend/`, `Backend/` | COMPLETED (Commit 89e39f5) |
-| **14.2 Stripe Live Mode Activation** | Live price IDs, production webhook validation, live subscription checkout verification | `Backend/`, `web/` | NOT STARTED |
+| 14.2 | Stripe Live Mode Activation & Checkout Verification | IN PROGRESS (Architecture Ready, Pending VPS Verification) | Stripe Live Mode Architecture Alignment & Verification |
 | **14.3 QuickBooks Online Production OAuth** | Production app review verification, live company connection, sync audit | `Backend/` | NOT STARTED |
 | **14.4 Browser Store Submission Tracking** | Chrome Web Store, Edge Add-ons, Mozilla AMO review status & compliance tracking | Store Dashboards | IN PROGRESS |
 | **14.5 Production Security & Rate Limiting** | CORS origin locking, Express rate limiters, Helmet headers, reverse proxy security | `Backend/`, Nginx | NOT STARTED |
@@ -80,3 +80,46 @@ Integrated Sentry backend CPU and transaction profiling into the Qyra API servic
 - Frontend TypeScript typecheck: Passed (`npm run typecheck` exit code 0).
 - Frontend production build: Passed (`npm run build` exit code 0).
 - Remote synchronization: Local `HEAD` successfully pushed and matched to `origin/main`.
+
+---
+
+### Phase 14.2 — STATUS: IN PROGRESS (Architecture Ready, Pending VPS Verification)
+**Deliverable:** Stripe Live Mode Activation & Production Checkout Verification  
+**Architecture & Integration Verification:**
+1. **Hosted Checkout Architecture:**
+   - Server-side session creation implemented at `POST /api/checkout/create-session` in `Backend/src/routes/checkout.ts`.
+   - Browser Extension triggers checkout in `Frontend/src/popup/components/PricingView.tsx` by requesting session URL and invoking `browser.tabs.create({ url })`.
+   - Zero publishable key requirement on client; zero PCI DSS scope on frontend.
+2. **Webhook & Raw Body Pipeline:**
+   - Middleware mounted in `Backend/src/index.ts` with `express.raw({ type: 'application/json', limit: '1mb' })` specifically on `/api/webhooks` preceding global `express.json()`.
+   - Cryptographic signature validation via `stripe.webhooks.constructEvent` in `Backend/src/routes/webhooks.ts`.
+   - Dynamic mode-guard rejection: test events sent to live backend (or live events to test backend) are blocked with HTTP 400.
+3. **Stripe Pricing Schema Alignment:**
+   - Synchronized 12-variable pricing manifest across `.env.example` and `.env.production.example`.
+   - 4 subscription tiers (Starter, Professional, Premium, Enterprise) with dedicated monthly and annual price IDs.
+   - 3 one-time scan pack tiers (100, 250, 500 scans) mapped to fixed price IDs.
+
+**Hetzner VPS vortex Production Operator Deployment Protocol:**
+1. **Repository Pull:**
+   - On VPS `vortex` (`2.28.120.85`), navigate to `/var/www/qyra/Backend`.
+   - Execute `git pull origin main` to synchronize configuration schemas.
+2. **Environment Variable Configuration:**
+   - Inspect `/var/www/qyra/Backend/.env`.
+   - Populate `STRIPE_SECRET_KEY` with live secret key (`sk_live_...`).
+   - Populate `STRIPE_WEBHOOK_SECRET` with live webhook endpoint secret (`whsec_...`).
+   - Populate all 12 live Price IDs corresponding to live Stripe Dashboard products.
+   - Enforce file permissions: `chmod 600 /var/www/qyra/Backend/.env`.
+3. **Stripe Dashboard Webhook Registration:**
+   - Endpoint URL: `https://api.qyra.space/api/webhooks`
+   - Subscribed Events:
+     * `checkout.session.completed`
+     * `customer.subscription.updated`
+     * `customer.subscription.deleted`
+     * `invoice.payment_succeeded`
+     * `invoice.payment_failed`
+4. **PM2 Process Reload:**
+   - Run `pm2 restart qyra-backend` (ensure sibling processes `jp-frontend`, `jp-backend`, `hayp-frontend` remain untouched).
+5. **Live Payment Verification & Rollback Plan:**
+   - Perform live checkout transaction of $1.00 or Starter Monthly plan using real credit card.
+   - Verify webhook 200 receipt and automatic subscription activation in PostgreSQL database `qyra_db`.
+   - **Rollback Procedure:** If live webhook fails or signature error occurs, restore `sk_test_...` credentials in `/var/www/qyra/Backend/.env` and execute `pm2 restart qyra-backend`.
