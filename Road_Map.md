@@ -21,6 +21,5 @@
 ---
 
 ## Next Steps
-1. Execute Deliverable 14.1: Production Telemetry & Sentry Integration.
-2. Monitor Chrome Web Store, Edge Add-ons, and Firefox AMO developer portals for review status.
-3. Validate production QuickBooks Online OAuth authorization flow in production environment.
+1. Monitor Chrome Web Store, Edge Add-ons, and Firefox AMO developer portals for review status.
+2. Validate production QuickBooks Online OAuth authorization flow in production environment.

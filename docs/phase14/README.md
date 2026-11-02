@@ -15,7 +15,7 @@ Phase 14 transitions Qyra from pre-launch store packaging into live commercial a
 
 | Deliverable | Description | Target Component | Status |
 |---|---|---|---|
-| **14.1 Production Telemetry & Sentry Integration** | Client & server error monitoring, performance tracing, sanitization of financial PII | `Frontend/`, `Backend/` | NOT STARTED |
+| **14.1 Production Telemetry & Sentry Integration** | Client & server error monitoring, performance tracing, sanitization of financial PII | `Frontend/`, `Backend/` | COMPLETED (Commit 89e39f5) |
 | **14.2 Stripe Live Mode Activation** | Live price IDs, production webhook validation, live subscription checkout verification | `Backend/`, `web/` | NOT STARTED |
 | **14.3 QuickBooks Online Production OAuth** | Production app review verification, live company connection, sync audit | `Backend/` | NOT STARTED |
 | **14.4 Browser Store Submission Tracking** | Chrome Web Store, Edge Add-ons, Mozilla AMO review status & compliance tracking | Store Dashboards | IN PROGRESS |
@@ -48,12 +48,35 @@ Phase 14 transitions Qyra from pre-launch store packaging into live commercial a
 - **Backend Test Suite:** `npm test` in `Backend/` must pass all test suites and tests.
 - **Fail-Closed Git Verification:** Working tree must remain clean; only designated files may be staged and committed.
 
-## Phase 14.1: Production Telemetry & Sentry Profiling
-- **Status:** COMPLETED
-- **Backend:**
-  - Error tracking and distributed tracing via `@sentry/node@11.4.0`.
-  - Continuous CPU profiling enabled via `@sentry/profiling-node@11.4.0` using `nodeProfilingIntegration()`.
-  - Profiling sample rates configured: `1.0` in development / test, `0.1` (10%) in production via `profileSessionSampleRate` mapped from `SENTRY_PROFILES_SAMPLE_RATE`.
-  - Comprehensive, fail-closed PII sanitization in `beforeSend` redacts sensitive headers, query parameters, user identifiers, and extra metadata keys.
-- **Frontend:**
-  - Browser-side crash tracking with fail-closed PII sanitization via `@sentry/browser@11.4.0` in `Frontend/src/popup/App.tsx`.
+## Phase 14.1: Production Telemetry & Sentry Integration — STATUS: DONE
+
+### Overview
+Integrated Sentry backend CPU and transaction profiling into the Qyra API service while preserving 100% of the battle-tested, fail-closed PII sanitization logic and browser telemetry.
+
+### Technical Implementation Details
+- **Dependencies Installed:** `@sentry/profiling-node@11.4.0` (pinned exact in `Backend/package.json`) aligned with `@sentry/node@11.4.0` to eliminate package version skew.
+- **Backend Profiling Integration:**
+  - File: `Backend/src/lib/logger.ts`.
+  - Initialized `nodeProfilingIntegration()` in `Sentry.init()`.
+  - Resolved Sentry 11.4.0 API requirement by configuring `profileSessionSampleRate` with fallback to `process.env.SENTRY_PROFILES_SAMPLE_RATE`.
+  - Profiling sample rates: `0.1` (10%) in production, `1.0` (100%) in development and testing.
+  - Safe initialization bypass: Sentry initialization is cleanly skipped if `process.env.SENTRY_DSN` is undefined, preventing test suite pollution.
+- **PII Sanitization Preservation:**
+  - Preserved all 50+ lines of existing production `beforeSend` sanitization in `Backend/src/lib/logger.ts` byte-for-byte.
+  - Redaction enforced for 7 sensitive headers (`authorization`, `cookie`, `set-cookie`, `x-api-key`, `x-auth-token`, `jwt`, `session`).
+  - Redaction enforced for 8 URL query parameters (`token`, `key`, `password`, `secret`, `auth`, `access_token`, `refresh_token`, `code`).
+  - Automatic stripping of user PII (`ip_address`, `email`, `username`).
+  - Recursive masking of sensitive metadata keys in extra payloads.
+  - Fail-closed error handling: Any exception thrown during event sanitization triggers `return null`, safely dropping the event to prevent data leakage.
+- **Frontend Telemetry Untouched:**
+  - `Frontend/src/popup/App.tsx` browser crash reporting and fail-closed sanitization verified complete and left 100% untouched.
+- **Environment Variable Manifests:**
+  - `Backend/.env.example`: Documents `SENTRY_PROFILES_SAMPLE_RATE=1.0`.
+  - `Backend/.env.production.example`: Documents `SENTRY_PROFILES_SAMPLE_RATE=0.1`.
+
+### Verification Gates Passed (Commit `89e39f54fac68372adab84539e05e717e6f72809`)
+- Backend Jest tests: 35/35 suites passed, 210/210 tests passed (`npm test -- --ci --bail` exit code 0).
+- Backend TypeScript compilation: Passed (`npm run build` exit code 0).
+- Frontend TypeScript typecheck: Passed (`npm run typecheck` exit code 0).
+- Frontend production build: Passed (`npm run build` exit code 0).
+- Remote synchronization: Local `HEAD` successfully pushed and matched to `origin/main`.
