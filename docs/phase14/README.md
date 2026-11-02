@@ -47,3 +47,13 @@ Phase 14 transitions Qyra from pre-launch store packaging into live commercial a
 - **Frontend Typecheck:** `npm run typecheck` in `Frontend/` must exit with 0 errors.
 - **Backend Test Suite:** `npm test` in `Backend/` must pass all test suites and tests.
 - **Fail-Closed Git Verification:** Working tree must remain clean; only designated files may be staged and committed.
+
+## Phase 14.1: Production Telemetry & Sentry Profiling
+- **Status:** COMPLETED
+- **Backend:**
+  - Error tracking and distributed tracing via `@sentry/node@11.4.0`.
+  - Continuous CPU profiling enabled via `@sentry/profiling-node@11.4.0` using `nodeProfilingIntegration()`.
+  - Profiling sample rates configured: `1.0` in development / test, `0.1` (10%) in production via `profileSessionSampleRate` mapped from `SENTRY_PROFILES_SAMPLE_RATE`.
+  - Comprehensive, fail-closed PII sanitization in `beforeSend` redacts sensitive headers, query parameters, user identifiers, and extra metadata keys.
+- **Frontend:**
+  - Browser-side crash tracking with fail-closed PII sanitization via `@sentry/browser@11.4.0` in `Frontend/src/popup/App.tsx`.

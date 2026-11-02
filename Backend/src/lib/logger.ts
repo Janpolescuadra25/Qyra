@@ -1,7 +1,17 @@
 import pino from 'pino';
 import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
 const isProduction = process.env.NODE_ENV === 'production';
+const profileSessionSampleRate = (() => {
+  const configuredRate = process.env.SENTRY_PROFILES_SAMPLE_RATE;
+  if (!configuredRate) {
+    return isProduction ? 0.1 : 1.0;
+  }
+
+  const parsedRate = Number(configuredRate);
+  return Number.isFinite(parsedRate) ? parsedRate : isProduction ? 0.1 : 1.0;
+})();
 
 export const logger = pino({
   level: isProduction ? 'info' : 'debug',
@@ -24,6 +34,8 @@ if (process.env.SENTRY_DSN) {
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV ?? 'development',
     tracesSampleRate: isProduction ? 0.2 : 1.0,
+    profileSessionSampleRate,
+    integrations: [nodeProfilingIntegration()],
     beforeSend(event) {
       try {
         const requestHeaders = (event.request?.headers ?? {}) as Record<string, string>;

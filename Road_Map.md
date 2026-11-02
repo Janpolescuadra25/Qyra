@@ -6,7 +6,7 @@
 - **Status:** IN PROGRESS (Initialization & Pre-Launch Validation)
 - **Primary Goal:** Validate production telemetries, configure live commercial infrastructure, monitor browser store submission lifecycles, and verify end-to-end security hardening.
 - **Deliverables:**
-  - [ ] **14.1 Production Telemetry & Sentry Integration:** Configure environment-aware error tracking and performance monitoring for API backend and client applications without leaking sensitive financial payload data.
+  - [x] **14.1 Production Telemetry & Sentry Integration:** Configure environment-aware error tracking and performance monitoring for API backend and client applications without leaking sensitive financial payload data.
   - [ ] **14.2 Stripe Live Mode Activation & Production Checkout Verification:** Provision live pricing plans, configure production webhook signing secrets on VPS `vortex`, and perform live transaction and subscription lifecycle tests.
   - [ ] **14.3 QuickBooks Online Production OAuth App Verification:** Finalize production app credentials, verify real-company accounting token exchanges, and validate live journal entry and attachment sync.
   - [ ] **14.4 Browser Store Submission Tracking & Lifecycle Monitoring:** Track review milestones across Chrome Web Store, Edge Add-ons, and Mozilla Add-ons (AMO); document review feedback and compliance responses.
