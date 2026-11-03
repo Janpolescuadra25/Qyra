@@ -236,6 +236,29 @@ export const scanRejectSchema = z.object({
   notes: z.string().max(500).optional(),
 }).strict();
 
+export function isValidStorageKey(key: unknown): boolean {
+  if (typeof key !== 'string' || !key.trim()) {
+    return false;
+  }
+
+  const trimmed = key.trim();
+  if (trimmed.length > 512) {
+    return false;
+  }
+
+  if (
+    trimmed.includes('..') ||
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('\\') ||
+    trimmed.includes('//') ||
+    trimmed.includes('\\')
+  ) {
+    return false;
+  }
+
+  return /^[A-Za-z0-9._\-/]+$/.test(trimmed);
+}
+
 export const scanCreateSchema = z.object({
   locationId: z.string().min(1),
   scanDate: z.string().min(1),

@@ -8,7 +8,7 @@ import { requireCapacity, checkStorageQuota } from '../middleware/capacity';
 import { enforceEffectiveRole } from '../middleware/effective-role';
 import { logAction } from '../middleware/audit';
 import { validate } from '../middleware/validate';
-import { scanSubmitSchema, scanApproveSchema, scanRejectSchema, scanCreateSchema } from '../lib/validators';
+import { scanSubmitSchema, scanApproveSchema, scanRejectSchema, scanCreateSchema, isValidStorageKey } from '../lib/validators';
 import type { Prisma } from '@prisma/client';
 import { ScanRawData } from '../types';
 import { prisma } from '../lib/prisma';
@@ -97,6 +97,20 @@ router.post('/', requireFeaturePermission('scan', 'write'), validate(scanCreateS
     const parsedDate = new Date(scanDate);
     if (isNaN(parsedDate.getTime())) {
       throw new AppError('scanDate must be a valid ISO date string', 400);
+    }
+
+    if (attachment && attachment.storageKey) {
+      if (!isValidStorageKey(attachment.storageKey)) {
+        throw new AppError('Invalid attachment storageKey format or illegal traversal sequence', 400);
+      }
+
+      const existingAttachment = await prisma.attachment.findUnique({
+        where: { storageKey: attachment.storageKey },
+      });
+
+      if (existingAttachment) {
+        throw new AppError('Storage key already in use', 409);
+      }
     }
 
     const scan = await prisma.scanRecord.create({
