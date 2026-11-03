@@ -17,7 +17,7 @@ Phase 14 transitions Qyra from pre-launch store packaging into live commercial a
 |---|---|---|---|
 | **14.1 Production Telemetry & Sentry Integration** | Client & server error monitoring, performance tracing, sanitization of financial PII | `Frontend/`, `Backend/` | COMPLETED (Commit 89e39f5) |
 | 14.2 | Stripe Live Mode Activation & Checkout Verification | IN PROGRESS (Architecture Ready, Pending VPS Verification) | Stripe Live Mode Architecture Alignment & Verification |
-| **14.3 QuickBooks Online Production OAuth** | Production app review verification, live company connection, sync audit | `Backend/` | NOT STARTED |
+| 14.3 | QuickBooks Online Production OAuth App Verification | IN PROGRESS (Architecture & Tests Ready, Pending Live Verification) | QuickBooks Online Production OAuth & Journal Entry Sync |
 | **14.4 Browser Store Submission Tracking** | Chrome Web Store, Edge Add-ons, Mozilla AMO review status & compliance tracking | Store Dashboards | IN PROGRESS |
 | **14.5 Production Security & Rate Limiting** | CORS origin locking, Express rate limiters, Helmet headers, reverse proxy security | `Backend/`, Nginx | NOT STARTED |
 | **14.6 Phase 14 Operator Handbook & Sign-Off** | Operator runbooks, incident response protocols, disaster recovery procedures | `docs/phase14/` | NOT STARTED |
@@ -123,3 +123,40 @@ Integrated Sentry backend CPU and transaction profiling into the Qyra API servic
    - Perform live checkout transaction of $1.00 or Starter Monthly plan using real credit card.
    - Verify webhook 200 receipt and automatic subscription activation in PostgreSQL database `qyra_db`.
    - **Rollback Procedure:** If live webhook fails or signature error occurs, restore `sk_test_...` credentials in `/var/www/qyra/Backend/.env` and execute `pm2 restart qyra-backend`.
+
+---
+
+### Phase 14.3 — STATUS: IN PROGRESS (Architecture & Tests Ready, Pending Live Verification)
+**Deliverable:** QuickBooks Online Production OAuth App Verification & Journal Entry Sync  
+**Architecture & Integration Verification:**
+1. **OAuth 2.0 Flow & State Validation:**
+   - Routes mounted at `/api/quickbooks/*` in `Backend/src/routes/quickbooks.ts`.
+   - Minimal scope enforcement: `com.intuit.quickbooks.accounting`.
+   - CSRF protection: 16-byte cryptographically random hex token hashed with `hashToken()`, persisted to `OAuthState` model with 15-minute TTL, deleted immediately upon single use.
+   - Browser Extension triggers OAuth via `useQuickBooks.ts` opening authorization tab via background service worker.
+2. **Token Lifecycle & Automatic Refresh:**
+   - Implemented in `Backend/src/services/qb.service.ts` (32 service methods across query, bills, journal entries, attachments).
+   - Proactive refresh in `getValidToken()` checking expiration against `expiresAt`.
+   - Reactive 401 retry in `callQB()` invoking `forceRefreshToken()` and re-executing API call.
+   - Direct Intuit OAuth2 token endpoint: `https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer` using native `fetchWithTimeout`.
+   - Token deduplication for concurrent user requests via `pendingRefreshes` map.
+   - At-rest AES-256 encryption using `encrypt()` utility before storage in `QBToken` model; decrypted in memory only via `decryptSafe()`.
+   - Stale token isolation: failed refresh marks `stale: true`, requiring re-authentication.
+3. **Automated Test Hardening:**
+   - Dedicated unit test suite in `Backend/tests/quickbooks-oauth.test.ts`.
+   - Coverage: Proactive refresh on expired token, 400 invalid grant error handling with stale marking, valid token bypass.
+
+**Hetzner VPS vortex Production Operator Verification Protocol:**
+1. **Intuit Developer Portal Production Settings:**
+   - Confirm App ID and Client ID match `Backend/.env` (`ABnJGWv9uA34NkQf17It4i15yM82XWVPSIePLe0XRhv9llLnms`).
+   - Confirm Redirect URI is registered exactly: `https://qyra.space/api/quickbooks/callback`.
+   - Confirm production keys are active and terms accepted in Intuit Developer Dashboard.
+2. **Environment Variable Configuration on vortex:**
+   - File: `/var/www/qyra/Backend/.env`
+   - Verify: `QB_ENVIRONMENT=production`, `QB_CLIENT_ID`, `QB_CLIENT_SECRET`, `QB_REDIRECT_URI=https://qyra.space/api/quickbooks/callback`, `QB_API_BASE_URL=https://quickbooks.api.intuit.com/v3/company`.
+3. **Live Production Flow Verification:**
+   - Open Qyra Extension popup -> Settings/Integrations -> Click "Connect QuickBooks".
+   - Complete Intuit production authorization screen with live company file.
+   - Verify redirect back to `https://qyra.space/api/quickbooks/callback` -> success view.
+   - Inspect PostgreSQL `qyra_db`: verify `QBToken` record created with encrypted `accessToken` and `refreshToken`.
+   - Trigger single receipt/invoice sync -> verify balanced Journal Entry created in live QuickBooks Online account.
