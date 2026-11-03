@@ -9,7 +9,6 @@
   - [ ] 14.2 Stripe Live Mode Activation & Production Checkout Verification (Architecture & code complete; pending VPS vortex deployment)
   - [ ] 14.3 QuickBooks Online Production OAuth App Verification (Code, unit tests, and documentation committed; pending live Intuit production app verification)
   - [ ] 14.4 Browser Store Submission Tracking & Lifecycle Monitoring
-  - [ ] 14.6 Phase 14 Verification, Documentation & Operator Handbook
 ---
 
 ## Archived Phases (Completed)
