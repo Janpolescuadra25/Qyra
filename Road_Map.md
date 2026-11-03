@@ -15,6 +15,8 @@
 ## Archived Phases (Completed)
 - **Phase 0-12**: Full core application, backend, auth, credit system, AI integration, Stripe checkout, automated testing. All phases 100% completed and archived.
 - **Phase 13**: Browser Store Packaging, Production Attributions & Verification. All deliverables (13.0–13.5) 100% completed and archived (Commits: 18f5ca3, b06164d, 7e8ab7d, 9e8f234, ee2657d, eb6390e).
+
+### Phase 14 Completed Deliverables
 - **Phase 14.1: Sentry Telemetry Profiling & PII Sanitization** (Verified Complete, Commit `c8d1979`)
 - **Phase 14.5: Production Security, Rate Limiting & CORS Hardening** (Verified Complete, Commit `df72449`)
 

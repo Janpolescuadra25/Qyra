@@ -183,11 +183,12 @@ Integrated Sentry backend CPU and transaction profiling into the Qyra API servic
 
 
 ### Verification Gates Passed (14.5)
-- **Commit Baseline:** df72449 (df724497bbaec2bfba0ce65c792d82e959af0ee0)
-- **CORS Suite Execution:** 9/9 passing (Backend/tests/cors.test.ts)
-- **TypeScript Compile Gate:** 
-pm run build exit code 0
-- **Origin Allowlist:** Strictly locked to http://localhost:3000, http://localhost:5173, https://qyra.space, https://api.qyra.space, https://www.qyra.space (zero wildcard matches)
-- **Extension Origin Allowlist:** Whitelisted IDs fhobnahngcmhaeklihifgfbgdepibii (CWS Store) and ccghhfmkjbcakhnoamgihifonfiammoc (dev/unpacked), with optional ALLOWED_EXTENSION_ID env override
-- **Rate Limiters:** 5 distinct Redis-backed / in-memory rate limiters active (uth, scan, sync, xport, pi)
+- **Commit Baseline:** `df72449` (`df724497bbaec2bfba0ce65c792d82e959af0ee0`)
+- **CORS Suite Execution:** 9/9 passing (`Backend/tests/cors.test.ts`)
+- **TypeScript Compile Gate:** `npm run build` exit code 0
+- **Origin Allowlist:** Strictly locked to `http://localhost:3000`, `http://localhost:5173`, `https://qyra.space`, `https://api.qyra.space`, `https://www.qyra.space` (zero wildcard matches)
+- **Extension Origin Allowlist:** Whitelisted IDs `bfhobnahngcmhaeklihifgfbgdepibii` (CWS Store) and `ccghhfmkjbcakhnoamgihifonfiammoc` (dev/unpacked), with optional `ALLOWED_EXTENSION_ID` env override
+- **Rate Limiters:** 5 distinct Redis-backed / in-memory rate limiters active (`auth`, `scan`, `sync`, `export`, `api`)
 - **Status:** VERIFIED COMPLETED (Signed off 2026-11-03)
+
+
