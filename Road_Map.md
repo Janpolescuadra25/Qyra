@@ -6,12 +6,12 @@
 - **Status:** IN PROGRESS (Initialization & Pre-Launch Validation)
 - **Primary Goal:** Validate production telemetries, configure live commercial infrastructure, monitor browser store submission lifecycles, and verify end-to-end security hardening.
 - **Deliverables:**
-  - [x] **14.1 Production Telemetry & Sentry Integration:** Configure environment-aware error tracking and performance monitoring for API backend and client applications without leaking sensitive financial payload data.
-  - [ ] **14.2 Stripe Live Mode Activation & Production Checkout Verification:** Provision live pricing plans, configure production webhook signing secrets on VPS `vortex`, and perform live transaction and subscription lifecycle tests.
-  - [ ] **14.3 QuickBooks Online Production OAuth App Verification:** Finalize production app credentials, verify real-company accounting token exchanges, and validate live journal entry and attachment sync.
-  - [ ] **14.4 Browser Store Submission Tracking & Lifecycle Monitoring:** Track review milestones across Chrome Web Store, Edge Add-ons, and Mozilla Add-ons (AMO); document review feedback and compliance responses.
-  - [ ] **14.5 Production Security, Rate Limiting & CORS Hardening Audit:** Audit API route rate limits, CORS origin isolation, helmet HTTP security headers, and reverse proxy timeouts on production VPS.
-  - [ ] **14.6 Phase 14 Verification, Documentation & Operator Handbook:** Compile operational runbooks, credential checklists, incident response protocols, and production release sign-off.
+  - [x] 14.1 Production Telemetry & Sentry Integration
+  - [ ] 14.2 Stripe Live Mode Activation & Production Checkout Verification (Architecture & code complete; pending VPS vortex deployment)
+  - [ ] 14.3 QuickBooks Online Production OAuth App Verification (Code, unit tests, and documentation committed; pending live Intuit production app verification)
+  - [ ] 14.4 Browser Store Submission Tracking & Lifecycle Monitoring
+  - [ ] 14.5 Production Security, Rate Limiting & CORS Hardening Audit
+  - [ ] 14.6 Phase 14 Verification, Documentation & Operator Handbook
 ---
 
 ## Archived Phases (Completed)
