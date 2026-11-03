@@ -1,4 +1,4 @@
-# Phase 14: Live Production Validation & Commercial Activation
+﻿# Phase 14: Live Production Validation & Commercial Activation
 
 **Phase Owner:** CYPRA (Planning & Prompts) · HYDRA (Auditing) · MANTRA (Execution) · JP (Operator & Authority)  
 **Status:** IN PROGRESS  
@@ -180,3 +180,14 @@ Integrated Sentry backend CPU and transaction profiling into the Qyra API servic
 - **Password Reset Limiter:** 3 requests per 15 minutes (`passwordResetLimiter`).
 - **Email Verification Limiter:** 3 requests per 15 minutes (`emailVerificationLimiter`).
 - **Gemini OCR Suggest Limiter:** 10 requests per 60 seconds (`geminiSuggestLimiter`).
+
+
+### Verification Gates Passed (14.5)
+- **Commit Baseline:** df72449 (df724497bbaec2bfba0ce65c792d82e959af0ee0)
+- **CORS Suite Execution:** 9/9 passing (Backend/tests/cors.test.ts)
+- **TypeScript Compile Gate:** 
+pm run build exit code 0
+- **Origin Allowlist:** Strictly locked to http://localhost:3000, http://localhost:5173, https://qyra.space, https://api.qyra.space, https://www.qyra.space (zero wildcard matches)
+- **Extension Origin Allowlist:** Whitelisted IDs fhobnahngcmhaeklihifgfbgdepibii (CWS Store) and ccghhfmkjbcakhnoamgihifonfiammoc (dev/unpacked), with optional ALLOWED_EXTENSION_ID env override
+- **Rate Limiters:** 5 distinct Redis-backed / in-memory rate limiters active (uth, scan, sync, xport, pi)
+- **Status:** VERIFIED COMPLETED (Signed off 2026-11-03)
