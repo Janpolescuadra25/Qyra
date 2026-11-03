@@ -192,3 +192,175 @@ Integrated Sentry backend CPU and transaction profiling into the Qyra API servic
 - **Status:** VERIFIED COMPLETED (Signed off 2026-11-03)
 
 
+
+---
+
+## 14.6 Production Operator Handbook & Runbooks
+
+### 1. Service Architecture & Process Lifecycle (VPS: vortex)
+Qyra operates on a dedicated Hetzner Cloud cx33 VPS (`vortex`, `2.28.120.85`) alongside sibling applications (`johnpaulescuadra.com` on ports 3000/3001 and `haypstudios.com` on port 3003).
+
+- **Multi-Tenant VPS Isolation Invariant:** Under NO circumstances may sibling PM2 processes (`jp-frontend`, `jp-backend`, `hayp-frontend`) be stopped, restarted, or modified during Qyra maintenance.
+- **Port Allocation:**
+  * Port `80` / `443`: Nginx reverse proxy & static landing page (`/var/www/qyra/web`).
+  * Port `3005`: Qyra Express API backend (`qyra-backend`).
+  * Port `5432`: Local PostgreSQL database (`qyra_db`).
+- **PM2 Process Commands:**
+  ```bash
+  # Check status of Qyra process only
+  pm2 status qyra-backend
+  
+  # Stream live backend logs
+  pm2 logs qyra-backend --lines 100
+  
+  # Graceful restart with zero downtime
+  pm2 reload qyra-backend --update-env
+  
+  # Stop / Start
+  pm2 stop qyra-backend
+  pm2 start qyra-backend
+  ```
+
+---
+
+### 2. Secret Management & Scheduled Rotation Cadence
+Secrets live exclusively in `/var/www/qyra/Backend/.env` on VPS `vortex` and are never committed to Git or echoed into terminal logs.
+
+| Secret Key | Purpose | Rotation Frequency | Rotation Procedure |
+|---|---|---|---|
+| `JWT_SECRET` | Auth session token signing | 90 Days | Generate 64-byte hex; update `.env`; restart `qyra-backend` |
+| `ENCRYPTION_KEY` | At-rest encryption key | 180 Days | Requires re-encrypting encrypted DB columns before cutover |
+| `STRIPE_SECRET_KEY` | Stripe billing & webhooks | On Compromise / 180 Days | Rotate in Stripe Dashboard; update `.env`; reload PM2 |
+| `QB_CLIENT_SECRET` | QuickBooks OAuth client secret | Annual / Intuit Requirement | Rotate in Intuit Developer Portal; update `.env` (see §14.3) |
+| `R2_SECRET_ACCESS_KEY` | Cloudflare R2 bucket access | 90 Days | Generate new API token in Cloudflare dashboard; update `.env` |
+| `RESEND_API_KEY` | Transactional email delivery | 90 Days | Generate new token in Resend portal; update `.env` |
+| `ALLOWED_EXTENSION_ID` | Chrome Extension Origin Gateway | On Extension Re-publish | Update to published Web Store ID (see §14.5) |
+
+---
+
+### 3. Synthetic Health & Automated Probes
+The backend exposes public health and diagnostic probes configured for uptime monitoring:
+- **Liveness Probe:** `GET https://api.qyra.space/api/health`
+  * Expected Response: `{"status":"ok","timestamp":"..."}` (HTTP 200)
+- **Database Connectivity Probe:** `GET https://api.qyra.space/api/health/db`
+  * Expected Response: `{"database":"connected","latencyMs":...}` (HTTP 200)
+- **R2 Storage Connectivity Probe:** `GET https://api.qyra.space/api/health/storage`
+  * Expected Response: `{"storage":"reachable"}` (HTTP 200)
+- **Thresholds & SLAs:**
+  * API latency p95: `< 250ms`
+  * Database query latency: `< 50ms`
+  * Uptime SLA: `99.9%`
+
+---
+
+### 4. Standard Incident Response Runbooks
+
+#### Runbook A: High Memory Usage / PM2 Restart Loop
+1. **Detection:** Sentry alerts or PM2 restart counter incrementing rapidly (`pm2 status qyra-backend`).
+2. **Triage:**
+   ```bash
+   pm2 logs qyra-backend --err --lines 50
+   top -b -n 1 -u root | grep node
+   ```
+3. **Mitigation:**
+   - If memory leak detected: Restart process with garbage collection flag:
+     ```bash
+     pm2 restart qyra-backend --node-args="--max-old-space-size=1024"
+     ```
+   - Check disk space:
+     ```bash
+     df -h /
+     ```
+
+#### Runbook B: Database Connection Exhaustion & Pool Hangs
+1. **Detection:** Backend logs show `PrismaClientInitializationError` or `Timed out fetching a new connection from the pool`.
+2. **Triage:** Check active PostgreSQL connections on VPS:
+   ```bash
+   sudo -u postgres psql -d qyra_db -c "SELECT count(*), state FROM pg_stat_activity GROUP BY state;"
+   ```
+3. **Mitigation:**
+   - Terminate idle or orphaned connections:
+     ```bash
+     sudo -u postgres psql -d qyra_db -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'idle' AND state_change < current_timestamp - INTERVAL '15' MINUTE;"
+     ```
+   - Reload backend process: `pm2 reload qyra-backend`
+
+#### Runbook C: QuickBooks OAuth Token Expiration / Intuit Sync Disconnects
+*Cross-reference: See Section 14.3 for complete OAuth token refresh architecture.*
+1. **Detection:** Error logs showing HTTP 401 from Intuit API or user sync failure emails via Resend.
+2. **Triage:**
+   - Verify token refresh loop in `Backend/src/services/qb.service.ts`.
+   - Verify if user's refresh token has expired (100-day Intuit hard limit).
+3. **Mitigation:**
+   - If token expired: Direct user to re-authorize QuickBooks via `https://qyra.space/dashboard/integrations`.
+   - If API outage: Check Intuit Developer System Status page (`https://developer.intuit.com/app/developer/dashboard`).
+
+#### Runbook D: CORS Violation Spike & Origin Spoofing Detection
+*Cross-reference: See Section 14.5 for CORS allowlist and rate limiting specifications.*
+1. **Detection:** High frequency of HTTP 403 `Origin Not Allowed` errors in Sentry or Nginx logs.
+2. **Triage:** Inspect requesting origin:
+   ```bash
+   grep "403" /var/log/nginx/access.log | tail -n 50
+   ```
+3. **Mitigation:**
+   - Verify if an authorized extension updated its Chrome Web Store ID. If so, update `ALLOWED_EXTENSION_ID` in `/var/www/qyra/Backend/.env` and reload PM2.
+   - If unauthorized origin attack: Fail-closed architecture safely blocks requests. Optionally ban aggressive IPs via `iptables` or fail2ban.
+
+---
+
+### 5. Backup, Recovery & Disaster Restoration Procedures
+- **Automated PostgreSQL Daily Backups:**
+  * Cron job runs daily at `02:00 UTC` dumping `qyra_db` to `/var/backups/qyra/`:
+    ```bash
+    pg_dump -U postgres qyra_db | gzip > /var/backups/qyra/qyra_db_\$(date +\%Y\%m\%d_\%H\%M\%S).sql.gz
+    ```
+  * Retention: 30 days local retention, synced weekly to Cloudflare R2 backup bucket.
+- **Point-in-Time Database Restoration:**
+  ```bash
+  # Uncompress and restore database
+  gunzip -c /var/backups/qyra/qyra_db_YYYYMMDD_HHMMSS.sql.gz | sudo -u postgres psql -d qyra_db
+  ```
+- **RTO / RPO Targets:**
+  * Recovery Time Objective (RTO): `< 1 hour`
+  * Recovery Point Objective (RPO): `< 24 hours` (daily backup)
+
+---
+
+### 6. Sentry Telemetry, Profiling & Alert Routing
+*Cross-reference: See Section 14.1 for Sentry profiling and PII sanitization configuration.*
+- **Alert Channels:** Critical errors routed to `paulescuadra25@gmail.com` and Sentry dashboard.
+- **PII Scrubbing Verification:**
+  * All transaction payloads, OCR strings, user passwords, and authorization headers are scrubbed before wire transmission (`beforeSend` hook in `Backend/src/index.ts`).
+  * Verify zero PII in Sentry breadcrumbs: Ensure email addresses, bank accounts, and invoice text are masked as `[REDACTED]`.
+
+---
+
+### 7. Zero-Downtime Rollout & Post-Deployment Smoke Verification
+- **Deployment Protocol (Pull-Only on Server):**
+  1. All changes committed locally and pushed to GitHub `main`.
+  2. SSH to VPS `vortex`:
+     ```bash
+     ssh -i ~/.ssh/id_ed25519_hetzner root@2.28.120.85
+     ```
+  3. Navigate to repository directory and pull:
+     ```bash
+     cd /var/www/qyra
+     git pull origin main
+     ```
+  4. Build backend and apply any pending Prisma migrations:
+     ```bash
+     cd /var/www/qyra/Backend
+     npm install --production=false
+     npx prisma migrate deploy
+     npm run build
+     ```
+  5. Reload backend process with zero downtime:
+     ```bash
+     pm2 reload qyra-backend
+     ```
+- **Post-Deployment Smoke Test Checklist:**
+  - [ ] `curl -f https://api.qyra.space/api/health` returns HTTP 200.
+  - [ ] `curl -f https://api.qyra.space/api/health/db` returns HTTP 200.
+  - [ ] Sibling check: `curl -f https://johnpaulescuadra.com` returns HTTP 200.
+  - [ ] Sibling check: `curl -f https://haypstudios.com` returns HTTP 200.
+  - [ ] Nginx access log confirms zero 502 Bad Gateway errors.
