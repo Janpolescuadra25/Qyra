@@ -8,7 +8,7 @@
 - **Deliverables:**
   - [ ] 14.2 Stripe Live Mode Activation & Production Checkout Verification (Architecture & code complete; pending VPS vortex deployment)
   - [ ] 14.3 QuickBooks Online Production OAuth App Verification (Code, unit tests, and documentation committed; pending live Intuit production app verification)
-  - [ ] 14.4 Browser Store Submission Tracking & Lifecycle Monitoring
+  - [ ] 14.4 Browser Store Submission Tracking & Lifecycle Monitoring (Packages built in Frontend/releases/; manual developer portal tracking active)
 ---
 
 ## Archived Phases (Completed)
@@ -18,7 +18,7 @@
 ### Phase 14 Completed Deliverables
 - **Phase 14.1: Sentry Telemetry Profiling & PII Sanitization** (Verified Complete, Commit `c8d1979`)
 - **Phase 14.5: Production Security, Rate Limiting & CORS Hardening** (Verified Complete, Commit `df72449`)
-- **14.6 Phase 14 Verification, Documentation & Operator Handbook** (Completed & Verified in docs/phase14/README.md, Commit `38d1ea7`)
+- [x] **Phase 14.6: Phase 14 Verification, Documentation & Operator Handbook** (Verified Complete, Commit `38d1ea7`)
 
 ---
 

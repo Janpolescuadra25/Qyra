@@ -15,12 +15,12 @@ Phase 14 transitions Qyra from pre-launch store packaging into live commercial a
 
 | Deliverable | Description | Target Component | Status |
 |---|---|---|---|
-| **14.1 Production Telemetry & Sentry Integration** | Client & server error monitoring, performance tracing, sanitization of financial PII | `Frontend/`, `Backend/` | COMPLETED (Commit 89e39f5) |
-| 14.2 | Stripe Live Mode Activation & Checkout Verification | IN PROGRESS (Architecture Ready, Pending VPS Verification) | Stripe Live Mode Architecture Alignment & Verification |
-| 14.3 | QuickBooks Online Production OAuth App Verification | IN PROGRESS (Architecture & Tests Ready, Pending Live Verification) | QuickBooks Online Production OAuth & Journal Entry Sync |
-| **14.4 Browser Store Submission Tracking** | Chrome Web Store, Edge Add-ons, Mozilla AMO review status & compliance tracking | Store Dashboards | IN PROGRESS |
-| **14.5 Production Security & Rate Limiting** | CORS origin locking, Express rate limiters, Helmet headers, reverse proxy security | `Backend/`, Nginx | COMPLETED |
-| 14.6 Phase 14 Verification, Documentation & Operator Handbook | COMPLETED | Verified operator handbook and runbooks documented in Section 7 (Commit 38d1ea7) |
+| **14.1 Sentry Production Error Tracking** | Full frontend and backend error instrumentation with environment tags | `Backend/src/server.ts`, `Frontend/src/main.tsx` | Complete (Commit `c8d1979`) |
+| **14.2 Stripe Live Mode Activation** | Real card processing & webhook reconciliation with signature verification | `Backend/src/routes/checkout.ts`, `stripe-webhook.ts` | Ready for Live Keys (Deploy Pending) |
+| **14.3 QuickBooks OAuth & Webhook Verification** | Multi-tenant accounting sync and production webhook handling | `Backend/src/routes/quickbooks.ts` | Architecture Complete (OAuth Pending) |
+| **14.4 Browser Store Submission Tracking** | Production ZIP packaging and store review lifecycle monitoring | `Frontend/releases/` (Chrome, Firefox, Edge) | Packages Built (Portal Submission Active) |
+| **14.5 Production CORS & Rate-Limit Hardening** | Strict origin validation, redis-backed tier rate-limiting, and security headers | `Backend/src/middleware/rate-limit.ts`, `cors.ts` | Complete (Commit `df72449`) |
+| **14.6 Production Operator Handbook & Runbooks** | Comprehensive incident response, failover procedures, and rollback runbooks | `docs/phase14/README.md` | Complete (Commit `38d1ea7`) |
 
 ---
 
