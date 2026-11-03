@@ -19,7 +19,7 @@ Phase 14 transitions Qyra from pre-launch store packaging into live commercial a
 | 14.2 | Stripe Live Mode Activation & Checkout Verification | IN PROGRESS (Architecture Ready, Pending VPS Verification) | Stripe Live Mode Architecture Alignment & Verification |
 | 14.3 | QuickBooks Online Production OAuth App Verification | IN PROGRESS (Architecture & Tests Ready, Pending Live Verification) | QuickBooks Online Production OAuth & Journal Entry Sync |
 | **14.4 Browser Store Submission Tracking** | Chrome Web Store, Edge Add-ons, Mozilla AMO review status & compliance tracking | Store Dashboards | IN PROGRESS |
-| **14.5 Production Security & Rate Limiting** | CORS origin locking, Express rate limiters, Helmet headers, reverse proxy security | `Backend/`, Nginx | NOT STARTED |
+| **14.5 Production Security & Rate Limiting** | CORS origin locking, Express rate limiters, Helmet headers, reverse proxy security | `Backend/`, Nginx | COMPLETED |
 | **14.6 Phase 14 Operator Handbook & Sign-Off** | Operator runbooks, incident response protocols, disaster recovery procedures | `docs/phase14/` | NOT STARTED |
 
 ---
@@ -160,3 +160,23 @@ Integrated Sentry backend CPU and transaction profiling into the Qyra API servic
    - Verify redirect back to `https://qyra.space/api/quickbooks/callback` -> success view.
    - Inspect PostgreSQL `qyra_db`: verify `QBToken` record created with encrypted `accessToken` and `refreshToken`.
    - Trigger single receipt/invoice sync -> verify balanced Journal Entry created in live QuickBooks Online account.
+
+---
+
+## 14.5 Production Security, Rate Limiting & CORS Hardening
+
+### CORS Whitelist Hardening
+- **Strict Origin Whitelisting:** Permissive wildcards (`*.qyra.space` and `chrome-extension://*`) were completely eliminated.
+- **Allowed Web Origins:** `http://localhost:3000`, `http://localhost:5173`, `https://qyra.space`, `https://api.qyra.space`, `https://www.qyra.space`.
+- **Allowed Extension Origins:**
+  - Chrome Web Store ID: `bfhobnahngcmhaeklihifgfbgdepibii`
+  - Unpacked Dev ID: `ccghhfmkjbcakhnoamgihifonfiammoc`
+  - Configurable: `process.env.ALLOWED_EXTENSION_ID`
+- **Security Regression Tests:** `Backend/tests/cors.test.ts` validates that approved origins receive `Access-Control-Allow-Origin` and unauthorized origins/extensions are denied CORS headers.
+
+### Rate Limiting Architecture (`Backend/src/middleware/rate-limit.ts`)
+- **General API Limiter:** 100 requests per 60 seconds (`apiLimiter`).
+- **Auth Limiter:** 10 requests per 15 minutes (`authLimiter`).
+- **Password Reset Limiter:** 3 requests per 15 minutes (`passwordResetLimiter`).
+- **Email Verification Limiter:** 3 requests per 15 minutes (`emailVerificationLimiter`).
+- **Gemini OCR Suggest Limiter:** 10 requests per 60 seconds (`geminiSuggestLimiter`).

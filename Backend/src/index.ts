@@ -67,17 +67,39 @@ const allowedOrigins = [
   'https://www.qyra.space',
 ];
 
+const allowedExtensionIds = [
+  'bfhobnahngcmhaeklihifgfbgdepibii', // Chrome Web Store published extension
+  'ccghhfmkjbcakhnoamgihifonfiammoc', // Dev / unpacked extension
+  ...(process.env.ALLOWED_EXTENSION_ID ? [process.env.ALLOWED_EXTENSION_ID] : []),
+];
+
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || origin.startsWith('chrome-extension://') || origin.endsWith('.qyra.space')) {
+    // Allow requests with no origin (e.g. server-to-server, curl, mobile native requests)
+    if (!origin) {
       return callback(null, true);
+    }
+
+    // Check explicit domain whitelist
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Check strictly whitelisted Chrome extensions
+    if (origin.startsWith('chrome-extension://')) {
+      const extensionId = origin.replace('chrome-extension://', '').replace(/\/.*$/, '');
+      if (allowedExtensionIds.includes(extensionId)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS: Unauthorized Chrome extension (' + extensionId + ')'));
     }
 
     return callback(new Error('Not allowed by CORS: ' + origin));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Set-Cookie'],
 }));
 app.use('/api/webhooks', express.raw({ type: 'application/json', limit: '1mb' }), webhookRoutes);
 app.use(express.json({ limit: '5mb' }));

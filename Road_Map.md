@@ -10,7 +10,7 @@
   - [ ] 14.2 Stripe Live Mode Activation & Production Checkout Verification (Architecture & code complete; pending VPS vortex deployment)
   - [ ] 14.3 QuickBooks Online Production OAuth App Verification (Code, unit tests, and documentation committed; pending live Intuit production app verification)
   - [ ] 14.4 Browser Store Submission Tracking & Lifecycle Monitoring
-  - [ ] 14.5 Production Security, Rate Limiting & CORS Hardening Audit
+  - [x] 14.5 Production Security, Rate Limiting & CORS Hardening Audit (Rate limiting verified; CORS origin whitelist locked and tested)
   - [ ] 14.6 Phase 14 Verification, Documentation & Operator Handbook
 ---
 
