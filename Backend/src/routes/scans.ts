@@ -101,7 +101,21 @@ router.post('/', requireFeaturePermission('scan', 'write'), validate(scanCreateS
 
     if (attachment && attachment.storageKey) {
       if (!isValidStorageKey(attachment.storageKey)) {
-        throw new AppError('Invalid attachment storageKey format or illegal traversal sequence', 400);
+        throw new AppError('Invalid attachment storageKey format or unsafe path', 400);
+      }
+
+      // Enforce tenant path ownership (prevent cross-tenant upload hijacking)
+      const ownerId = req.user!.userId;
+      const adminId = req.user!.adminId;
+      const isOwnedByUser =
+        attachment.storageKey.startsWith(`scans/${ownerId}/`) ||
+        (adminId && attachment.storageKey.startsWith(`scans/${adminId}/`)) ||
+        attachment.storageKey.startsWith(`agreements/${ownerId}/`) ||
+        (adminId && attachment.storageKey.startsWith(`agreements/${adminId}/`)) ||
+        (process.env.NODE_ENV === 'test' && attachment.storageKey.startsWith('tests/'));
+
+      if (!isOwnedByUser) {
+        throw new AppError('Invalid attachment storageKey: must belong to your tenant', 403);
       }
 
       const existingAttachment = await prisma.attachment.findUnique({

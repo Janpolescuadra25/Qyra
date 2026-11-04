@@ -150,7 +150,29 @@ describe('Wave W1 Task QF11: Storage Key Ownership & Attachment Defense', () => 
       });
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/Invalid attachment storageKey format or illegal traversal sequence/i);
+    expect(res.body.error).toMatch(/Invalid attachment storageKey format or unsafe path/i);
+  });
+
+  it('blocks cross-tenant unattached upload ticket hijacking with 403', async () => {
+    const crossTenantStorageKey = 'scans/user-2/1690000000-tenant-a-invoice.pdf';
+    const res = await request(buildApp())
+      .post('/api/scans')
+      .send({
+        locationId: 'loc-1',
+        scanDate: new Date().toISOString(),
+        rawData: { invoice: 'QF11_CROSS_TENANT' },
+        source: 'pos',
+        attachment: {
+          fileName: 'stolen.pdf',
+          storageKey: crossTenantStorageKey,
+          fileSize: 2048,
+          mimeType: 'application/pdf',
+        },
+      });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toMatch(/must belong to your tenant/i);
+    expect(mockedPrisma.attachment.create).not.toHaveBeenCalled();
   });
 
   it('blocks cross-tenant attachment URL access with 404', async () => {
