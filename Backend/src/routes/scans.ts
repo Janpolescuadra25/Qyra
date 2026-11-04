@@ -127,29 +127,37 @@ router.post('/', requireFeaturePermission('scan', 'write'), validate(scanCreateS
       }
     }
 
-    const scan = await prisma.scanRecord.create({
-      data: {
-        locationId,
-        scanDate: parsedDate,
-        rawData: (rawData ?? {}) as unknown as Prisma.InputJsonValue,
-        rawScanEntry: rawScanEntry ? rawScanEntry as unknown as Prisma.InputJsonValue : undefined,
-        source: source || 'pos',
-        status: 'PENDING',
-        autoAttach: autoAttach ?? true,
-        ...(transactionType ? { transactionType } : {}),
-      },
-    });
-
-    if (attachment) {
-      const createdAttachment = await prisma.attachment.create({
+    const { scan, createdAttachment } = await prisma.$transaction(async (tx) => {
+      const createdScan = await tx.scanRecord.create({
         data: {
-          scanRecordId: scan.id,
-          fileName: attachment.fileName,
-          storageKey: attachment.storageKey,
-          fileSize: attachment.fileSize,
-          mimeType: attachment.mimeType,
+          locationId,
+          scanDate: parsedDate,
+          rawData: (rawData ?? {}) as unknown as Prisma.InputJsonValue,
+          rawScanEntry: rawScanEntry ? rawScanEntry as unknown as Prisma.InputJsonValue : undefined,
+          source: source || 'pos',
+          status: 'PENDING',
+          autoAttach: autoAttach ?? true,
+          ...(transactionType ? { transactionType } : {}),
         },
       });
+
+      let newAttachment = null;
+      if (attachment) {
+        newAttachment = await tx.attachment.create({
+          data: {
+            scanRecordId: createdScan.id,
+            fileName: attachment.fileName,
+            storageKey: attachment.storageKey,
+            fileSize: attachment.fileSize,
+            mimeType: attachment.mimeType,
+          },
+        });
+      }
+
+      return { scan: createdScan, createdAttachment: newAttachment };
+    });
+
+    if (createdAttachment) {
       logAction({
         actorId: req.user!.userId,
         action: 'ATTACHMENT_UPLOADED',

@@ -827,14 +827,7 @@ async function syncSingleScan(
     });
 
     if (scanRecordId) {
-      await prisma.scanRecord.update({
-        where: { id: scanRecordId },
-        data: {
-          status: 'SYNCED',
-          syncStatus: 'SYNCED',
-          lastSyncError: null,
-        },
-      });
+      let attachmentError: string | null = null;
 
       try {
         const scan = await prisma.scanRecord.findUnique({ where: { id: scanRecordId }, select: { autoAttach: true } });
@@ -861,13 +854,23 @@ async function syncSingleScan(
           });
         }
       } catch (err) {
+        attachmentError = err instanceof Error ? err.message : String(err);
         logAction({
           actorId: userId,
           action: 'ATTACHMENT_FAILED',
-          details: { scanRecordId, entityType: 'JournalEntry', error: err instanceof Error ? err.message : String(err) },
+          details: { scanRecordId, entityType: 'JournalEntry', entityId: result.id, error: attachmentError },
         });
         log.error({ err, scanRecordId, entityType: 'JournalEntry', entityId: result.id }, 'Failed to attach file to QB entity');
       }
+
+      await prisma.scanRecord.update({
+        where: { id: scanRecordId },
+        data: {
+          status: 'SYNCED',
+          syncStatus: attachmentError ? 'FAILED' : 'SYNCED',
+          lastSyncError: attachmentError ? `Financial entry posted (${result.id}), but attachment sync failed: ${attachmentError}` : null,
+        },
+      });
     }
 
     return {

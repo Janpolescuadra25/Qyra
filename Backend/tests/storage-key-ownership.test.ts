@@ -6,8 +6,8 @@ import { createErrorHandler } from '../src/lib/errors';
 import { prisma } from '../src/lib/prisma';
 import scanRoutes from '../src/routes/scans';
 
-jest.mock('../src/lib/prisma', () => ({
-  prisma: {
+jest.mock('../src/lib/prisma', () => {
+  const mockPrismaObj: any = {
     location: {
       findFirst: jest.fn(),
       count: jest.fn(),
@@ -22,8 +22,18 @@ jest.mock('../src/lib/prisma', () => ({
       findFirst: jest.fn(),
       create: jest.fn(),
     },
-  },
-}));
+    $transaction: jest.fn(async (work: any) => {
+      if (Array.isArray(work)) {
+        return Promise.all(work);
+      }
+      if (typeof work === 'function') {
+        return work(mockPrismaObj);
+      }
+      return work;
+    }),
+  };
+  return { prisma: mockPrismaObj };
+});
 
 jest.mock('../src/lib/storage', () => ({
   uploadFile: jest.fn(),
