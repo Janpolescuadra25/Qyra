@@ -21,6 +21,7 @@ Phase 14 transitions Qyra from pre-launch store packaging into live commercial a
 | **14.4 Browser Store Submission Tracking** | Production ZIP packaging and store review lifecycle monitoring | `Frontend/releases/` (Chrome, Firefox, Edge) | Packages Built (Portal Submission Active) |
 | **14.5 Production CORS & Rate-Limit Hardening** | Strict origin validation, redis-backed tier rate-limiting, and security headers | `Backend/src/middleware/rate-limit.ts`, `cors.ts` | Complete (Commit `df72449`) |
 | **14.6 Production Operator Handbook & Runbooks** | Comprehensive incident response, failover procedures, and rollback runbooks | `docs/phase14/README.md` | Complete (Commit `38d1ea7`) |
+| **14.7 Storage Key Ownership Verification** | Defensive traversal validation, storageKey collision pre-check (409), tenant boundary enforcement (`locationFilter`), regression test suite | `Backend/src/`, `Backend/tests/` | COMPLETED (Commit `43206d9`) |
 
 ---
 
@@ -47,6 +48,28 @@ Phase 14 transitions Qyra from pre-launch store packaging into live commercial a
 - **Frontend Typecheck:** `npm run typecheck` in `Frontend/` must exit with 0 errors.
 - **Backend Test Suite:** `npm test` in `Backend/` must pass all test suites and tests.
 - **Fail-Closed Git Verification:** Working tree must remain clean; only designated files may be staged and committed.
+
+## 14.7 Storage Key Ownership Verification
+
+### Overview & Threat Model
+- **Vulnerability Mitigated:** Unchecked client-provided `storageKey` values during scan creation allowed unhandled database 500 errors on collision and potential path traversal / cross-tenant attachment access.
+- **Resolution:** Strict regex and format validation via `isValidStorageKey`, pre-insertion database collision checks returning HTTP 409 Conflict, and defensive attachment retrieval ensuring cross-tenant requests return HTTP 404 Not Found.
+
+### Key Implemented Controls
+1. **Format & Traversal Validation (`Backend/src/lib/validators.ts`)**:
+   - Rejection of path traversal sequences (`..`), leading slashes (`/`, `\`), null bytes, illegal characters, and length overflow (>512 chars).
+2. **Collision Pre-Check & Status Code (`Backend/src/routes/scans.ts`)**:
+   - Pre-query check against Prisma `Attachment` table before scan creation; returns HTTP 409 (`Storage key already in use`) on collision.
+   - Traversal or malformed keys return HTTP 400 (`Invalid attachment storageKey format or illegal traversal sequence`).
+3. **Tenant Boundary Enforcement (`Backend/src/routes/scans.ts`)**:
+   - Scan records and attachment presigned URLs are strictly filtered through `locationFilter(req.user!)`.
+4. **Automated Regression Suite (`Backend/tests/storage-key-ownership.test.ts`)**:
+   - 4/4 passing tests validating valid creation, duplicate collision (409), traversal rejection (400), and cross-tenant isolation (404).
+
+### Verification Sign-Off
+- **Commit:** `43206d9f9a6b883a8176ea59a90b9c57461eb992`
+- **Test Results:** 4/4 passing in `Backend/tests/storage-key-ownership.test.ts`
+- **TypeScript Build:** `npx tsc --noEmit` exit code 0
 
 ## Phase 14.1: Production Telemetry & Sentry Integration — STATUS: DONE
 
