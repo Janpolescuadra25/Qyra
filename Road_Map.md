@@ -9,7 +9,6 @@
   - [ ] 14.2 Stripe Live Mode Activation & Production Checkout Verification (Architecture & code complete; pending VPS vortex deployment)
   - [ ] 14.3 QuickBooks Online Production OAuth App Verification (Code, unit tests, and documentation committed; pending live Intuit production app verification)
   - [ ] 14.4 Browser Store Submission Tracking & Lifecycle Monitoring (Packages built in Frontend/releases/; manual developer portal tracking active)
-  - [ ] 14.8: Storage Key Synchronization & Retry-Safe Attachment Processing
   - [ ] 14.9: Approval-to-Payload Cryptographic Binding & Financial Line Integrity
 ---
 
@@ -22,6 +21,7 @@
 - **Phase 14.5: Production Security, Rate Limiting & CORS Hardening** (Verified Complete, Commit `df72449`)
 - [x] **Phase 14.6: Phase 14 Verification Documentation & Operator Handbook** (Verified Complete Commit `38d1ea7`)
 - [x] **Phase 14.7: Storage Key Ownership Verification** (Verified Complete Commit `b92868d`)
+- [x] **Phase 14.8: Storage Key Synchronization & Retry-Safe Attachment Processing** (Verified Complete Commit `1c373cd`)
 
 ---
 

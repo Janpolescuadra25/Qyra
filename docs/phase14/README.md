@@ -21,7 +21,8 @@ Phase 14 transitions Qyra from pre-launch store packaging into live commercial a
 | **14.4 Browser Store Submission Tracking** | Production ZIP packaging and store review lifecycle monitoring | `Frontend/releases/` (Chrome, Firefox, Edge) | Packages Built (Portal Submission Active) |
 | **14.5 Production CORS & Rate-Limit Hardening** | Strict origin validation, redis-backed tier rate-limiting, and security headers | `Backend/src/middleware/rate-limit.ts`, `cors.ts` | Complete (Commit `df72449`) |
 | **14.6 Production Operator Handbook & Runbooks** | Comprehensive incident response, failover procedures, and rollback runbooks | `docs/phase14/README.md` | Complete (Commit `38d1ea7`) |
-| **14.7 Storage Key Ownership Verification** | Defensive traversal validation, storageKey collision pre-check (409), tenant boundary enforcement (`locationFilter`), regression test suite | `Backend/src/`, `Backend/tests/` | COMPLETED (Commit `b92868d`) |
+| **14.7 Storage Key Ownership Verification** | Defensive traversal validation, storageKey collision pre-check (409), tenant boundary enforcement (`locationFilter`), regression test suite | `Backend/src/`, `Backend/tests/` | COMPLETED (Commit `b92868d`) |
+| **14.8 Storage Key Synchronization & Retry-Safe Attachment Processing** | Atomic scan creation transaction (`prisma.$transaction`), retry-safe attachment sync error isolation (`syncStatus: 'FAILED'`, `lastSyncError`), test mock transaction support | `Backend/src/routes/scans.ts`, `Backend/src/routes/quickbooks.ts`, `Backend/tests/` | COMPLETED (Commit `1c373cd`) |
 
 ---
 
@@ -385,3 +386,28 @@ The backend exposes public health and diagnostic probes configured for uptime mo
   - [ ] Sibling check: `curl -f https://johnpaulescuadra.com` returns HTTP 200.
   - [ ] Sibling check: `curl -f https://haypstudios.com` returns HTTP 200.
   - [ ] Nginx access log confirms zero 502 Bad Gateway errors.
+
+## 14.8 Storage Key Synchronization & Retry-Safe Attachment Processing
+
+### Overview & Threat Model
+- **Vulnerabilities Mitigated:** 
+  1. *Non-atomic scan creation:* Independent execution of `scanRecord.create` and `attachment.create` risked orphaned records and unhandled R2 storage keys upon failure.
+  2. *QuickBooks sync silent attachment loss:* Attachment upload failures were previously caught and logged while the scan record was already prematurely marked as `SYNCED` (`syncStatus: 'SYNCED'`, `lastSyncError: null`), leaving financial entries posted but attachments silently dropped with no persistent failure flag for operator review or retry processing.
+- **Resolution:** Wrapped `scanRecord.create` and `attachment.create` in an atomic `prisma.$transaction`. Reordered QuickBooks attachment upload so `prisma.scanRecord.update` executes post-attachment; upon attachment failure, `status` remains `'SYNCED'` (financial transaction preserved) while `syncStatus` is set to `'FAILED'` with `lastSyncError` detailing the attachment failure.
+
+### Key Implemented Controls
+1. **Scan Creation Atomicity (`Backend/src/routes/scans.ts:130–156`)**:
+   - `prisma.$transaction(async (tx) => { ... })` wraps both `tx.scanRecord.create` and `tx.attachment.create`. Any failure in attachment metadata creation immediately rolls back the scan record.
+2. **QuickBooks Attachment Error Isolation (`Backend/src/routes/quickbooks.ts:855–878`)**:
+   - Financial journal entry posting succeeds and receives QuickBooks `result.id`.
+   - Subsequent attachment upload failures are captured in `attachmentError`.
+   - Post-processing updates `scanRecord` with `status: 'SYNCED'`, `syncStatus: attachmentError ? 'FAILED' : 'SYNCED'`, and `lastSyncError: attachmentError ? 'Financial entry posted (' + result.id + '), but attachment sync failed: ' + attachmentError : null`.
+3. **Prisma Mock Transaction Support (`Backend/tests/storage-key-ownership.test.ts:22–38`)**:
+   - Updated inline Jest mock with robust `$transaction` handling for both callback-style (`(tx) => tx(mockPrismaObj)`) and array-style (`Promise.all(work)`) transactions.
+4. **Automated Regression Suite (`Backend/tests/storage-key-ownership.test.ts`)**:
+   - 5/5 passing unit tests validating valid creation, duplicate collision (409), traversal rejection (400), tenant path ownership rejection (403), and cross-tenant isolation (404).
+
+### Verification Sign-Off
+- **Commit:** `1c373cdf870a9d989d376c525215b132399fe59c` (Commit prefix: `1c373cd`)
+- **Test Results:** 5/5 passing in `Backend/tests/storage-key-ownership.test.ts` (`JEST_OK`)
+- **TypeScript Build:** `npx tsc --noEmit` exit code 0 (`TSC_OK`)
