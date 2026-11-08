@@ -1,4 +1,4 @@
-﻿# Phase 14: Live Production Validation & Commercial Activation
+# Phase 14: Live Production Validation & Commercial Activation
 
 **Phase Owner:** CYPRA (Planning & Prompts) · HYDRA (Auditing) · MANTRA (Execution) · JP (Operator & Authority)  
 **Status:** IN PROGRESS  
@@ -21,7 +21,8 @@ Phase 14 transitions Qyra from pre-launch store packaging into live commercial a
 | **14.4 Browser Store Submission Tracking** | Production ZIP packaging and store review lifecycle monitoring | `Frontend/releases/` (Chrome, Firefox, Edge) | Packages Built (Portal Submission Active) |
 | **14.5 Production CORS & Rate-Limit Hardening** | Strict origin validation, redis-backed tier rate-limiting, and security headers | `Backend/src/middleware/rate-limit.ts`, `cors.ts` | Complete (Commit `df72449`) |
 | **14.6 Production Operator Handbook & Runbooks** | Comprehensive incident response, failover procedures, and rollback runbooks | `docs/phase14/README.md` | Complete (Commit `38d1ea7`) |
-| **14.7 Storage Key Ownership Verification** | Defensive traversal validation, storageKey collision pre-check (409), tenant boundary enforcement (`locationFilter`), regression test suite | `Backend/src/`, `Backend/tests/` | COMPLETED (Commit `b92868d`) |
+| **14.7 Storage Key Ownership Verification** | Defensive traversal validation, storageKey collision pre-check (409), tenant boundary enforcement (`locationFilter`), regression test suite | `Backend/src/`, `Backend/tests/` | COMPLETED (Commit `b92868d`) |
+
 | **14.8 Storage Key Synchronization & Retry-Safe Attachment Processing** | Atomic scan creation transaction (`prisma.$transaction`), retry-safe attachment sync error isolation (`syncStatus: 'FAILED'`, `lastSyncError`), test mock transaction support | `Backend/src/routes/scans.ts`, `Backend/src/routes/quickbooks.ts`, `Backend/tests/` | COMPLETED (Commit `1c373cd`) |
 
 ---
@@ -411,3 +412,40 @@ The backend exposes public health and diagnostic probes configured for uptime mo
 - **Commit:** `1c373cdf870a9d989d376c525215b132399fe59c` (Commit prefix: `1c373cd`)
 - **Test Results:** 5/5 passing in `Backend/tests/storage-key-ownership.test.ts` (`JEST_OK`)
 - **TypeScript Build:** `npx tsc --noEmit` exit code 0 (`TSC_OK`)
+---
+
+## 14.9 Approval-to-Payload Cryptographic Binding & Financial Line Integrity (Commit `2278687`)
+
+### 1. Architectural Overview & Security Boundary
+Phase 14.9 (Task `QF08`) resolves the financial line tampering risk between user draft approval and QuickBooks Online synchronization. 
+
+Previously, when a scan was approved, only status was updated to `APPROVED`. During later synchronization (`POST /api/quickbooks/sync/journal-entry`, `bill`, `vendor-credit`, etc.), request payloads containing `{ txnDate, lines }` were accepted without cryptographic proof that they matched the exact line items approved by the user.
+
+### 2. Implementation Specifications
+- **Data Model Extensions (`Backend/prisma/schema.prisma`):**
+  - Added `approvalHash String?` to store the 64-character HMAC-SHA256 hex digest.
+  - Added `approvedPayload Json?` to store the canonicalized snapshot `{ txnDate, lines }`.
+- **Cryptographic Helpers (`Backend/src/lib/encryption.ts`):**
+  - Utilizes `canonicalize(value: unknown)` from `Backend/src/lib/dedup.ts` to recursively sort object keys and ensure key-order invariance.
+  - Implements `createPayloadHmac(payload: unknown): string` using HMAC-SHA256 keyed with `process.env.ENCRYPTION_KEY`.
+  - Implements `verifyPayloadHmac(payload: unknown, expectedHmac: string): boolean` using timing-safe buffer comparison via `crypto.timingSafeEqual`.
+  - Exports `interface ApprovedPayload { txnDate: string; lines: unknown[]; }`.
+- **Validation Updates (`Backend/src/lib/validators.ts`):**
+  - Updated `scanApproveSchema` to accept optional `{ lines, txnDate, notes }` with `.passthrough()`, allowing clients to submit verified line items during approval.
+- **Approval Routes (`Backend/src/routes/scans.ts`):**
+  - Single Approval (`POST /:id/approve`): Computes canonical HMAC over `{ txnDate, lines }` and persists `approvalHash` and `approvedPayload` on `ScanRecord`.
+  - Bulk Approval (`POST /bulk-approve`): Runs within `prisma.$transaction`, generating individual HMAC snapshots for all approved records.
+- **QuickBooks Sync Hardening (`Backend/src/routes/quickbooks.ts`):**
+  - Evaluates `verifyPayloadHmac({ txnDate, lines }, scan.approvalHash)`.
+  - Rejects mismatched or tampered payloads with HTTP 403 `AppError('Approved financial snapshot mismatch detected; sync rejected as fail-closed', 403)`.
+  - Safely allows legacy scan records with `approvalHash == null` to sync without interruption.
+
+### 3. Verification & Regression Coverage
+- `npx tsc --noEmit`: 0 errors.
+- `Backend/tests/approval-cryptographic-binding.test.ts`: 7/7 tests passed.
+  - Canonicalization determinism across varying object key orders.
+  - Tamper detection for amounts, account IDs, and transaction dates.
+  - Safe handling of malformed and empty HMAC strings.
+  - Legacy null-hash bypass verification.
+  - Bulk-approval multi-hash independence.
+- `Backend/tests/storage-key-ownership.test.ts`: 5/5 regression tests passed.
