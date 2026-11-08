@@ -14,16 +14,7 @@
 ## Archived Phases (Completed)
 - **Phase 0-12**: Full core application, backend, auth, credit system, AI integration, Stripe checkout, automated testing. All phases 100% completed and archived.
 - **Phase 13**: Browser Store Packaging, Production Attributions & Verification. All deliverables (13.0–13.5) 100% completed and archived (Commits: 18f5ca3, b06164d, 7e8ab7d, 9e8f234, ee2657d, eb6390e).
-
-### Phase 14 Completed Deliverables
-- **Phase 14.1: Sentry Telemetry Profiling & PII Sanitization** (Verified Complete, Commit `c8d1979`)
-- **Phase 14.5: Production Security, Rate Limiting & CORS Hardening** (Verified Complete, Commit `df72449`)
-- [x] **Phase 14.6: Phase 14 Verification Documentation & Operator Handbook** (Verified Complete Commit `38d1ea7`)
-- [x] **Phase 14.7: Storage Key Ownership Verification** (Verified Complete Commit `b92868d`)
-- [x] **Phase 14.8: Storage Key Synchronization & Retry-Safe Attachment Processing** (Verified Complete Commit `1c373cd`)
-- [x] **Phase 14.9: Approval-to-Payload Cryptographic Binding & Financial Line Integrity** (Verified Complete Commit `2278687`)
-
----
+- **Phase 14 Completed Deliverables**: 14.1 (Sentry Telemetry), 14.5 (Security Hardening), 14.6 (Verification Docs), 14.7 (Storage Key Ownership), 14.8 (Storage Sync), 14.9 (Cryptographic Binding). All deliverables 100% completed and archived with verified production commits.
 
 ## Next Steps
 1. Monitor Chrome Web Store, Edge Add-ons, and Firefox AMO developer portals for review status.
