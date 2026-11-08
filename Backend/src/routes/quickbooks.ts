@@ -11,7 +11,7 @@ import { Prisma, SyncType } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { validate } from '../middleware/validate';
 import { billSchema, chequeSchema, vendorCreditSchema, billPaymentSchema, journalEntrySchema } from '../lib/validators';
-import { encrypt, decryptSafe, hashToken } from '../lib/encryption';
+import { encrypt, decryptSafe, hashToken, verifyPayloadHmac } from '../lib/encryption';
 import { QBApiError } from '../lib/qb-errors';
 import { createSyncLogEntry, countSyncAttempts, findDuplicateSync, hashSyncRequest, calculateExponentialBackoff } from '../lib/dedup';
 import { isTransientSyncError } from '../lib/error-classifier';
@@ -56,6 +56,33 @@ function restrictSkipDedup(req: AuthRequest, _res: Response, next: NextFunction)
     }
   }
   next();
+}
+
+async function assertApprovedPayloadMatches(scanRecordId: string | undefined, payload: { txnDate: string; lines: unknown[] }): Promise<void> {
+  if (!scanRecordId) {
+    return;
+  }
+
+  const scan = await prisma.scanRecord.findUnique({
+    where: { id: scanRecordId },
+    select: { approvalHash: true, approvedPayload: true },
+  });
+
+  if (!scan || !scan.approvalHash) {
+    return;
+  }
+
+  if (!scan.approvedPayload || typeof scan.approvedPayload !== 'object') {
+    throw new AppError('Approved payload is missing for this scan record', 403);
+  }
+
+  const approvedPayload = scan.approvedPayload as Record<string, unknown>;
+  const snapshotMatches = verifyPayloadHmac(approvedPayload, scan.approvalHash);
+  const currentPayloadMatches = verifyPayloadHmac(payload, scan.approvalHash);
+
+  if (!snapshotMatches || !currentPayloadMatches) {
+    throw new AppError('Approved financial snapshot mismatch detected; sync rejected as fail-closed', 403);
+  }
 }
 
 // ── GET /api/quickbooks/auth-url ──────────────────────────────────────────────
@@ -768,6 +795,8 @@ async function syncSingleScan(
   skipDedupCheck = false,
   idempotencyKey?: string,
 ): Promise<SyncSingleResult> {
+  await assertApprovedPayloadMatches(scanRecordId, { txnDate, lines });
+
   const syncType = SyncType.JOURNAL_ENTRY;
   const requestHash = hashSyncRequest(syncType, { txnDate, lines, privateNote, docNumber }, idempotencyKey);
 
@@ -929,6 +958,8 @@ async function syncSingleVendorCredit(
   skipDedupCheck = false,
   idempotencyKey?: string,
 ): Promise<SyncSingleResult> {
+  await assertApprovedPayloadMatches(scanRecordId, { txnDate, lines });
+
   const syncType = SyncType.VENDOR_CREDIT;
   const requestHash = hashSyncRequest(syncType, { txnDate, vendorRef, apAccountRef, memo, privateNote, lines, docNumber }, idempotencyKey);
 
@@ -1086,6 +1117,8 @@ async function syncSingleCheque(
   customerRef?: { value: string; name?: string },
   idempotencyKey?: string,
 ): Promise<SyncSingleResult> {
+  await assertApprovedPayloadMatches(scanRecordId, { txnDate, lines });
+
   const syncType = SyncType.CHEQUE;
   const requestHash = hashSyncRequest(syncType, { txnDate, bankAccountRef, payeeRef, amount, memo, lines, docNumber, customerRef }, idempotencyKey);
 
@@ -1250,6 +1283,8 @@ async function syncSingleBill(
   skipDedupCheck = false,
   idempotencyKey?: string,
 ): Promise<SyncSingleResult> {
+  await assertApprovedPayloadMatches(scanRecordId, { txnDate, lines });
+
   const syncType = SyncType.BILL;
   const requestHash = hashSyncRequest(syncType, { txnDate, vendorRef, apAccountRef, termsRef, dueDate, memo, privateNote, lines, docNumber }, idempotencyKey);
 
@@ -1413,6 +1448,8 @@ async function syncSingleBillPayment(
   skipDedupCheck = false,
   idempotencyKey?: string,
 ): Promise<SyncSingleResult> {
+  await assertApprovedPayloadMatches(scanRecordId, { txnDate, lines });
+
   const syncType = SyncType.BILL_PAYMENT;
   const requestHash = hashSyncRequest(syncType, { vendorRef, payType, txnDate, totalAmt, lines, bankAccountRef, checkNum }, idempotencyKey);
 

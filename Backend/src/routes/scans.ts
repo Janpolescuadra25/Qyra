@@ -17,6 +17,7 @@ import { detectPOS, parseDocumentWithGemini, parseInvoiceWithGemini, parsePOSRep
 import type { ParsePOSTabResponse } from '../types';
 import { validateTransactionType } from './templates';
 import { logger } from '../lib/logger';
+import { createPayloadHmac } from '../lib/encryption';
 
 const log = logger.child({ module: 'Scans' });
 
@@ -34,6 +35,38 @@ async function deductBonusScan(userId: string): Promise<boolean> {
 }
 
 const router = Router();
+
+function resolveApprovalPayload(rawData: unknown, rawScanEntry: unknown, requestTxnDate?: unknown, requestLines?: unknown, fallbackDate?: Date): { txnDate: string; lines: unknown[] } | null {
+  const payloadSource = (typeof rawData === 'object' && rawData !== null ? rawData as Record<string, unknown> : {}) as Record<string, unknown>;
+  const scanEntrySource = (typeof rawScanEntry === 'object' && rawScanEntry !== null ? rawScanEntry as Record<string, unknown> : {}) as Record<string, unknown>;
+
+  const txnDateValue = typeof requestTxnDate === 'string'
+    ? requestTxnDate
+    : typeof payloadSource.txnDate === 'string'
+      ? payloadSource.txnDate
+      : typeof scanEntrySource.txnDate === 'string'
+        ? scanEntrySource.txnDate
+        : fallbackDate
+          ? fallbackDate.toISOString().slice(0, 10)
+          : null;
+
+  const linesValue = Array.isArray(requestLines)
+    ? requestLines
+    : Array.isArray(payloadSource.lines)
+      ? payloadSource.lines
+      : Array.isArray(scanEntrySource.lines)
+        ? scanEntrySource.lines
+        : null;
+
+  if (!txnDateValue || !linesValue) {
+    return null;
+  }
+
+  return {
+    txnDate: String(txnDateValue),
+    lines: linesValue,
+  };
+}
 
 // Multer config for AI invoice parsing (memory storage, 10MB limit)
 const upload = multer({
@@ -315,23 +348,37 @@ router.post('/bulk-approve', requireFeaturePermission('drafts', 'execute'), asyn
       id: { in: uniqueScanIds },
       location: { ...locationFilter(req.user!) },
     },
-    select: { id: true, status: true, submittedById: true, locationId: true },
+    select: { id: true, status: true, submittedById: true, locationId: true, rawData: true, rawScanEntry: true, scanDate: true },
   });
 
   const approvableScans = scans.filter((scan) => scan.status === 'PENDING_APPROVAL' && scan.submittedById !== userId);
-  const approvedIds = approvableScans.map((scan) => scan.id);
+  const approvedUpdates = approvableScans.flatMap((scan) => {
+    const approvedPayload = resolveApprovalPayload(scan.rawData, scan.rawScanEntry, undefined, undefined, scan.scanDate);
+    if (!approvedPayload) {
+      return [];
+    }
 
-  if (approvedIds.length) {
-    await prisma.$transaction(approvedIds.map((id) => prisma.scanRecord.update({
-      where: { id },
+    return [{
+      id: scan.id,
+      locationId: scan.locationId,
+      approvedPayload,
+      approvalHash: createPayloadHmac(approvedPayload),
+    }];
+  });
+
+  if (approvedUpdates.length) {
+    await prisma.$transaction(approvedUpdates.map((scan) => prisma.scanRecord.update({
+      where: { id: scan.id },
       data: {
         status: 'APPROVED',
         approvedById: userId,
         approvedAt: new Date(),
+        approvalHash: scan.approvalHash,
+        approvedPayload: scan.approvedPayload as Prisma.InputJsonValue,
       },
     })));
 
-    await Promise.all(approvableScans.map((scan) => logAction({
+    await Promise.all(approvedUpdates.map((scan) => logAction({
       actorId: userId,
       action: 'DRAFT_APPROVED',
       details: { scanRecordId: scan.id, locationId: scan.locationId },
@@ -340,7 +387,7 @@ router.post('/bulk-approve', requireFeaturePermission('drafts', 'execute'), asyn
     })));
   }
 
-  res.json({ approved: approvedIds.length, skipped: uniqueScanIds.length - approvedIds.length });
+  res.json({ approved: approvedUpdates.length, skipped: uniqueScanIds.length - approvedUpdates.length });
 }));
 
 router.delete('/:id', requireFeaturePermission('scan', 'write'), asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
@@ -526,7 +573,7 @@ router.post('/:id/approve', requireFeaturePermission('drafts', 'execute'), valid
       id,
       location: { ...locationFilter(req.user!) },
     },
-    select: { status: true, locationId: true, submittedById: true },
+    select: { status: true, locationId: true, submittedById: true, rawData: true, rawScanEntry: true, scanDate: true },
   });
   if (!scan) {
     throw new AppError('Scan record not found', 404);
@@ -538,12 +585,28 @@ router.post('/:id/approve', requireFeaturePermission('drafts', 'execute'), valid
     throw new AppError('You cannot approve your own submission', 403);
   }
 
+  const approvedPayload = resolveApprovalPayload(
+    scan.rawData,
+    scan.rawScanEntry,
+    (req.body as { txnDate?: unknown }).txnDate,
+    (req.body as { lines?: unknown }).lines,
+    scan.scanDate,
+  );
+
+  if (!approvedPayload) {
+    throw new AppError('Approval payload is missing txnDate and lines', 400);
+  }
+
+  const approvalHash = createPayloadHmac(approvedPayload);
+
   const updated = await prisma.scanRecord.update({
     where: { id },
     data: {
       status: 'APPROVED',
       approvedById: userId,
       approvedAt: new Date(),
+      approvalHash,
+      approvedPayload: approvedPayload as Prisma.InputJsonValue,
     },
   });
 

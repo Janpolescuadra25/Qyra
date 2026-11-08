@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 import { Prisma, SyncStatus, SyncType } from '@prisma/client';
 import { prisma } from './prisma';
 
-function canonicalize(value: unknown): unknown {
+export function canonicalize(value: unknown): unknown {
   if (value === null || value === undefined) {
     return value;
   }

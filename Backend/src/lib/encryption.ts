@@ -10,6 +10,22 @@ export interface ApprovedPayload {
   lines: unknown[];
 }
 
+export function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token, 'utf8').digest('hex');
+}
+
+export function decryptSafe(ciphertext: string | null | undefined): string {
+  if (!ciphertext) {
+    return '';
+  }
+
+  try {
+    return decrypt(ciphertext);
+  } catch {
+    return '';
+  }
+}
+
 function getKey(): Buffer {
   const hex = process.env.ENCRYPTION_KEY;
   if (!hex || hex.length !== 64) {

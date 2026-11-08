@@ -231,7 +231,7 @@ export const journalEntrySchema = z.object({
 export const scanSubmitSchema = z.object({}).strict();
 
 export const scanApproveSchema = z.object({
-  lines: z.array(z.record(z.unknown())).optional(),
+  lines: z.array(z.record(z.string(), z.unknown())).optional(),
   txnDate: z.string().optional(),
   notes: z.string().optional(),
 }).passthrough();
