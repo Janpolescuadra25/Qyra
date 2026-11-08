@@ -449,3 +449,11 @@ Previously, when a scan was approved, only status was updated to `APPROVED`. Dur
   - Legacy null-hash bypass verification.
   - Bulk-approval multi-hash independence.
 - `Backend/tests/storage-key-ownership.test.ts`: 5/5 regression tests passed.
+---
+
+## Commercial Activation & Production Deployment Runbooks
+For operational deployment to Hetzner VPS `vortex` (`2.28.120.85`), consult the comprehensive runbook:
+- **Production Deployment Checklist:** [`production-deployment-checklist.md`](./production-deployment-checklist.md)
+  - Phase 14.2: Stripe Live Mode Activation, product/price setup, webhook endpoint `https://api.qyra.space/webhooks/stripe`.
+  - Phase 14.3: QuickBooks Online Production OAuth verification, Intuit dashboard registration, token encryption and refresh.
+  - Hetzner VPS `vortex` pull-only deployment and sibling PM2 process isolation protocol.
