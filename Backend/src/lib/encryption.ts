@@ -1,51 +1,86 @@
-import * as crypto from 'crypto';
+import crypto from 'crypto';
+import { canonicalize } from './dedup';
 
 const ALGORITHM = 'aes-256-gcm';
+const IV_LENGTH = 12;
+const AUTH_TAG_LENGTH = 16;
 
-function getKey(): Buffer {
-  const key = process.env.ENCRYPTION_KEY;
-  if (!key) throw new Error('ENCRYPTION_KEY environment variable is not set');
-  if (Buffer.from(key, 'hex').length !== 32) {
-    throw new Error('ENCRYPTION_KEY must be 32 bytes (64 hex characters)');
-  }
-  return Buffer.from(key, 'hex');
+export interface ApprovedPayload {
+  txnDate: string;
+  lines: unknown[];
 }
 
-export function encrypt(plaintext: string): string {
-  const key = getKey();
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
-  let encrypted = cipher.update(plaintext, 'utf8', 'hex');
+function getKey(): Buffer {
+  const hex = process.env.ENCRYPTION_KEY;
+  if (!hex || hex.length !== 64) {
+    throw new Error('ENCRYPTION_KEY must be a 64-character hex string (32 bytes)');
+  }
+  return Buffer.from(hex, 'hex');
+}
+
+export function encrypt(text: string): string {
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv(ALGORITHM, getKey(), iv, {
+    authTagLength: AUTH_TAG_LENGTH,
+  });
+
+  let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
-  const authTag = cipher.getAuthTag().toString('hex');
-  return `${iv.toString('hex')}:${authTag}:${encrypted}`;
+  const tag = cipher.getAuthTag();
+
+  return [
+    iv.toString('hex'),
+    encrypted,
+    tag.toString('hex'),
+  ].join(':');
 }
 
 export function decrypt(ciphertext: string): string {
-  const key = getKey();
-  const [ivHex, authTagHex, encrypted] = ciphertext.split(':');
-  if (!ivHex || !authTagHex || !encrypted) {
-    throw new Error('Invalid encrypted format');
+  const parts = ciphertext.split(':');
+  if (parts.length !== 3) {
+    throw new Error('Invalid ciphertext format');
   }
+
+  const [ivHex, encryptedHex, tagHex] = parts;
   const iv = Buffer.from(ivHex, 'hex');
-  const authTag = Buffer.from(authTagHex, 'hex');
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
-  decipher.setAuthTag(authTag);
-  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+  const tag = Buffer.from(tagHex, 'hex');
+
+  const decipher = crypto.createDecipheriv(ALGORITHM, getKey(), iv, {
+    authTagLength: AUTH_TAG_LENGTH,
+  });
+  decipher.setAuthTag(tag);
+
+  let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
   return decrypted;
 }
 
-export function isEncrypted(value: string): boolean {
-  const parts = value.split(':');
-  return parts.length === 3 && parts.every(p => /^[0-9a-f]+$/i.test(p));
+/**
+ * Computes a deterministic HMAC-SHA256 signature for an arbitrary payload.
+ * The payload is canonically sorted via canonicalize() to ensure key-order invariance.
+ */
+export function createPayloadHmac(payload: unknown): string {
+  const key = getKey();
+  const canonicalString = JSON.stringify(canonicalize(payload) ?? null);
+  return crypto.createHmac('sha256', key).update(canonicalString, 'utf8').digest('hex');
 }
 
-export function decryptSafe(ciphertext: string): string {
-  if (!isEncrypted(ciphertext)) return ciphertext;
-  return decrypt(ciphertext);
-}
-
-export function hashToken(token: string): string {
-  return crypto.createHash('sha256').update(token).digest('hex');
+/**
+ * Timing-safe verification of an expected HMAC against a given payload.
+ */
+export function verifyPayloadHmac(payload: unknown, expectedHmac: string): boolean {
+  if (!expectedHmac || typeof expectedHmac !== 'string') {
+    return false;
+  }
+  try {
+    const computed = createPayloadHmac(payload);
+    const expectedBuf = Buffer.from(expectedHmac, 'hex');
+    const computedBuf = Buffer.from(computed, 'hex');
+    if (expectedBuf.length !== computedBuf.length) {
+      return false;
+    }
+    return crypto.timingSafeEqual(expectedBuf, computedBuf);
+  } catch {
+    return false;
+  }
 }
