@@ -8,7 +8,7 @@
 - **Status:** IN PROGRESS (Initialization & Pre-Launch Validation)
 - **Primary Goal:** Validate production telemetries, configure live commercial infrastructure, monitor browser store submission lifecycles, and verify end-to-end security hardening.
 - **Deliverables:**
-  - [ ] 14.1 Sentry Telemetry Integration (Frontend complete with PII scrubbing; backend code complete; pending production Sentry DSN configuration)
+  - [ ] 14.1 Sentry Telemetry Integration (Frontend complete with PII scrubbing; backend code + regression test coverage complete; pending production Sentry DSN configuration)
   - [ ] 14.2 Stripe Live Mode Activation & Guard Validation (Pending Stripe live mode keys & webhook verification)
   - [ ] 14.3 QuickBooks OAuth Production Refresh Deduplication (Pending Intuit production app verification)
   - [ ] 14.4 Browser Store Submission Tracking & Lifecycle Monitoring (Pending creation of browser store packages in Frontend/releases/ directory)
