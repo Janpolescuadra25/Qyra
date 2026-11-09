@@ -4,7 +4,8 @@
 This deliverable implements and standardizes the live commercial payment processing architecture for Qyra. It isolates live payment processing from sandbox/testmode operations, enforces cryptographic webhook signature verification, and establishes fail-closed mode validation.
 
 ## 2. Technical Architecture & Implementation
-- **Webhook Route Handler**: `Backend/src/routes/webhooks.ts` (lines 142–151)
+- **Webhook Route Handler**: `Backend/src/routes/webhooks.ts` mounted at `/api/webhooks/stripe` (lines 142–151)
+- **Endpoint Path**: `/api/webhooks/stripe`
 - **Mode Isolation**: Enforces runtime validation preventing test events (`sk_test_`) from executing on live accounts and live events (`sk_live_`) from being ingested into test environments.
 - **Webhook Secret Validation**: All payloads verified against `STRIPE_WEBHOOK_SECRET` before processing.
 - **Price ID Metadata Mapping**:
