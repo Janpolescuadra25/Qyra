@@ -19,3 +19,14 @@
 ## Next Steps
 1. Monitor Chrome Web Store, Edge Add-ons, and Firefox AMO developer portals for review status.
 2. Validate production QuickBooks Online OAuth authorization flow in production environment.
+
+## Future Backlog
+
+### Phase 15: Backlog Security & Route Hardening
+- **15.1 Webhook Route Path Alignment (QF25)**: Verify and document `/api/webhooks/stripe` across all operational guides and Nginx configs.
+- **15.2 Web Origin & Extension Allowlist Hardening (QF23)**: Restrict CORS strictly to `https://qyra.space` and extension origin configured via `${ALLOWED_EXTENSION_ID}` in production.
+- **15.3 Scan Attachment Ownership (QF11)**: Mitigated via server-side path prefix validation (`scans/{userId}/...`) and `isValidStorageKey()` traversal protection.
+
+### Phase 16: VPS vortex Commercial Deployment
+- **Deployment Target**: Hetzner VPS `vortex` (`2.28.120.85`).
+- **Execution Protocol**: Fast-forward git pull, server TypeScript build, PM2 reload (`qyra-backend` on port 3005), preserving sibling services (`jp-frontend`, `jp-backend`, `hayp-frontend`).
