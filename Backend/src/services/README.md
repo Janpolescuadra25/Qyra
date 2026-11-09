@@ -17,7 +17,7 @@
   - Cached entities: Accounts (`getAccounts`), Vendors (`getVendors`), Customers (`getCustomers`), Tax Codes (`getTaxCodes`).
   - Cache operations: `getCachedEntity<T>()` and `setCachedEntity<T>()` with sliding TTL checks. Avoids redundant Intuit API round-trips and shields Intuit rate quotas.
 - **Token Refresh Coordination**:
-  - `pendingRefreshes = Map<string, Promise<string>>`: Coordinates concurrent refresh requests per realm to prevent duplicate token rotations.
+  - `pendingRefreshes = Map<string, Promise<{ accessToken: string; realmId: string }>>`: Coordinates concurrent refresh requests per realm to prevent duplicate token rotations.
 - **Payload Builders**:
   - `buildBillPaymentPayload()`: Constructs bill-payment payloads with linked transaction references.
   - `buildJournalEntryPayload()`: Enforces required QB fields and validates Journal Entry debit/credit balance equality.
