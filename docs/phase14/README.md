@@ -457,3 +457,11 @@ For operational deployment to Hetzner VPS `vortex` (`2.28.120.85`), consult the 
   - Phase 14.2: Stripe Live Mode Activation, product/price setup, webhook endpoint `https://api.qyra.space/webhooks/stripe`.
   - Phase 14.3: QuickBooks Online Production OAuth verification, Intuit dashboard registration, token encryption and refresh.
   - Hetzner VPS `vortex` pull-only deployment and sibling PM2 process isolation protocol.
+
+---
+
+## Active Deliverable Documentation (Commercial Activation)
+The following deliverable-specific architectural guides provide detailed specifications, configuration requirements, and operational checklists:
+- [14.2 Stripe Live Mode Architecture](./14.2-stripe-live-mode/README.md) — Live mode webhook isolation, price IDs, and payment verification.
+- [14.3 QuickBooks Online OAuth Architecture](./14.3-quickbooks-oauth/README.md) — Production OAuth 2.0 credentials, token refresh deduplication, and sync flows.
+- [14.4 Browser Store Submissions Architecture](./14.4-browser-store-submissions/README.md) — Distribution ZIP manifests, Manifest V3 compliance, and store submissions.
