@@ -4,7 +4,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const RELEASES = path.join(ROOT, 'releases');
-const browsers = ['chrome', 'firefox', 'edge'];
+const browsers = ['chrome', 'firefox', 'edge', 'safari'];
 fs.mkdirSync(RELEASES, { recursive: true });
 
 function packageBrowser(browserName) {

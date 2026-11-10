@@ -11,7 +11,7 @@
   - [ ] 14.1 Sentry Telemetry Integration (Code complete & tested with PII scrubbing; pending VPS production SENTRY_DSN configuration)
   - [ ] 14.2 Stripe Live Mode Activation & Guard Validation (Code complete & tested with 5 route-level mode guard tests; pending VPS production keys & live webhook verification)
   - [ ] 14.3 QuickBooks OAuth Deduplication (Code complete in qb.service.ts via pendingRefreshes; pending Intuit production app review)
-  - [ ] 14.4 Browser Store Submission Packages (Build pipelines exist for Chrome, Edge, Firefox, Safari; pending Frontend/releases/ packaging workflow)
+  - [x] 14.4 Browser Store Submission Packages (Multi-browser packaging complete for Chrome, Edge, Firefox, Safari in Frontend/releases/ and CI release workflow configured)
   - [ ] 14.5 Security Hardening (Pending PR #39 review & merge)
   - [ ] 14.6 Verification Docs (Pending comprehensive security & verification documentation)
   - [ ] 14.7 Storage Key Ownership (Test suite merged; pending service implementation PR #42)
@@ -37,3 +37,4 @@
 ### Phase 16: VPS vortex Commercial Deployment
 - **Deployment Target**: Hetzner VPS `vortex` (`2.28.120.85`).
 - **Execution Protocol**: Fast-forward git pull, server TypeScript build, PM2 reload (`qyra-backend` on port 3005), preserving sibling services (`jp-frontend`, `jp-backend`, `hayp-frontend`).
+
