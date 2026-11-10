@@ -12,11 +12,11 @@
   - [ ] 14.2 Stripe Live Mode Activation & Guard Validation (Code complete & tested with 5 route-level mode guard tests; pending VPS production keys & live webhook verification)
   - [ ] 14.3 QuickBooks OAuth Deduplication (Code complete in qb.service.ts via pendingRefreshes; pending Intuit production app review)
   - [x] 14.4 Browser Store Submission Packages (Multi-browser packaging complete for Chrome, Edge, Firefox, Safari in Frontend/releases/ and CI release workflow configured)
-  - [ ] 14.5 Security Hardening (Pending PR #39 review & merge)
+  - [ ] 14.5 Security Hardening (Base middleware implemented; pending comprehensive security audit & route hardening)
   - [ ] 14.6 Verification Docs (Pending comprehensive security & verification documentation)
-  - [ ] 14.7 Storage Key Ownership (Test suite merged; pending service implementation PR #42)
-  - [ ] 14.8 Storage Sync (Pending PR #45 review & merge)
-  - [ ] 14.9 Cryptographic Binding (HMAC utilities merged in Backend/src/lib/encryption.ts; pending formal production security audit)
+  - [ ] 14.7 Storage Key Ownership (Test suite merged; pending service implementation)
+  - [ ] 14.8 Storage Sync (Planned; pending multi-device sync implementation)
+  - [x] 14.9 Cryptographic Binding (HMAC utilities & documentation merged in Backend/src/lib/; pending formal production security audit)
 ---
 
 ## Archived Phases (Completed)
