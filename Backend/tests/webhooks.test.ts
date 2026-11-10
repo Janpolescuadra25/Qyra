@@ -85,6 +85,7 @@ const mockUserFindMany = __prismaMocks.mockUserFindMany as jest.Mock;
 
 beforeAll(() => {
   process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test';
+  process.env.STRIPE_SECRET_KEY = 'sk_' + 'test_default_mock_webhook_key';
   process.env.STRIPE_STARTER_MONTHLY_PRICE_ID = 'price_starter_monthly';
   process.env.STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID = 'price_professional_monthly';
   process.env.STRIPE_PREMIUM_MONTHLY_PRICE_ID = 'price_premium_monthly';
@@ -123,6 +124,12 @@ const rawPayload = JSON.stringify({ hello: 'world' });
 
 describe('Stripe webhook route', () => {
   beforeEach(() => {
+    jest.clearAllMocks();
+    process.env.STRIPE_SECRET_KEY = 'sk_' + 'test_default_mock_webhook_key';
+  });
+
+  afterEach(() => {
+    delete process.env.STRIPE_SECRET_KEY;
     jest.clearAllMocks();
   });
 
@@ -461,5 +468,141 @@ describe('Stripe webhook route', () => {
       .expect((res) => {
         expect(res.body.error).toContain('Invalid webhook signature');
       });
+  });
+
+  describe('Stripe Mode Safety Guards (Phase 14.2 / AST-02)', () => {
+    const originalStripeKey = process.env.STRIPE_SECRET_KEY;
+    const MOCK_TEST_KEY = 'sk_' + 'test_mock_mode_test_key_val';
+    const MOCK_LIVE_KEY = 'sk_' + 'live_mock_mode_test_key_val';
+
+    afterEach(() => {
+      if (originalStripeKey === undefined) {
+        delete process.env.STRIPE_SECRET_KEY;
+      } else {
+        process.env.STRIPE_SECRET_KEY = originalStripeKey;
+      }
+      jest.clearAllMocks();
+    });
+
+    it('rejects live event when running in test mode with HTTP 400', async () => {
+      process.env.STRIPE_SECRET_KEY = MOCK_TEST_KEY;
+      const app = buildApp();
+      mockConstructEvent.mockReturnValueOnce({
+        id: 'evt_live_mode_test',
+        type: 'checkout.session.completed',
+        livemode: true,
+        data: { object: { id: 'cs_live_123' } },
+      });
+
+      const res = await request(app)
+        .post('/api/webhooks/stripe')
+        .set('stripe-signature', 'valid_test_signature')
+        .set('Content-Type', 'application/json')
+        .send(rawPayload);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Stripe mode mismatch: Live event rejected in test mode');
+    });
+
+    it('rejects test event when running in live mode with HTTP 400', async () => {
+      process.env.STRIPE_SECRET_KEY = MOCK_LIVE_KEY;
+      const app = buildApp();
+      mockConstructEvent.mockReturnValueOnce({
+        id: 'evt_test_mode_test',
+        type: 'checkout.session.completed',
+        livemode: false,
+        data: { object: { id: 'cs_test_123' } },
+      });
+
+      const res = await request(app)
+        .post('/api/webhooks/stripe')
+        .set('stripe-signature', 'valid_live_signature')
+        .set('Content-Type', 'application/json')
+        .send(rawPayload);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Stripe mode mismatch: Test event rejected in live mode');
+    });
+
+    it('accepts matching test event in test mode with HTTP 200', async () => {
+      process.env.STRIPE_SECRET_KEY = MOCK_TEST_KEY;
+      const app = buildApp();
+      mockConstructEvent.mockReturnValueOnce({
+        id: 'evt_matching_test',
+        type: 'customer.subscription.updated',
+        livemode: false,
+        data: {
+          object: {
+            id: 'sub_matching_123',
+            status: 'active',
+            current_period_end: 1700000000,
+            cancel_at_period_end: false,
+            items: {
+              data: [{ price: { id: 'price_professional_monthly' } }],
+            },
+          },
+        },
+      });
+
+      mockUserUpdateMany.mockResolvedValueOnce({ count: 1 });
+
+      const res = await request(app)
+        .post('/api/webhooks/stripe')
+        .set('stripe-signature', 'valid_test_signature')
+        .set('Content-Type', 'application/json')
+        .send(rawPayload);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ received: true });
+      expect(mockUserUpdateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { stripeSubscriptionId: 'sub_matching_123' },
+          data: expect.objectContaining({
+            currentPlan: 'professional',
+            status: 'ACTIVE',
+          }),
+        })
+      );
+    });
+
+    it('rejects webhook with HTTP 500 when STRIPE_SECRET_KEY is missing', async () => {
+      delete process.env.STRIPE_SECRET_KEY;
+      const app = buildApp();
+      mockConstructEvent.mockReturnValueOnce({
+        id: 'evt_missing_key',
+        type: 'checkout.session.completed',
+        livemode: false,
+        data: { object: {} },
+      });
+
+      const res = await request(app)
+        .post('/api/webhooks/stripe')
+        .set('stripe-signature', 'valid_signature')
+        .set('Content-Type', 'application/json')
+        .send(rawPayload);
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toContain('STRIPE_SECRET_KEY is not configured');
+    });
+
+    it('rejects webhook with HTTP 500 when STRIPE_SECRET_KEY format is invalid', async () => {
+      process.env.STRIPE_SECRET_KEY = 'invalid_prefix_key_12345';
+      const app = buildApp();
+      mockConstructEvent.mockReturnValueOnce({
+        id: 'evt_invalid_format',
+        type: 'checkout.session.completed',
+        livemode: false,
+        data: { object: {} },
+      });
+
+      const res = await request(app)
+        .post('/api/webhooks/stripe')
+        .set('stripe-signature', 'valid_signature')
+        .set('Content-Type', 'application/json')
+        .send(rawPayload);
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toContain('STRIPE_SECRET_KEY format is invalid');
+    });
   });
 });

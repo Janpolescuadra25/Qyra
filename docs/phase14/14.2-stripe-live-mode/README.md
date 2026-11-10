@@ -33,3 +33,13 @@ This deliverable implements and standardizes the live commercial payment process
 - Zero production secret keys committed to Git repositories.
 - Mode mismatch returns HTTP 400 with fail-closed rejection.
 - Webhook signature replay protection enforced via Stripe timestamp tolerances.
+
+## Mode Safety Guard Integration Test Coverage
+
+The fail-closed Stripe mode safety guards implemented in `Backend/src/routes/webhooks.ts` are verified through route-level integration coverage in `Backend/tests/webhooks.test.ts` using the live Express route via `buildApp()`, `rawPayload`, `supertest`, and `mockConstructEvent`.
+
+1. **Live event rejected in test mode (`HTTP 400`)**: Validates that a live event (`livemode: true`) is rejected when `STRIPE_SECRET_KEY` is configured as a test key (`sk_test_...`). Asserts the JSON error body via `res.body.error`.
+2. **Test event rejected in live mode (`HTTP 400`)**: Validates that a test event (`livemode: false`) is rejected when `STRIPE_SECRET_KEY` is configured as a live key (`sk_live_...`). Asserts the JSON error body via `res.body.error`.
+3. **Matching mode accepted (`HTTP 200`)**: Confirms a matching test-mode event succeeds and the route persists the update via `mockedPrisma.user.updateMany` with the expected subscription metadata.
+4. **Missing key guard (`HTTP 500`)**: Confirms that a missing `STRIPE_SECRET_KEY` fails closed and returns an application error payload with `res.body.error`.
+5. **Invalid key format guard (`HTTP 500`)**: Confirms that a malformed secret prefix (`sk_...` not matching `sk_live_` or `sk_test_`) fails closed and returns `res.body.error`.
