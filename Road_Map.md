@@ -1,4 +1,4 @@
-<!-- Actively maintained roadmap — Last updated: 2026-11-10 -->
+<!-- Actively maintained roadmap — Last updated: 2026-11-11 -->
 
 # Qyra Development Roadmap
 
