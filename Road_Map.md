@@ -32,7 +32,7 @@
 ### Phase 15: Backlog Security & Route Hardening
 - **15.1 Webhook Route Path Alignment (QF25)**: Verify and document `/api/webhooks/stripe` across all operational guides and Nginx configs.
 - **15.2 Web Origin & Extension Allowlist Hardening (QF23)**: Restrict CORS strictly to `https://qyra.space` and extension origin configured via `${ALLOWED_EXTENSION_ID}` in production.
-- **15.3 Scan Attachment Ownership (QF11)**: Mitigated via server-side path prefix validation (`scans/{userId}/...`) and `isValidStorageKey()` traversal protection.
+- **[x] 15.3 Scan Attachment Ownership (QF11)**: Fully completed & mitigated by Phase 14.7 implementation; server-side path prefix validation and traversal protection active in production.
 
 ### Phase 16: VPS vortex Commercial Deployment
 - **Deployment Target**: Hetzner VPS `vortex` (`2.28.120.85`).
