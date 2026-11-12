@@ -14,7 +14,7 @@
   - [x] 14.4 Browser Store Submission Packages (Multi-browser packaging complete for Chrome, Edge, Firefox, Safari in Frontend/releases/ and CI release workflow configured)
   - [ ] 14.5 Security Hardening (Base middleware implemented; pending comprehensive security audit & route hardening)
   - [ ] 14.6 Verification Docs (Pending comprehensive security & verification documentation)
-  - [ ] 14.7 Storage Key Ownership (Test suite merged; pending service implementation)
+  - [x] 14.7 Storage Key Ownership (Path prefix validation and tenant isolation defense enforced in scans.ts)
   - [ ] 14.8 Storage Sync (Planned; pending multi-device sync implementation)
   - [x] 14.9 Cryptographic Binding (HMAC utilities & documentation merged in Backend/src/lib/; pending formal production security audit)
 ---
