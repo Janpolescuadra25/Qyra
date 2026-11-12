@@ -140,12 +140,17 @@ router.post('/', requireFeaturePermission('scan', 'write'), validate(scanCreateS
       // Enforce tenant path ownership (prevent cross-tenant upload hijacking)
       const ownerId = req.user!.userId;
       const adminId = req.user!.adminId;
-      const isOwnedByUser =
-        attachment.storageKey.startsWith(`scans/${ownerId}/`) ||
-        (adminId && attachment.storageKey.startsWith(`scans/${adminId}/`)) ||
-        attachment.storageKey.startsWith(`agreements/${ownerId}/`) ||
-        (adminId && attachment.storageKey.startsWith(`agreements/${adminId}/`)) ||
-        (process.env.NODE_ENV === 'test' && attachment.storageKey.startsWith('tests/'));
+      const allowedPrefixes = [
+        `scans/${ownerId}/`,
+        `agreements/${ownerId}/`,
+      ];
+      if (adminId) {
+        allowedPrefixes.push(`scans/${adminId}/`, `agreements/${adminId}/`);
+      }
+      if (process.env.NODE_ENV === 'test') {
+        allowedPrefixes.push('tests/');
+      }
+      const isOwnedByUser = allowedPrefixes.some(prefix => attachment.storageKey.startsWith(prefix));
 
       if (!isOwnedByUser) {
         throw new AppError('Invalid attachment storageKey: must belong to your tenant', 403);
