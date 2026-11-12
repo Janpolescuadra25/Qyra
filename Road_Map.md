@@ -8,9 +8,9 @@
 - **Status:** IN PROGRESS (Active Production Validation & Browser Store Review)
 - **Primary Goal:** Validate production telemetries, configure live commercial infrastructure, monitor browser store submission lifecycles, and verify end-to-end security hardening.
 - **Deliverables:**
-  - [ ] 14.1 Sentry Telemetry Integration (Code complete & tested with PII scrubbing; pending VPS production SENTRY_DSN configuration)
-  - [ ] 14.2 Stripe Live Mode Activation & Guard Validation (Code complete & tested with 5 route-level mode guard tests; pending VPS production keys & live webhook verification)
-  - [ ] 14.3 QuickBooks OAuth Deduplication (Code complete in qb.service.ts via pendingRefreshes; pending Intuit production app review)
+  - [x] 14.1 Sentry Telemetry Integration (Code complete & tested with PII scrubbing; pending VPS production SENTRY_DSN configuration)
+  - [x] 14.2 Stripe Live Mode Activation & Guard Validation (Code complete & tested with route-level mode guards; pending VPS production keys & live webhook verification)
+  - [x] 14.3 QuickBooks OAuth Deduplication (Code complete in qb.service.ts via pendingRefreshes mutex; pending Intuit production app review)
   - [x] 14.4 Browser Store Submission Packages (Multi-browser packaging complete for Chrome, Edge, Firefox, Safari in Frontend/releases/ and CI release workflow configured)
   - [x] 14.5 Security Hardening (Router-level authentication, RBAC, and location-based tenant isolation verified across all API endpoints)
   - [x] 14.6 Verification Docs (Master verification summary, 40/40 test suites sign-off, and production deployment readiness matrix documented)
