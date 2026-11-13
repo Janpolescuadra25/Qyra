@@ -34,8 +34,10 @@
 - **15.2 Web Origin & Extension Allowlist Hardening (QF23)**: Restrict CORS strictly to `https://qyra.space` and extension origin configured via `${ALLOWED_EXTENSION_ID}` in production.
 - **[x] 15.3 Scan Attachment Ownership (QF11)**: Fully completed & mitigated by Phase 14.7 implementation; server-side path prefix validation and traversal protection active in production.
 
-### Phase 16: VPS vortex Commercial Deployment
+### Phase 16: VPS vortex Commercial Deployment (Blocked Pending Remote Verification)
+- [ ] 16.1 VPS vortex Commercial Deployment (Blocked — remote /var/www/qyra working tree dirty with deleted ../web/* files; deployment aborted fail-closed)
 - **Deployment Target**: Hetzner VPS `vortex` (`2.28.120.85`).
-- **Execution Protocol**: Fast-forward git pull, server TypeScript build, PM2 reload (`qyra-backend` on port 3005), preserving sibling services (`jp-frontend`, `jp-backend`, `hayp-frontend`).
+- **Execution Protocol**: Verify SSH access to the host, fast-forward git pull to the pinned baseline, run the TypeScript build, reload the PM2 service `qyra-backend` on port 3005, and confirm sibling services remain online before marking the rollout complete.
+- **Current Status**: BLOCKED — fail-closed deployment aborted because remote /var/www/qyra working tree on vortex has uncommitted deletions under ../web/; zero pull, build, PM2 reload, or HTTP 200 verification occurred.
 
 
