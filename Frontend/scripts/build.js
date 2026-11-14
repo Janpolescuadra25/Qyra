@@ -19,7 +19,7 @@ if (targets.some((target) => !supportedBrowsers.includes(target))) {
 }
 
 const isWatch = process.argv.includes('--watch');
-const backendUrl = process.env.VITE_BACKEND_URL || process.env.BACKEND_URL || 'https://qyra-backend.onrender.com';
+const backendUrl = process.env.VITE_BACKEND_URL || process.env.BACKEND_URL || 'https://api.qyra.space';
 const targetMap = { chrome: 'chrome120', edge: 'edge120', firefox: 'firefox109', safari: 'safari16' };
 
 function resetDirectory(directory) {

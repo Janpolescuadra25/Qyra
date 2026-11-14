@@ -59,19 +59,44 @@ app.set('trust proxy', 1);
 // ── Middleware ──────────────────────────────────────────────────────────────
 app.use(requestId);
 
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5173',
+const PRODUCTION_ALLOWED_ORIGINS = [
   'https://qyra.space',
   'https://api.qyra.space',
   'https://www.qyra.space',
 ];
 
-const allowedExtensionIds = [
-  'bfhobnahngcmhaeklihifgfbgdepibii', // Chrome Web Store published extension
-  'ccghhfmkjbcakhnoamgihifonfiammoc', // Dev / unpacked extension
-  ...(process.env.ALLOWED_EXTENSION_ID ? [process.env.ALLOWED_EXTENSION_ID] : []),
+const DEV_ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:5173',
 ];
+
+const PUBLISHED_EXTENSION_ID = 'bfhobnahngcmhaeklihifgfbgdepibii';
+const DEV_EXTENSION_ID = 'ccghhfmkjbcakhnoamgihifonfiammoc';
+
+export function getAllowedOrigins(nodeEnv: string | undefined = process.env.NODE_ENV): string[] {
+  if (nodeEnv === 'production') {
+    return [...PRODUCTION_ALLOWED_ORIGINS];
+  }
+
+  return [...DEV_ALLOWED_ORIGINS, ...PRODUCTION_ALLOWED_ORIGINS];
+}
+
+export function getAllowedExtensionIds(
+  env: { NODE_ENV?: string; ALLOWED_EXTENSION_ID?: string } = process.env
+): string[] {
+  const configuredExtensionIds = (env.ALLOWED_EXTENSION_ID ?? '')
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
+
+  const ids = [
+    PUBLISHED_EXTENSION_ID,
+    ...(env.NODE_ENV === 'production' ? [] : [DEV_EXTENSION_ID]),
+    ...configuredExtensionIds,
+  ];
+
+  return Array.from(new Set(ids));
+}
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -80,12 +105,15 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // Check explicit domain whitelist
+    const allowedOrigins = getAllowedOrigins();
+    const allowedExtensionIds = getAllowedExtensionIds();
+
+    // Check explicit domain whitelist (localhost excluded in production)
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    // Check strictly whitelisted Chrome extensions
+    // Check strictly whitelisted Chrome extensions (hardcoded dev ID excluded in production)
     if (origin.startsWith('chrome-extension://')) {
       const extensionId = origin.replace('chrome-extension://', '').replace(/\/.*$/, '');
       if (allowedExtensionIds.includes(extensionId)) {

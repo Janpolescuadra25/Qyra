@@ -44,7 +44,7 @@ Canvas 2D particle system with connecting lines, rendered behind the hero sectio
 Both `Backend/public/landing/` and `web/` are kept in sync. Known differences:
 - Logo path: `web/` uses `icons/qyra-logo.png`
 - Script src: `web/` uses `js/landing.js` (no `/js/` prefix)
-- `web/js/landing.js` L5: `var API_BASE = 'https://nest-backend-mddn.onrender.com';`
+- `web/js/landing.js` L5: `// Same-origin API calls served via Nginx -> qyra-backend (e.g. fetch('/api/auth/register', ...))`
 
 ### CSS Stacking Context
 The hero section uses `relative z-0` to create a real stacking context. The canvas uses `z-index: -1`. Per CSS 2.1 Appendix E painting order, this places the canvas:

@@ -133,7 +133,7 @@ Integrated Sentry backend CPU and transaction profiling into the Qyra API servic
    - Populate all 12 live Price IDs corresponding to live Stripe Dashboard products.
    - Enforce file permissions: `chmod 600 /var/www/qyra/Backend/.env`.
 3. **Stripe Dashboard Webhook Registration:**
-   - Endpoint URL: `https://api.qyra.space/api/webhooks`
+   - Endpoint URL: `https://qyra.space/api/webhooks/stripe` (canonical mounted route `POST /api/webhooks/stripe`; `https://api.qyra.space/api/webhooks/stripe` once `api.qyra.space` Nginx vhost/TLS is activated under Phase 16.1)
    - Subscribed Events:
      * `checkout.session.completed`
      * `customer.subscription.updated`
@@ -454,7 +454,7 @@ Previously, when a scan was approved, only status was updated to `APPROVED`. Dur
 ## Commercial Activation & Production Deployment Runbooks
 For operational deployment to Hetzner VPS `vortex` (`2.28.120.85`), consult the comprehensive runbook:
 - **Production Deployment Checklist:** [`production-deployment-checklist.md`](./production-deployment-checklist.md)
-  - Phase 14.2: Stripe Live Mode Activation, product/price setup, webhook endpoint `https://api.qyra.space/webhooks/stripe`.
+  - Phase 14.2: Stripe Live Mode Activation, product/price setup, webhook endpoint `https://qyra.space/api/webhooks/stripe`.
   - Phase 14.3: QuickBooks Online Production OAuth verification, Intuit dashboard registration, token encryption and refresh.
   - Hetzner VPS `vortex` pull-only deployment and sibling PM2 process isolation protocol.
 

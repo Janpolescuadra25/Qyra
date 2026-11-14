@@ -39,7 +39,7 @@ VPS `vortex` hosts three independent production applications:
   - Scan Pack 250 (`STRIPE_SCAN_PACK_250_PRICE_ID`)
   - Scan Pack 500 (`STRIPE_SCAN_PACK_500_PRICE_ID`)
 - [ ] Create a live Webhook Endpoint:
-  - **Endpoint URL:** `https://api.qyra.space/webhooks/stripe`
+  - **Endpoint URL:** `https://qyra.space/api/webhooks/stripe` (canonical mounted route `POST /api/webhooks/stripe`; `https://api.qyra.space/api/webhooks/stripe` once `api.qyra.space` Nginx vhost/TLS is activated under Phase 16.1)
   - **Events to listen for:**
     - `checkout.session.completed`
     - `invoice.payment_succeeded`
